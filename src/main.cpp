@@ -6,7 +6,7 @@ using namespace std;
 
 class TestArea: public Area {
     public:
-        Walker* gnik;
+        Player* gnik;
 
         TestArea() {
             config["map-texture"] = "tiles";
@@ -17,7 +17,7 @@ class TestArea: public Area {
             load->spritesheet("teenGnik", "assets/teenGnikolas.png", 64, 64);
         }
 
-        void create() {
+        void onCreate() {
             assets->addAnim("teenGnik", "downStand", 0);
             assets->addAnim("teenGnik", "upStand", 10);
             assets->addAnim("teenGnik", "leftStand", 20);
@@ -28,7 +28,7 @@ class TestArea: public Area {
             assets->addAnim("teenGnik", "rightWalk", {32, 33, 32, 34}, 6, true);
 
 
-            addProp(gnik = new Walker(0, 0, "teenGnik"), {
+            addProp(gnik = new Player(0, 0, "teenGnik"), {
                 {"tileX", 0}, {"tileY", 0}
             });
             gnik->setOrigin(0.5, 70/80.0);
@@ -45,23 +45,16 @@ class TestArea: public Area {
             controls->addButton("left", BUTTON_DPAD_LEFT);
             controls->addButton("right", BUTTON_DPAD_RIGHT);
 
+            controls->addButton("up", LEFTSTICK_UP);
+            controls->addButton("down", LEFTSTICK_DOWN);
+            controls->addButton("left", LEFTSTICK_LEFT);
+            controls->addButton("right", LEFTSTICK_RIGHT);
+
             controls->addButton("full", BUTTON_A);
         }
 
-        void update() {
-            Area::update();
-            if (controls->isDown("up")) {
-                gnik->walk(Up);
-            }
-            else if (controls->isDown("down")) {
-                gnik->walk(Down);
-            }
-            else if (controls->isDown("left")) {
-                gnik->walk(Left);
-            }
-            else if (controls->isDown("right")) {
-                gnik->walk(Right);
-            }
+        void onDuration() {
+            
             if (controls->justDown("full")) {
                 if (!game->isFullscreen) {
                     game->setWindowSize(game->display->width, game->display->height);

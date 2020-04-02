@@ -107,7 +107,7 @@ namespace Amara {
                 walkDirection = NoDir;
             }
 
-            void handleWalking() {
+            virtual void handleWalking() {
                 if (walkDirection != NoDir) {
                     int sx = x;
                     int sy = y;

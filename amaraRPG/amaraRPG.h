@@ -32,7 +32,8 @@ namespace Amara {
 }
 #endif
 
-#include "walker.cpp"
-#include "area.cpp"
-#include "prop.cpp"
-#include "assistFunctions.cpp"
+#include "amaraRPG_player.cpp"
+#include "amaraRPG_walker.cpp"
+#include "amaraRPG_area.cpp"
+#include "amaraRPG_prop.cpp"
+#include "amaraRPG_assistFunctions.cpp"

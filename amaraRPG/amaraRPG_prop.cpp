@@ -17,23 +17,22 @@ namespace Amara {
 
             bool isWall = true;
             bool isWalker = false;
+            bool isPlayer = false;
 
-            Prop(int gx, int gy, std::string tKey): Amara::Sprite(gx, gy, tKey) {}
+            Prop(int gx, int gy, std::string tKey): Amara::Sprite(0, 0, tKey) {
+                tileX = gx;
+                tileY = gy;
+                snapToTile();
+            }
             Prop(): Amara::Sprite() {}
 
-            void configure(Amara::Area* gArea) {
+            virtual void configure(Amara::Area* gArea) {
                 area = gArea;
             }
 
-            void configure(Amara::Area* gArea, nlohmann::json& config) {
+            virtual void configure(Amara::Area* gArea, nlohmann::json& config) {
                 configure(gArea);
-
-                if (config.find("id") != config.end()) {
-                    id = config["id"];
-                }
-                if (config.find("texture") != config.end()) {
-                    setTexture(config["texture"]);
-                }
+                Amara::Sprite::configure(config);
 
                 if (config.find("tileX") != config.end()) {
                     tileX = config["tileX"];
@@ -41,17 +40,27 @@ namespace Amara {
                 if (config.find("tileY") != config.end()) {
                     tileY = config["tileY"];
                 }
+                if (config.find("tileOffsetX") != config.end()) {
+                    tileOffsetX = config["tileOffsetX"];
+                }
+                if (config.find("tileOffsetY") != config.end()) {
+                    tileOffsetY = config["tileOffsetY"];
+                }
                 snapToTile();
 
-                if (config.find("originX") != config.end()) {
-                    originX = config["originX"];
-                }
-                if (config.find("originY") != config.end()) {
-                    originY = config["originY"];
-                }
                 if (config.find("isWall") != config.end()) {
                     isWall = config["isWall"];
                 }
+            }
+
+            virtual nlohmann::json toData() {
+                nlohmann::json config = Amara::Sprite::toData();
+                config["tileX"] = tileX;
+                config["tileY"] = tileY;
+                config["tileOffsetX"] = tileOffsetX;
+                config["tileOffsetY"] = tileOffsetY;
+                config["isWall"] = isWall;
+                return config;
             }
 
             void create() {
