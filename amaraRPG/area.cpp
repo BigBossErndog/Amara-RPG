@@ -9,12 +9,9 @@ namespace Amara {
             std::deque<Prop*> props;
 
             nlohmann::json config;
+            Amara::StateManager sm;
 
             Area() {}
-
-            void create() {
-                props.clear();
-            }
 
             virtual void createObjects() {}
             virtual void createEvents() {}

@@ -24,7 +24,7 @@ namespace Amara {
                     return get(key);
                 }
 
-                Amara::Control* newControl = new Amara::Control(key);
+                Amara::Control* newControl = new Amara::Control(properties, key);
                 controls[key] = newControl;
                 controlList.push_back(newControl);
 
@@ -87,8 +87,21 @@ namespace Amara {
                 return setKey(id, key);
             }
 
+            Amara::Control* addButton(std::string id, Amara::Buttoncode bcode) {
+                Amara::Control* control = get(id);
+                if (control != nullptr) {
+                    control->addButton(bcode);
+                    return control;
+                }
+                
+                std::cout << "Key \"" << id << "\" has not been initialized." << std::endl;
+                control = newControl(id);
+                std::cout << "Key \"" << id << "\" now exists." << std::endl;
+                return addButton(id, bcode);
+            }
+
             void run() {
-               for (Amara::Control* control : controlList) {
+                for (Amara::Control* control : controlList) {
                     control->run();
                 }
             }

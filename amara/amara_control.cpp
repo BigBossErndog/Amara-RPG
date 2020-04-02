@@ -6,8 +6,13 @@
 namespace Amara {
     class Control {
         public:
+            Amara::GameProperties* properties;
+            Amara::InputManager* input;
+            Amara::GamepadManager* gamepads;
+
             std::string id;
             std::vector<Amara::Key*> keys;
+            std::vector<Amara::Buttoncode> buttons;
 
             bool isDown = false;
             bool justDown = false;
@@ -16,10 +21,13 @@ namespace Amara {
 			bool held = false;
             bool activated = false;
 
-            Amara::Key* lastDown = nullptr;
+            Amara::Key* lastKeyDown = nullptr;
 
+            Control(Amara::GameProperties* gProperties, std::string givenId) {
+                properties = gProperties;
+                input = properties->input;
+                gamepads = input->gamepads;
 
-            Control(std::string givenId) {
                 id = givenId;
                 keys.clear();
             }
@@ -31,6 +39,15 @@ namespace Amara {
             void setKey(Amara::Key* nKey) {
                 keys.clear();
                 addKey(nKey);
+            }
+
+            void addButton(Amara::Buttoncode bcode) {
+                buttons.push_back(bcode);
+            }
+
+            void setButton(Amara::Buttoncode bcode) {
+                buttons.clear();
+                addButton(bcode);
             }
 
             Amara::Key* remove(Amara::Keycode keyCode) {
@@ -80,8 +97,17 @@ namespace Amara {
                     activated = activated || key->activated;
 
                     if (justDown) {
-                        lastDown = key;
+                        lastKeyDown = key;
                     }
+                }
+
+                for (Amara::Buttoncode bcode: buttons) {
+                    isDown = isDown || gamepads->isDown(bcode);
+                    justDown = justDown || gamepads->justDown(bcode);
+                    tapped = tapped || gamepads->tapped(bcode);
+                    justUp = justUp || gamepads->justUp(bcode);
+                    held = held || gamepads->held(bcode);
+                    activated = activated || gamepads->activated(bcode);
                 }
             }
     };

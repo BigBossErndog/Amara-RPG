@@ -13,6 +13,8 @@ namespace Amara {
             float walkSpeed = 1;
             float runSpeed = 2;
 
+            bool justFinishedWalking = false;
+
             Walker(int gx, int gy, std::string tKey): Amara::Prop(gx, gy, tKey) {
                 isWalker = true;
             }
@@ -28,6 +30,10 @@ namespace Amara {
             }
 
             void update() {
+                if (justFinishedWalking && !isBusy()) {
+                    play(standAnim(direction));
+                }
+                justFinishedWalking = false;
                 handleWalking();
             }
 
@@ -43,6 +49,7 @@ namespace Amara {
                 tileY += oy;
 
                 walkDirection = NoDir;
+                direction = dir;
 
                 Amara::Prop* block = area->getPropAt(tileX + ox, tileY + oy);
                 if (block != nullptr && block->isWall) {
@@ -52,7 +59,7 @@ namespace Amara {
                 walkDirection = dir;
                 movementSpeed = walkSpeed;
                 if (replaceAnim) {
-                    play(walkAnim(dir));
+                    play(Amara::walkAnim(dir));
                 }
 
                 return true;
@@ -70,14 +77,22 @@ namespace Amara {
                 return false;
             }
 
-            bool run(Amara::Direction dir) {
+            bool run(Amara::Direction dir, bool replaceAnim) {
                 if (walk(dir, false)) {
                     movementSpeed = runSpeed;
-                    play(runAnim(dir));
+                    if (replaceAnim) play(Amara::runAnim(dir));
                     return true;
                 }
 
                 return false;
+            }
+            
+            bool run(Amara::Direction dir) {
+                return run(dir, true);
+            }
+
+            bool freeWalk(Amara::Direction dir, bool replaceAnim) {
+
             }
 
             bool isBusy() {
@@ -115,6 +130,7 @@ namespace Amara {
                             }
                             else {
                                 walkDirection = NoDir;
+                                justFinishedWalking = true;
                             }
                         }
                     }
@@ -129,6 +145,7 @@ namespace Amara {
                             }
                             else {
                                 walkDirection = NoDir;
+                                justFinishedWalking = true;
                             }
                         }
                     }
@@ -144,6 +161,7 @@ namespace Amara {
                             }
                             else {
                                 walkDirection = NoDir;
+                                justFinishedWalking = true;
                             }
                         }
                     }
@@ -158,6 +176,7 @@ namespace Amara {
                             }
                             else {
                                 walkDirection = NoDir;
+                                justFinishedWalking = true;
                             }
                         }
                     }

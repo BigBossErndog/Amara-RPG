@@ -18,17 +18,34 @@ class TestArea: public Area {
         }
 
         void create() {
+            assets->addAnim("teenGnik", "downStand", 0);
+            assets->addAnim("teenGnik", "upStand", 10);
+            assets->addAnim("teenGnik", "leftStand", 20);
+            assets->addAnim("teenGnik", "rightStand", 30);
             assets->addAnim("teenGnik", "downWalk", {2, 3, 2, 4}, 6, true);
+            assets->addAnim("teenGnik", "upWalk", {12, 13, 12, 14}, 6, true);
+            assets->addAnim("teenGnik", "leftWalk", {22, 23, 22, 24}, 6, true);
+            assets->addAnim("teenGnik", "rightWalk", {32, 33, 32, 34}, 6, true);
+
+
             addProp(gnik = new Walker(0, 0, "teenGnik"), {
-                {"originX", 0.5}, {"originY", 0.5}
+                {"tileX", 0}, {"tileY", 0}
             });
+            gnik->setOrigin(0.5, 70/80.0);
             gnik->play("downWalk");
 
-            controls->addKey("up", K_UP);
-            controls->addKey("down", K_DOWN);
-            controls->addKey("left", K_LEFT);
-            controls->addKey("right", K_RIGHT);
-            controls->addKey("full", K_ESC);
+            controls->addKey("up", KEY_UP);
+            controls->addKey("down", KEY_DOWN);
+            controls->addKey("left", KEY_LEFT);
+            controls->addKey("right", KEY_RIGHT);
+            controls->addKey("full", KEY_ESC);
+
+            controls->addButton("up", BUTTON_DPAD_UP);
+            controls->addButton("down", BUTTON_DPAD_DOWN);
+            controls->addButton("left", BUTTON_DPAD_LEFT);
+            controls->addButton("right", BUTTON_DPAD_RIGHT);
+
+            controls->addButton("full", BUTTON_A);
         }
 
         void update() {
@@ -46,10 +63,12 @@ class TestArea: public Area {
                 gnik->walk(Right);
             }
             if (controls->justDown("full")) {
-                if (game->isFullscreen) {
-                    game->startWindowedFullscreen();
+                if (!game->isFullscreen) {
+                    game->setWindowSize(game->display->width, game->display->height);
+                    game->startFullscreen();
                 }
                 else {
+                    game->setWindowSize(960, 720);
                     game->exitFullscreen();
                 }
             }
@@ -60,6 +79,7 @@ int main(int argc, char** args) {
     Game* game = new Game("Amara Game");
     game->init(480, 360);
     game->setWindowSize(960, 720);
+    game->setBackgroundColor(0,0,0);
 
     game->scenes->add("test", new TestArea());
     game->start("test");

@@ -102,6 +102,25 @@ namespace Amara {
 
         return "";
     }
+
+    std::string standAnim(Amara::Direction dir) {
+        switch (dir) {
+            case Up:
+                return "upStand";
+                break;
+            case Down:
+                return "downStand";
+                break;
+            case Left:
+                return "leftStand";
+                break;
+            case Right:
+                return "rightStand";
+                break;
+        }
+
+        return "";
+    }
 }
 
 #endif
