@@ -1,29 +1,5 @@
 #include "amara.h"
 
-
-#ifndef AMARARPG_DIRECTIONS
-#define AMARARPG_DIRECTIONS
-
-namespace Amara {
-    enum Direction {
-        NoDir,
-        Up,
-        UpLeft,
-        UpRight,
-        Down,
-        DownLeft,
-        DownRight,
-        Left,
-        Right
-    };
-
-    std::vector<Direction> DirectionsInOrder = { Down, DownLeft, Left, UpLeft, Up, UpRight, Right, DownRight };
-    std::vector<Direction> FourDirections = { Down, Left, Up, Right };
-    std::vector<Direction> DiagonalDirections = { DownLeft, UpLeft, UpRight, DownRight };
-}
-
-#endif
-
 #ifndef AMARA_TILEDIM
 #define AMARA_TILEDIM
 namespace Amara {
@@ -34,6 +10,6 @@ namespace Amara {
 
 #include "amaraRPG_player.cpp"
 #include "amaraRPG_walker.cpp"
-#include "amaraRPG_area.cpp"
+#include "amaraRPG_RPGScene.cpp"
 #include "amaraRPG_prop.cpp"
 #include "amaraRPG_assistFunctions.cpp"

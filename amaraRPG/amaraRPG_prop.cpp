@@ -4,11 +4,11 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class Area;
+    class RPGScene;
 
     class Prop: public Amara::Sprite {
         public:
-            Amara::Area* area = nullptr;
+            Amara::RPGScene* rpgScene = nullptr;
             int tileX = 0;
             int tileY = 0;
 
@@ -25,13 +25,15 @@ namespace Amara {
                 snapToTile();
             }
             Prop(): Amara::Sprite() {}
-
-            virtual void configure(Amara::Area* gArea) {
-                area = gArea;
+            Prop(nlohmann::json config): Prop() {
+                configure(config);
             }
 
-            virtual void configure(Amara::Area* gArea, nlohmann::json& config) {
-                configure(gArea);
+            virtual void configure(Amara::RPGScene* gScene) {
+                rpgScene = gScene;
+            }
+
+            virtual void configure(nlohmann::json config) {
                 Amara::Sprite::configure(config);
 
                 if (config.find("tileX") != config.end()) {
@@ -51,6 +53,11 @@ namespace Amara {
                 if (config.find("isWall") != config.end()) {
                     isWall = config["isWall"];
                 }
+            }
+
+            virtual void configure(Amara::RPGScene* gScene, nlohmann::json config) {
+                configure(gScene);
+                configure(config);
             }
 
             virtual nlohmann::json toData() {

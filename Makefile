@@ -20,7 +20,8 @@ OTHER_LIB_PATHS = -I ext_lib\nlohmann\include -I ext_lib\tileson -I ext_lib/tile
 
 AMARA_PATH = -I .\amara -I ./amaraRPG
 
-COMPILER_FLAGS = -w -Wl,-subsystem,windows
+COMPILER_FLAGS = -w
+# COMPILER_FLAGS = -w -Wl,-subsystem,windows
 
 win64: $(SRC_FILES)
 	cls

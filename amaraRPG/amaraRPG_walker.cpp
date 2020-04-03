@@ -15,17 +15,23 @@ namespace Amara {
 
             bool justFinishedWalking = false;
 
+            Amara::PathFindingTask* pathTask = nullptr;
+            Amara::PathTile currentPathTile;
+
             Walker(int gx, int gy, std::string tKey): Amara::Prop(gx, gy, tKey) {
                 isWalker = true;
             }
             Walker(): Amara::Prop() {
                 isWalker = true;
             }
+            Walker(nlohmann::json config): Walker() {
+                configure(config);
+            }
 
-            void configure(Amara::Area* gArea, nlohmann::json& config) {
-                Amara::Prop::configure(gArea, config);
-                if (config.find("dir") != config.end()) {
-                    direction = config["dir"];
+            void configure(nlohmann::json config) {
+                Amara::Prop::configure(config);
+                if (config.find("direction") != config.end()) {
+                    direction = config["direction"];
                 }
             }
 
@@ -51,9 +57,18 @@ namespace Amara {
                 walkDirection = NoDir;
                 direction = dir;
 
-                Amara::Prop* block = area->getPropAt(tileX + ox, tileY + oy);
+                Amara::Prop* block = rpgScene->getPropAt(tileX + ox, tileY + oy);
                 if (block != nullptr && block->isWall) {
                     return false;
+                }
+
+                if (pathTask) {
+                    if (!pathTask->findingPath && pathTask->foundPath) {
+                        if (currentPathTile.x != tileX || currentPathTile.y != tileY) {
+                            delete pathTask;
+                            pathTask = nullptr;
+                        }
+                    }
                 }
 
                 walkDirection = dir;
@@ -91,8 +106,45 @@ namespace Amara {
                 return run(dir, true);
             }
 
-            bool freeWalk(Amara::Direction dir, bool replaceAnim) {
+            bool walkTo(int gx, int gy) {
+                if (isBusy()) return false;
 
+                if (tileX == gx && tileY == gy) {
+                    if (pathTask) delete pathTask;
+                    pathTask = nullptr;
+                    return true;
+                }
+
+                if (pathTask) {
+                    if (pathTask->findingPath) {
+                        return false;
+                    }
+                    else if (!pathTask->foundPath) {
+                        delete pathTask;
+                        pathTask = nullptr;
+                        return false;
+                    }
+                    else if (pathTask->targetX == gx && pathTask->targetY == gy) {
+                        if (tileX == gx && tileY == gy) {
+                            delete pathTask;
+                            pathTask = nullptr;
+                            return true;
+                        }
+                        else {
+                            currentPathTile = pathTask->dequeue();
+                            if (!walk(currentPathTile.direction)) {
+                                delete pathTask;
+                                pathTask = nullptr;
+                                return false;
+                            }
+                        }
+                    }
+                }
+                if (pathTask == nullptr) {
+                    pathTask = new Amara::PathFindingTask(rpgScene->tilemap);
+                    pathTask->from(tileX, tileY)->to(gx, gy)->start();
+                }
+                return false;
             }
 
             bool isBusy() {
@@ -184,6 +236,8 @@ namespace Amara {
                 }
             }
     };
+
+    typedef Walker NPC;
 }
 
 #endif

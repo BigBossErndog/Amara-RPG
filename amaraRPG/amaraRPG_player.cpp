@@ -12,6 +12,9 @@ namespace Amara {
             Player(): Amara::Walker() {
                 isPlayer = true;
             }
+            Player(nlohmann::json config): Player() {
+                configure(config);
+            }
 
             Amara::Direction lastWalkDir = NoDir;
             Amara::Direction walkBuffer = NoDir;
@@ -49,7 +52,7 @@ namespace Amara {
 
             void handleWalking() {
                 Amara::Walker::handleWalking();
-                if (area->sm.isState("duration")) {
+                if (rpgScene->sm.isState("duration")) {
                     Amara::Direction preDir = NoDir;
                     
                     if (controls->isDown("up")) {

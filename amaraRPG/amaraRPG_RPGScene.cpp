@@ -4,10 +4,10 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class Area : public Amara::Scene {
+    class RPGScene : public Amara::Scene {
         public:
             std::deque<Amara::Prop*> props;
-            Amara::Tilemap* tilemap;
+            Amara::Tilemap* tilemap = nullptr;
 
             nlohmann::json config;
             nlohmann::json tiledJson;
@@ -22,7 +22,10 @@ namespace Amara {
 
                 onPrepare();
 
-                if (tiledJson.empty()) {
+                add(tilemap = new Amara::Tilemap());
+                tilemap->createLayer(100, 100, 100, 100);
+                
+                if (!tiledJson.empty()) {
 
                 }
 

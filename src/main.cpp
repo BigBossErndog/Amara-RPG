@@ -4,7 +4,7 @@
 using namespace Amara;
 using namespace std;
 
-class TestArea: public Area {
+class TestArea: public RPGScene {
     public:
         Player* gnik;
 
@@ -28,8 +28,11 @@ class TestArea: public Area {
             assets->addAnim("teenGnik", "rightWalk", {32, 33, 32, 34}, 6, true);
 
 
-            addProp(gnik = new Player(0, 0, "teenGnik"), {
-                {"tileX", 0}, {"tileY", 0}
+            addProp(gnik = new Player());
+            gnik->configure({
+                {"texture", "teenGnik"},
+                {"tileX", 0},
+                {"tileY", 1}
             });
             gnik->setOrigin(0.5, 70/80.0);
             gnik->play("downWalk");
@@ -50,7 +53,8 @@ class TestArea: public Area {
             controls->addButton("left", LEFTSTICK_LEFT);
             controls->addButton("right", LEFTSTICK_RIGHT);
 
-            controls->addButton("full", BUTTON_A);
+            controls->addButton("walk", BUTTON_A);
+            controls->addKey("walk", KEY_SPACE);
         }
 
         void onDuration() {
@@ -65,6 +69,11 @@ class TestArea: public Area {
                     game->exitFullscreen();
                 }
             }
+
+            if (controls->isDown("walk")) {
+                gnik->walkTo(4, 4);
+            }
+            
         }
 };
 
