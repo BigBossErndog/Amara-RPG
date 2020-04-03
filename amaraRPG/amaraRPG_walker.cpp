@@ -47,6 +47,9 @@ namespace Amara {
                 if (isBusy()) {
                     return false;
                 }
+                if (dir == NoDir) {
+                    return false;
+                }
                 snapToTile();
 
                 int ox = Amara::getOffsetX(dir);
@@ -132,6 +135,9 @@ namespace Amara {
                         }
                         else {
                             currentPathTile = pathTask->dequeue();
+                            while (currentPathTile.x == tileX && currentPathTile.y == tileY && currentPathTile.id > 0) {
+                                currentPathTile = pathTask->dequeue();
+                            }
                             if (!walk(currentPathTile.direction)) {
                                 delete pathTask;
                                 pathTask = nullptr;
