@@ -14,7 +14,7 @@ namespace Amara {
 
             Amara::StateManager sm;
 
-            Area() {}
+            RPGScene() {}
 
             void create() {
                 sm.reset();
