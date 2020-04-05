@@ -27,7 +27,7 @@ COMPILER_FLAGS = -w
 
 all:
 	@echo "Usage: make (option)"
-	@echo "Options: win64 win32"
+	@echo "Options: win64 win32 archlinux64"
 	@echo "Options: playwin playlinux"
 
 clean:
