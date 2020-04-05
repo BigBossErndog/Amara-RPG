@@ -20,8 +20,9 @@ class TestArea: public RPGScene {
 
         void onPrepare() {
             config["map_texture"] = "tiles";
-            config["map_layers"] = { "floor", "above" };
-            config["map_wall_layers"] = { "walls" };
+            config["map_wallLayers"] = { "walls" };
+            config["map_aboveLayers"] = { "above" };
+            config["map_hiddenLayers"] = { "walls" };
             config["map_json"] = "reeds_home";
         }
 

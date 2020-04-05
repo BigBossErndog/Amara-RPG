@@ -32,9 +32,27 @@ namespace Amara {
                     }
 
                     Amara::TilemapLayer* layer;
-                    layer = getLayer("walls");
-                    if (layer != nullptr && config.find("showWalls") == config.end()) {
-                        layer->setVisible(false);
+
+                    if (config.find("map_hiddenLayers") != config.end()) {
+                        for (std::string layerKey: config["map_hiddenLayers"]) {
+                            layer = getLayer(layerKey);
+                            if (layer) {
+                                layer->setVisible(false);
+                            }
+                        }
+                    }
+
+                    int aboveDepth = tilemap->heightInPixels * 2;
+                    if (config.find("map_aboveLayersDepth") != config.end()) {
+                        aboveDepth = config["map_aboveLayersDepth"];
+                    }
+                    if (config.find("map_aboveLayers") != config.end()) {
+                        for (std::string layerKey: config["map_aboveLayers"]) {
+                            layer = getLayer(layerKey);
+                            if (layer) {
+                                layer->depth = aboveDepth;
+                            }
+                        }
                     }
                 }
 
@@ -102,11 +120,12 @@ namespace Amara {
                 }
 
                 Amara::TilemapLayer* layer;
-                layer = getLayer("walls");
-                if (layer != nullptr) {
-                    Amara::Tile tile = layer->getTileAt(tx, ty);
-                    if (tile.id >= 0) {
-                        return true;
+                if (config.find("map_wallLayers") != config.end()) {
+                    for (std::string layerKey: config["map_wallLayers"]) {
+                        layer = getLayer(layerKey);
+                        if (layer && layer->getTileAt(tx, ty).id != -1) {
+                            return true;
+                        }
                     }
                 }
 
