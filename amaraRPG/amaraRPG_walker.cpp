@@ -33,6 +33,12 @@ namespace Amara {
                 if (config.find("direction") != config.end()) {
                     direction = config["direction"];
                 }
+                if (config.find("walkSpeed") != config.end()) {
+                    walkSpeed = config["walkSpeed"];
+                }
+                if (config.find("runSpeed") != config.end()) {
+                    runSpeed = config["runSpeed"];
+                }
             }
 
             void update() {
@@ -54,16 +60,23 @@ namespace Amara {
 
                 int ox = Amara::getOffsetX(dir);
                 int oy = Amara::getOffsetY(dir);
-                tileX += ox;
-                tileY += oy;
 
                 walkDirection = NoDir;
                 direction = dir;
 
-                Amara::Prop* block = rpgScene->getPropAt(tileX + ox, tileY + oy);
-                if (block != nullptr && block->isWall) {
+                if (rpgScene->isWall(tileX + ox, tileY + oy)) {
+                    face(dir);
+                    if (pathTask) {
+                        delete pathTask;
+                        pathTask = nullptr;
+                    }
                     return false;
                 }
+
+                walkDirection = dir;
+                movementSpeed = walkSpeed;
+                tileX += ox;
+                tileY += oy;
 
                 if (pathTask) {
                     if (!pathTask->findingPath && pathTask->foundPath) {
@@ -74,8 +87,6 @@ namespace Amara {
                     }
                 }
 
-                walkDirection = dir;
-                movementSpeed = walkSpeed;
                 if (replaceAnim) {
                     play(Amara::walkAnim(dir));
                 }
@@ -163,6 +174,7 @@ namespace Amara {
             void face(Amara::Direction dir) {
                 direction = dir;
                 walkDirection = NoDir;
+                play(standAnim(dir));
             }
 
             virtual void handleWalking() {

@@ -9,12 +9,20 @@ class TestArea: public RPGScene {
         Player* gnik;
 
         TestArea() {
-            config["map-texture"] = "tiles";
-            config["map-layers"] = { "floor", "above" };
+            
         }
 
         void preload() {
             load->spritesheet("teenGnik", "assets/teenGnikolas.png", 64, 64);
+            load->json("reeds_home", "assets/reeds_home.json");
+            load->image("tiles", "assets/tiles.png");
+        }
+
+        void onPrepare() {
+            config["map_texture"] = "tiles";
+            config["map_layers"] = { "floor", "above" };
+            config["map_wall_layers"] = { "walls" };
+            config["map_json"] = "reeds_home";
         }
 
         void onCreate() {
@@ -27,12 +35,12 @@ class TestArea: public RPGScene {
             assets->addAnim("teenGnik", "leftWalk", {22, 23, 22, 24}, 6, true);
             assets->addAnim("teenGnik", "rightWalk", {32, 33, 32, 34}, 6, true);
 
-
             addProp(gnik = new Player());
             gnik->configure({
                 {"texture", "teenGnik"},
-                {"tileX", 0},
-                {"tileY", 1}
+                {"tileX", 2},
+                {"tileY", 10},
+                {"walkSpeed", 2}
             });
             gnik->setOrigin(0.5, 70/80.0);
             gnik->play("downWalk");
@@ -55,6 +63,8 @@ class TestArea: public RPGScene {
 
             controls->addButton("full", BUTTON_A);
             controls->addKey("walk", KEY_SPACE);
+
+            mainCamera->startFollow(gnik);
         }
 
         void onDuration() {
