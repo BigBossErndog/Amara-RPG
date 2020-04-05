@@ -186,7 +186,6 @@ namespace Amara {
             }
 
             void draw(int vx, int vy, int vw, int vh) {
-                if (!isVisible) return;
                 if (alpha < 0) alpha = 0;
                 if (alpha > 1) alpha = 1;
 
@@ -297,6 +296,7 @@ namespace Amara {
                     }
                 }
                 
+                // Amara::breakGame();
                 Amara::Actor::draw(vx, vy, vw, vh);
             }
 

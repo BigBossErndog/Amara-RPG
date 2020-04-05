@@ -61,8 +61,11 @@ class TestArea: public RPGScene {
             controls->addButton("left", LEFTSTICK_LEFT);
             controls->addButton("right", LEFTSTICK_RIGHT);
 
-            controls->addButton("full", BUTTON_A);
+            controls->addButton("walk", BUTTON_A);
             controls->addKey("walk", KEY_SPACE);
+
+            controls->addKey("full", KEY_ESC);
+            controls->addButton("full", BUTTON_RIGHTSHOULDER);
 
             mainCamera->startFollow(gnik);
         }
