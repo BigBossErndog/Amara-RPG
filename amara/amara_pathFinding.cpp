@@ -178,7 +178,7 @@ namespace Amara {
                 Amara::Tile tile;
                 for (Amara::TilemapLayer* layer: walls) {
                     tile = layer->getTileAt(gx, gy);
-                    if (tile.id != 0) {
+                    if (tile.id >= 0) {
                         return true;
                     }
                 }
@@ -306,7 +306,7 @@ namespace Amara {
                 }
             }
         }
-
+        
         if (foundPath) {
             int current = targetId;
             while (current != -1) {
@@ -314,6 +314,9 @@ namespace Amara {
                 task->path.push_front(curTile);
                 current = curTile.parentId;
             }
+        }
+        else {
+            SDL_Log("Path not found: from (%d,%d) to (%d,%d)", task->startX, task->startY, task->targetX, task->targetY);
         }
         
         task->findingPath = false;

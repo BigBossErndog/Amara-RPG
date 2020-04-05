@@ -30,6 +30,9 @@ all:
 	@echo "Options: win64 win32 linux"
 	@echo "Options: playwin playlinux"
 
+cpamara:
+	cp -T -r ../amara/amara ./amara
+
 clean:
 	rm -rf $(BUILD_PATH)/*
 

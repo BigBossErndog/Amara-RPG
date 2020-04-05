@@ -4,6 +4,27 @@
 using namespace Amara;
 using namespace std;
 
+class WalkTo: public Script {
+    public:
+        Amara::Player* gnik;
+        int x = 0, y = 0;
+
+        WalkTo(int tx, int ty) {
+            x = tx;
+            y = ty;
+        }
+
+        void prepare(Amara::Actor* actor) {
+            gnik = (Amara::Player*)actor;
+        }
+
+        void script() {
+            if (gnik->walkTo(x, y)) {
+                finish();
+            }
+        }
+};
+
 class TestArea: public RPGScene {
     public:
         Player* gnik;
@@ -31,20 +52,21 @@ class TestArea: public RPGScene {
             assets->addAnim("teenGnik", "upStand", 10);
             assets->addAnim("teenGnik", "leftStand", 20);
             assets->addAnim("teenGnik", "rightStand", 30);
-            assets->addAnim("teenGnik", "downWalk", {2, 3, 2, 4}, 6, true);
-            assets->addAnim("teenGnik", "upWalk", {12, 13, 12, 14}, 6, true);
-            assets->addAnim("teenGnik", "leftWalk", {22, 23, 22, 24}, 6, true);
-            assets->addAnim("teenGnik", "rightWalk", {32, 33, 32, 34}, 6, true);
+            assets->addAnim("teenGnik", "downWalk", {3, 2, 4, 2}, 6, true);
+            assets->addAnim("teenGnik", "upWalk", {13, 12, 14, 12}, 6, true);
+            assets->addAnim("teenGnik", "leftWalk", {23, 22, 24, 22}, 6, true);
+            assets->addAnim("teenGnik", "rightWalk", {33, 32, 34, 32}, 6, true);
 
             addProp(gnik = new Player());
             gnik->configure({
+                {"id","Gnikolas"},
                 {"texture", "teenGnik"},
                 {"tileX", 2},
                 {"tileY", 10},
                 {"walkSpeed", 2}
             });
             gnik->setOrigin(0.5, 70/80.0);
-            gnik->play("downWalk");
+            gnik->recite(new WalkTo(15, 10));
 
             controls->addKey("up", KEY_UP);
             controls->addKey("down", KEY_DOWN);
@@ -72,7 +94,6 @@ class TestArea: public RPGScene {
         }
 
         void onDuration() {
-            
             if (controls->justDown("full")) {
                 if (!game->isFullscreen) {
                     game->setWindowSize(game->display->width, game->display->height);
@@ -83,11 +104,7 @@ class TestArea: public RPGScene {
                     game->exitFullscreen();
                 }
             }
-
-            if (controls->isDown("walk")) {
-                gnik->walkTo(4, 4);
-            }
-            
+            // gnik->walkTo(15, 10);
         }
 };
 

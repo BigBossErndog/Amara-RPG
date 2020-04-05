@@ -54,6 +54,10 @@ namespace Amara {
                             }
                         }
                     }
+
+                    if (config.find("map_wallLayers") != config.end()) {
+                        tilemap->setWalls(config["map_wallLayers"]);
+                    }
                 }
 
 

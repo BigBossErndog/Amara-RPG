@@ -49,6 +49,13 @@ namespace Amara {
                 handleWalking();
             }
 
+            bool isBusy() {
+                if (walkDirection != NoDir) {
+                    return true;
+                }
+                return false;
+            }
+
             bool walk(Amara::Direction dir, bool replaceAnim) {
                 if (isBusy()) {
                     return false;
@@ -62,23 +69,23 @@ namespace Amara {
                 int oy = Amara::getOffsetY(dir);
 
                 walkDirection = NoDir;
-                direction = dir;
 
                 if (rpgScene->isWall(tileX + ox, tileY + oy)) {
                     face(dir);
-                    if (pathTask) {
+                    if (pathTask != nullptr) {
                         delete pathTask;
                         pathTask = nullptr;
                     }
                     return false;
                 }
+                direction = dir;
 
                 walkDirection = dir;
                 movementSpeed = walkSpeed;
                 tileX += ox;
                 tileY += oy;
 
-                if (pathTask) {
+                if (pathTask != nullptr) {
                     if (!pathTask->findingPath && pathTask->foundPath) {
                         if (currentPathTile.x != tileX || currentPathTile.y != tileY) {
                             delete pathTask;
@@ -121,15 +128,19 @@ namespace Amara {
             }
 
             bool walkTo(int gx, int gy) {
-                if (isBusy()) return false;
+                if (isBusy()) {
+                    return false;
+                }
 
                 if (tileX == gx && tileY == gy) {
-                    if (pathTask) delete pathTask;
+                    if (pathTask != nullptr) {
+                        delete pathTask;
+                    }
                     pathTask = nullptr;
                     return true;
                 }
 
-                if (pathTask) {
+                if (pathTask != nullptr) {
                     if (pathTask->findingPath) {
                         return false;
                     }
@@ -164,14 +175,8 @@ namespace Amara {
                 return false;
             }
 
-            bool isBusy() {
-                if (walkDirection != NoDir) {
-                    return true;
-                }
-                return false;
-            }
-
             void face(Amara::Direction dir) {
+                if (dir == NoDir) return;
                 direction = dir;
                 walkDirection = NoDir;
                 play(standAnim(dir));
