@@ -6,6 +6,10 @@
 namespace Amara {
     class Player: public Amara::Walker {
         public:
+            Amara::Direction lastWalkDir = NoDir;
+            Amara::Direction walkBuffer = NoDir;
+            bool controlsEnabled = true;
+
             Player(int gx, int gy, std::string tKey): Amara::Walker(gx, gy, tKey) {
                 isPlayer = true;
             }
@@ -16,8 +20,18 @@ namespace Amara {
                 configure(config);
             }
 
-            Amara::Direction lastWalkDir = NoDir;
-            Amara::Direction walkBuffer = NoDir;
+            virtual void configure(nlohmann::json config) {
+                Amara::Walker::configure(config);
+                if (config.find("controlsEnabled") != config.end()) {
+                    controlsEnabled = config["controlsEnabled"];
+                } 
+            }
+
+            virtual nlohmann::json toData() {
+                nlohmann::json config = Amara::Walker::toData();
+                config["controlsEnabled"] = controlsEnabled;
+                return config;
+            }
 
             bool interactWith(Amara::Prop* prop) {
                 if (!isActive) return false;
@@ -52,7 +66,7 @@ namespace Amara {
 
             void handleWalking() {
                 Amara::Walker::handleWalking();
-                if (rpgScene->sm.isState("duration")) {
+                if (controlsEnabled && rpgScene->sm.isState("duration")) {
                     Amara::Direction preDir = NoDir;
                     
                     if (controls->isDown("up")) {
@@ -103,6 +117,13 @@ namespace Amara {
                         }
                     }
                 }
+            }
+
+            void enableControls() {
+                controlsEnabled = true;
+            }
+            void disableControls() {
+                controlsEnabled = false;
             }
     };
 }

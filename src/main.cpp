@@ -16,10 +16,43 @@ class WalkTo: public Script {
 
         void prepare(Amara::Actor* actor) {
             gnik = (Amara::Player*)actor;
+            gnik->disableControls();
         }
 
         void script() {
             if (gnik->walkTo(x, y)) {
+                finish();
+            }
+        }
+};
+
+class CameraStuff: public Script {
+    public:
+        Scene* scene;
+        Player* gnik;
+        void prepare(Actor* actor) {
+            scene = (Scene*)actor;
+            gnik = (Player*)scene->get("Gnikolas");
+            gnik->controlsEnabled = false;
+        }
+        void script() {
+            start();
+            wait(2);
+            if (once()) {
+                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT, 4);
+            }
+            if (evt()) {
+                if (!gnik->stillActing()) {
+                    nextEvt();
+                }
+            }
+            if (once()) {
+                gnik->play("downStand");
+                scene->mainCamera->zoomTo(2, 1, SINE);
+            }
+            wait(1);
+            if (once()) {
+                gnik->enableControls();
                 finish();
             }
         }
@@ -63,7 +96,7 @@ class TestArea: public RPGScene {
                 {"texture", "teenGnik"},
                 {"tileX", 2},
                 {"tileY", 10},
-                {"walkSpeed", 2}
+                {"walkSpeed", 1}
             });
             gnik->setOrigin(0.5, 70/80.0);
             gnik->recite(new WalkTo(15, 10));
@@ -90,7 +123,10 @@ class TestArea: public RPGScene {
             controls->addKey("full", KEY_ESC);
             controls->addButton("full", BUTTON_RIGHTSHOULDER);
 
-            mainCamera->startFollow(gnik);
+            controls->addKey("confirm", KEY_Z);
+
+            // mainCamera->startFollow(gnik);
+            recite(new CameraStuff());
         }
 
         void onDuration() {
@@ -104,7 +140,6 @@ class TestArea: public RPGScene {
                     game->exitFullscreen();
                 }
             }
-            // gnik->walkTo(15, 10);
         }
 };
 

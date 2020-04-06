@@ -28,7 +28,7 @@ namespace Amara {
                 configure(config);
             }
 
-            void configure(nlohmann::json config) {
+            virtual void configure(nlohmann::json config) {
                 Amara::Prop::configure(config);
                 if (config.find("direction") != config.end()) {
                     direction = config["direction"];
@@ -39,6 +39,14 @@ namespace Amara {
                 if (config.find("runSpeed") != config.end()) {
                     runSpeed = config["runSpeed"];
                 }
+            }
+
+            virtual nlohmann::json toData() {
+                nlohmann::json config = Amara::Prop::toData();
+                config["direction"] = direction;
+                config["walkSpeed"] = walkSpeed;
+                config["runSpeed"] = runSpeed;
+                return config;
             }
 
             void update() {

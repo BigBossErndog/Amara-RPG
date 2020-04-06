@@ -8,11 +8,28 @@ namespace Amara {
 
     class Tween: public Amara::StateManager {
         public:
-            bool finished = false;
+            Amara::GameProperties* properties = nullptr;
+            bool finished = false; 
             bool deleteOnFinish = true;
 
-            virtual void assign(Amara::Tweener* gTweener) {}
-            virtual void run() {}
+            double progress = 0;
+            float time = 0;
+
+            virtual void assign(Amara::Tweener* gTweener, Amara::GameProperties* gProperties) {
+                properties = gProperties;
+            }
+
+            virtual void run() {
+                progress += (time/properties->lps);
+                if (progress >= 1) {
+                    finished = true;
+                    progress = 1;
+                }
+            }
+            
+            virtual void reset() {
+                progress = 0;
+            }
     };
 }
 
