@@ -39,7 +39,7 @@ class CameraStuff: public Script {
             start();
             wait(2);
             if (once()) {
-                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT, 4);
+                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT+TILE_WIDTH/2, 4, SINE);
             }
             if (evt()) {
                 if (!gnik->stillActing()) {
@@ -52,6 +52,11 @@ class CameraStuff: public Script {
             }
             wait(1);
             if (once()) {
+                scene->mainCamera->zoomTo(1, 1, SINE);
+            }
+            wait(1);
+            if (once()) {
+                scene->mainCamera->startFollow(gnik);
                 gnik->enableControls();
                 finish();
             }
@@ -126,6 +131,7 @@ class TestArea: public RPGScene {
             controls->addKey("confirm", KEY_Z);
 
             // mainCamera->startFollow(gnik);
+            mainCamera->offsetY = -TILE_HEIGHT/2;
             recite(new CameraStuff());
         }
 

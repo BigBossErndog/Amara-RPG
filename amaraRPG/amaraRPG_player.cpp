@@ -8,6 +8,7 @@ namespace Amara {
         public:
             Amara::Direction lastWalkDir = NoDir;
             Amara::Direction walkBuffer = NoDir;
+            Amara::Direction faceDir = NoDir;
             bool controlsEnabled = true;
 
             Player(int gx, int gy, std::string tKey): Amara::Walker(gx, gy, tKey) {
@@ -73,7 +74,7 @@ namespace Amara {
                         if (isBusy() && controls->justDown("up")) {
                             walkBuffer = Up;
                         }
-                        if (preDir == NoDir || preDir == direction) {
+                        if (preDir == NoDir || preDir == lastWalkDir) {
                             preDir = Up;
                         }
                     }
@@ -82,7 +83,7 @@ namespace Amara {
                         if (isBusy() && controls->justDown("down")) {
                             walkBuffer = Down;
                         }
-                        if (preDir == NoDir || preDir == direction) {
+                        if (preDir == NoDir || preDir == lastWalkDir) {
                             preDir = Down;
                         }
                     }
@@ -91,7 +92,7 @@ namespace Amara {
                         if (isBusy() && controls->justDown("left")) {
                             walkBuffer = Left;
                         }
-                        if (preDir == NoDir || preDir == direction) {
+                        if (preDir == NoDir || preDir == lastWalkDir) {
                             preDir = Left;
                         }
                     }
@@ -100,7 +101,7 @@ namespace Amara {
                         if (isBusy() && controls->justDown("right")) {
                             walkBuffer = Right;
                         }
-                        if (preDir == NoDir || preDir == direction) {
+                        if (preDir == NoDir || preDir == lastWalkDir) {
                             preDir = Right;
                         }
                     }
@@ -109,12 +110,29 @@ namespace Amara {
                         if (walk(walkBuffer)) {
                             lastWalkDir = walkBuffer;
                         }
+                        else if (faceDir == NoDir) {
+                            face(walkBuffer);
+                            faceDir = walkBuffer;
+                        }
                         walkBuffer = NoDir;
+                        lastWalkDir = walkBuffer;
                     }
                     else if (preDir != NoDir) {
                         if (walk(preDir)) {
                             lastWalkDir = preDir;
                         }
+                        else {
+                            if (faceDir == NoDir) {
+                                face(preDir);
+                                faceDir = preDir;
+                            }
+                            if (!isBusy()) {
+                                lastWalkDir = preDir;
+                            }
+                        }
+                    }
+                    else {
+                        faceDir = NoDir;
                     }
                 }
             }

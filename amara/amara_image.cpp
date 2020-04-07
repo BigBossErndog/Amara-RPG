@@ -78,7 +78,7 @@ namespace Amara {
                 return config;
             }
 
-            virtual void draw(int vx, int vy, int vw, int vh) override {
+            virtual void drawTexture(int vx, int vy, int vw, int vh) {
                 bool skipDrawing = false;
 
                 if (alpha < 0) alpha = 0;
@@ -90,8 +90,8 @@ namespace Amara {
                 viewport.h = vh;
                 SDL_RenderSetViewport(gRenderer, &viewport);
 
-                destRect.x = floor(floor(x*scaleX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * properties->zoomX);
-                destRect.y = floor(floor(y*scaleY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * properties->zoomY);
+                destRect.x = floor(floor(x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * properties->zoomX);
+                destRect.y = floor(floor(y - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * properties->zoomY);
                 destRect.w = ceil(ceil(imageWidth * scaleX) * properties->zoomX);
                 destRect.h = ceil(ceil(imageHeight * scaleY) * properties->zoomY);
 
@@ -165,6 +165,10 @@ namespace Amara {
                         );
                     }
                 }
+            }
+
+            virtual void draw(int vx, int vy, int vw, int vh) override {
+                drawTexture(vx, vy, vw, vh);
 
                 Amara::Entity::draw(vx, vy, vw, vh);
             }

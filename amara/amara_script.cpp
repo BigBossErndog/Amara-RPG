@@ -11,9 +11,9 @@ namespace Amara {
     class Script: public Amara::StateManager {
         public:
             Amara::GameProperties* properties = nullptr;
-            Amara::Actor* parent = nullptr;
-            Amara::Scene* scene = nullptr;
             Amara::Game* game = nullptr;
+            Amara::Scene* scene = nullptr;
+            Amara::Actor* parent = nullptr;
             Amara::InputManager* input = nullptr;
             Amara::ControlScheme* controls = nullptr;
             Amara::AudioGroup* audio = nullptr;
@@ -26,7 +26,7 @@ namespace Amara {
 
             Script(): Script(true) {}
 
-            void init(Amara::GameProperties* gameProperties, Amara::Actor* parentActor) {
+            virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::StateManager::properties = gameProperties;
                 properties = gameProperties;
                 game = properties->game;
@@ -34,7 +34,10 @@ namespace Amara {
                 input = properties->input;
                 controls = properties->controls;
                 audio = properties->audio;
+            }
 
+            virtual void init(Amara::GameProperties* gameProperties, Amara::Actor* parentActor) {
+                init(gameProperties);
                 parent = parentActor;
             }
             

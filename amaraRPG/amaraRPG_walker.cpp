@@ -79,7 +79,6 @@ namespace Amara {
                 walkDirection = NoDir;
 
                 if (rpgScene->isWall(tileX + ox, tileY + oy)) {
-                    face(dir);
                     if (pathTask != nullptr) {
                         delete pathTask;
                         pathTask = nullptr;
@@ -184,6 +183,7 @@ namespace Amara {
             }
 
             void face(Amara::Direction dir) {
+                if (isBusy()) return;
                 if (dir == NoDir) return;
                 direction = dir;
                 walkDirection = NoDir;

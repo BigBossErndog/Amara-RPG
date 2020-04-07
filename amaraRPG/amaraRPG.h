@@ -9,7 +9,11 @@ namespace Amara {
 #endif
 
 #include "amaraRPG_player.cpp"
+
 #include "amaraRPG_walker.cpp"
+
 #include "amaraRPG_RPGScene.cpp"
+#include "amaraRPG_cutsceneBase.cpp"
+
 #include "amaraRPG_prop.cpp"
 #include "amaraRPG_assistFunctions.cpp"
