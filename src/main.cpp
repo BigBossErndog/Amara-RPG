@@ -138,10 +138,14 @@ class TestArea: public RPGScene {
         void onDuration() {
             if (controls->justDown("full")) {
                 if (!game->isFullscreen) {
+                    int w = 480;
+                    int h = w * (game->display->height/(float)game->display->width);
+                    game->setResolution(w, h);
                     game->setWindowSize(game->display->width, game->display->height);
                     game->startFullscreen();
                 }
                 else {
+                    game->setResolution(480, 360);
                     game->setWindowSize(960, 720);
                     game->exitFullscreen();
                 }
@@ -151,6 +155,7 @@ class TestArea: public RPGScene {
 
 int main(int argc, char** args) {
     Game* game = new Game("Amara Game");
+    
     game->init(480, 360);
     game->setWindowSize(960, 720);
     game->setBackgroundColor(0,0,0);
