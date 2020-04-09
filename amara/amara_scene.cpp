@@ -57,13 +57,11 @@ namespace Amara {
                 mainCamera = nullptr;
 
                 for (Amara::Entity* entity : entities) {
-                    delete entity;
+                    entity->destroy();
                 }
                 entities.clear();
-
-                mainCamera = new Amara::Camera();
-                cameras.push_back(mainCamera);
-                mainCamera->init(properties, this, this, &entities);
+                
+                add(mainCamera = new Amara::Camera());
 
                 preload();
                 std::cout << "START LOADING TASKS: " << load->tasks.size() << " loading tasks." << std::endl;
@@ -77,9 +75,29 @@ namespace Amara {
 
             virtual Amara::Camera* add(Amara::Camera* cam) {
                 cameras.push_back(cam);
-                cam->init(properties, this, this, &entities);
+                cam->init(properties, this, this);
+                cam->sceneCameras = &cameras;
                 return cam;
             }
+
+            virtual Amara::Entity* removeCamera(size_t index) {
+				Amara::Entity* child = entities.at(index);
+				child->parent = nullptr;
+				cameras.erase(cameras.begin() + index);
+				return child;
+			}
+
+			virtual Amara::Entity* removeCamera(Amara::Camera* entity) {
+				Amara::Camera* child;
+				int numChildren = cameras.size();
+				for (size_t i = 0; i < numChildren; i++) {
+					child = cameras.at(i);
+					if (child == entity) {
+						return removeCamera(i);
+					}
+				}
+				return nullptr;
+			}
 
             virtual void run() {
                 properties->currentScene = this;
@@ -130,10 +148,13 @@ namespace Amara {
                     offset = ((float)properties->window->height - ((float)properties->resolution->height * upScale))/2;
                     vy += offset/upScale;
                 }
-                
-                for (Amara::Camera* cam : cameras) {
-                    if (cam->isDestroyed || cam->parent != this) continue;
-                    using namespace std;
+
+                Amara::Camera* cam;
+                for (std::vector<Amara::Camera*>::iterator it = cameras.begin(); it != cameras.end(); it++) {
+                    cam = *it;
+                    if (cam->isDestroyed || cam->parent != this) {
+                        cameras.erase(it--);
+                    }
                     cam->draw(vx, vy, properties->resolution->width, properties->resolution->height);
                 }
             }

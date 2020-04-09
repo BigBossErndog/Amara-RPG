@@ -4,7 +4,7 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class Cutscene: Amara::CutsceneBase {
+    class Cutscene: public Amara::CutsceneBase {
         public:
             Amara::RPGScene* rpgScene = nullptr;
 
@@ -13,7 +13,7 @@ namespace Amara {
                 rpgScene = (Amara::RPGScene*)scene;
             }
 
-            void walk(Amara::Walker* walker, Amara::Direction dir) {
+            bool walk(Amara::Walker* walker, Amara::Direction dir) {
                 if (once()) {
                     walker->walk(dir);
                     return true;
@@ -21,7 +21,7 @@ namespace Amara {
                 return false;
             }
 
-            void walkTo(Amara::Walker* walker, int tx, int ty) {
+            bool walk(Amara::Walker* walker, int tx, int ty) {
                 if (evt()) {
                     if (walker->walkTo(tx, ty)) {
                         nextEvt();
@@ -30,7 +30,7 @@ namespace Amara {
                 }
                 return false;
             }
-    }
+    };
 }
 
 #endif

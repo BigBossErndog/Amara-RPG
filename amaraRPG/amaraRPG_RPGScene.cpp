@@ -9,6 +9,9 @@ namespace Amara {
             std::deque<Amara::Prop*> props;
             Amara::Tilemap* tilemap = nullptr;
 
+            std::deque<Amara::CutsceneBase*> cutscenes;
+            Amara::CutsceneBase* currentCutscene = nullptr;
+
             nlohmann::json config;
 
             Amara::StateManager sm;
@@ -18,6 +21,11 @@ namespace Amara {
             void create() {
                 sm.reset();
                 props.clear();
+
+                for (Amara::CutsceneBase* cutscene: cutscenes) {
+                    delete cutscene;
+                } 
+                cutscenes.clear();
 
                 onPrepare();
                 add(tilemap = new Amara::Tilemap());
@@ -74,12 +82,28 @@ namespace Amara {
                     onDuration();
                 }
                 else if (sm.state("cutscenes")) {
-                    
-                }
-            }
+                    if (currentCutscene != nullptr) {
+                        currentCutscene->script();
+                        currentCutscene->script(this);
+                    }
 
-            void onStop() {
-                props.clear();
+                    if (currentCutscene == nullptr || currentCutscene->finished) {
+                        if (currentCutscene != nullptr) {
+                            if (currentCutscene->deleteOnFinish) {
+                                delete currentCutscene;
+                            }
+                        }
+
+                        cutscenes.pop_back();
+                        if (cutscenes.size() > 0) {
+                            currentCutscene = cutscenes.back();
+                        }
+                        else {
+                            currentCutscene = nullptr;
+                            sm.switchState("duration");
+                        }
+                    }
+                }
             }
             
             virtual void onPrepare() {}
@@ -134,6 +158,21 @@ namespace Amara {
                 }
 
                 return false;
+            }
+
+            Amara::CutsceneBase* startCutscene(Amara::CutsceneBase* cutscene) {
+                cutscene->init(properties);
+                cutscene->prepare();
+                cutscene->prepare(this);
+
+                cutscenes.push_back(cutscene);
+                currentCutscene = cutscene;
+
+                sm.switchState("cutscenes");
+            }
+
+            bool inCutscene() {
+                return sm.inState("cutscene");
             }
     };
 }

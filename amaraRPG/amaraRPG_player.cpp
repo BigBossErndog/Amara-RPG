@@ -67,7 +67,7 @@ namespace Amara {
 
             void handleWalking() {
                 Amara::Walker::handleWalking();
-                if (controlsEnabled && rpgScene->sm.isState("duration")) {
+                if (controlsEnabled && rpgScene->sm.inState("duration")) {
                     Amara::Direction preDir = NoDir;
                     
                     if (controls->isDown("up")) {

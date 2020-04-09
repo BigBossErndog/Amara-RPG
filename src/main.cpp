@@ -16,7 +16,7 @@ class WalkTo: public Script {
 
         void prepare(Amara::Actor* actor) {
             gnik = (Amara::Player*)actor;
-            gnik->disableControls();
+            // gnik->disableControls();
         }
 
         void script() {
@@ -26,26 +26,26 @@ class WalkTo: public Script {
         }
 };
 
-class CameraStuff: public Script {
+class CameraStuff: public Cutscene {
     public:
         Scene* scene;
         Player* gnik;
+        TextBox* tb;
+
         void prepare(Actor* actor) {
             scene = (Scene*)actor;
             gnik = (Player*)scene->get("Gnikolas");
             gnik->controlsEnabled = false;
+            tb = (TextBox*)scene->get("textBox");
+            tb->copyStateManager(this);
+            tb->setOpenCloseSpeed(10);
         }
         void script() {
             start();
-            wait(2);
             if (once()) {
                 scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT+TILE_WIDTH/2, 4, SINE);
             }
-            if (evt()) {
-                if (!gnik->stillActing()) {
-                    nextEvt();
-                }
-            }
+            walk(gnik, 15, 10);
             if (once()) {
                 gnik->play("downStand");
                 scene->mainCamera->zoomTo(2, 1, SINE);
@@ -55,6 +55,9 @@ class CameraStuff: public Script {
                 scene->mainCamera->zoomTo(1, 1, SINE);
             }
             wait(1);
+            tb->say("Hello mom, this textbox works now.");
+            tb->say("I am very happy with this. It's awesome!");
+            tb->close();
             if (once()) {
                 scene->mainCamera->startFollow(gnik);
                 gnik->enableControls();
@@ -65,6 +68,7 @@ class CameraStuff: public Script {
 
 class TestArea: public RPGScene {
     public:
+        TextBox* box;
         Player* gnik;
 
         TestArea() {
@@ -75,6 +79,9 @@ class TestArea: public RPGScene {
             load->spritesheet("teenGnik", "assets/teenGnikolas.png", 64, 64);
             load->json("reeds_home", "assets/reeds_home.json");
             load->image("tiles", "assets/tiles.png");
+
+            load->image("box", "assets/orangeTextbox.png");
+            load->ttf("pressStart", "assets/press-start.regular.ttf", 8);
         }
 
         void onPrepare() {
@@ -104,7 +111,19 @@ class TestArea: public RPGScene {
                 {"walkSpeed", 1}
             });
             gnik->setOrigin(0.5, 70/80.0);
-            gnik->recite(new WalkTo(15, 10));
+            // gnik->recite(new WalkTo(15, 10));
+
+            add(box = new TextBox(20, 20, 200, 80, "box", "pressStart"));
+            box->setText("Somebody once told me the world revolved around me.");
+            box->setColor(255, 255, 255);
+            box->setProgressive();
+            box->id = "textBox";
+            box->setScrollFactor(0);
+            box->setZoomFactor(0);
+            box->bringToFront();
+            box->setVisible(false);
+
+            mainCamera->centerOn(gnik);
 
             controls->addKey("up", KEY_UP);
             controls->addKey("down", KEY_DOWN);
@@ -129,20 +148,21 @@ class TestArea: public RPGScene {
             controls->addButton("full", BUTTON_RIGHTSHOULDER);
 
             controls->addKey("confirm", KEY_Z);
+            box->setProgressControl("confirm");
 
             // mainCamera->startFollow(gnik);
             mainCamera->offsetY = -TILE_HEIGHT/2;
-            recite(new CameraStuff());
+            startCutscene(new CameraStuff());
         }
 
-        void onDuration() {
+        void onUpdate() {
             if (controls->justDown("full")) {
                 if (!game->isFullscreen) {
                     int w = 480;
                     int h = w * (game->display->height/(float)game->display->width);
                     game->setResolution(w, h);
                     game->setWindowSize(game->display->width, game->display->height);
-                    game->startFullscreen();
+                    game->startWindowedFullscreen();
                 }
                 else {
                     game->setResolution(480, 360);
