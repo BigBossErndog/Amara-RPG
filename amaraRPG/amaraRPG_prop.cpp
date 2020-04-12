@@ -12,6 +12,8 @@ namespace Amara {
             int tileX = 0;
             int tileY = 0;
 
+            int tileSpace = 0;
+
             int tileOffsetX = TILE_WIDTH/2;
             int tileOffsetY = TILE_HEIGHT/2;
 
@@ -48,6 +50,9 @@ namespace Amara {
                 if (config.find("tileOffsetY") != config.end()) {
                     tileOffsetY = config["tileOffsetY"];
                 }
+                if (config.find("tileSpace") != config.end()) {
+                    tileSpace = config["tileSpace"];
+                }
                 snapToTile();
 
                 if (config.find("isWall") != config.end()) {
@@ -66,6 +71,7 @@ namespace Amara {
                 config["tileY"] = tileY;
                 config["tileOffsetX"] = tileOffsetX;
                 config["tileOffsetY"] = tileOffsetY;
+                config["tileSpace"] = tileSpace;
                 config["isWall"] = isWall;
                 return config;
             }

@@ -34,22 +34,6 @@ namespace Amara {
                 return config;
             }
 
-            bool interactWith(Amara::Prop* prop) {
-                if (!isActive) return false;
-                if (!prop->isActive) return false;
-
-                int ox = Amara::getOffsetX(direction);
-                int oy = Amara::getOffsetY(direction);
-                int tx = tileX + ox;
-                int ty = tileY + oy;
-
-                if (tx == prop->tileX && ty == prop->tileY) {
-                    return true;
-                }
-
-                return false;
-            }
-
             bool interactWith(int ix, int iy) {
                 if (!isActive) return false;
 
@@ -142,6 +126,25 @@ namespace Amara {
             }
             void disableControls() {
                 controlsEnabled = false;
+            }
+
+            bool interactWith(Amara::Prop* prop) {
+                if (!isActive) return false;
+                if (!prop->isActive) return false;
+                if (!controls->justDown("interact")) return false;
+
+                if (rpgScene->sm.inState("duration")) {
+                    int ox = Amara::getOffsetX(direction);
+                    int oy = Amara::getOffsetY(direction);
+                    int tx = tileX + ox;
+                    int ty = tileY + oy;
+                    
+                    if (tx == prop->tileX && ty == prop->tileY) {
+                        return true;
+                    }
+                }
+
+                return false;
             }
     };
 }

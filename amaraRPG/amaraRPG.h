@@ -3,8 +3,8 @@
 #ifndef AMARA_TILEDIM
 #define AMARA_TILEDIM
 namespace Amara {
-    const int TILE_WIDTH = 32;
-    const int TILE_HEIGHT = 32;
+   int TILE_WIDTH = 32;
+   int TILE_HEIGHT = 32;
 }
 #endif
 

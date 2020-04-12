@@ -115,7 +115,7 @@ class TestArea: public RPGScene {
 
             add(box = new TextBox(20, 20, 200, 80, "box", "pressStart"));
             box->setText("Somebody once told me the world revolved around me.");
-            box->setColor(255, 255, 255);
+            box->setTextColor(255, 255, 255);
             box->setProgressive();
             box->id = "textBox";
             box->setScrollFactor(0);

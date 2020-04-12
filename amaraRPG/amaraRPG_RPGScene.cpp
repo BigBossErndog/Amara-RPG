@@ -18,6 +18,10 @@ namespace Amara {
 
             RPGScene() {}
 
+            void preload() {
+                onPreload();
+            }
+
             void create() {
                 sm.reset();
                 props.clear();
@@ -106,6 +110,7 @@ namespace Amara {
                 }
             }
             
+            virtual void onPreload() {}
             virtual void onPrepare() {}
             virtual void onCreate() {}
             virtual void onUpdate() {}
@@ -116,7 +121,7 @@ namespace Amara {
             Amara::Prop* addProp(Amara::Prop* prop) {
                 props.push_back(prop);
                 prop->configure(this);
-                add(prop);
+                Amara::Scene::add(prop);
                 return prop;
             }
 
@@ -128,8 +133,14 @@ namespace Amara {
 
             Amara::Prop* getPropAt(int tx, int ty) {
                 for (Amara::Prop* prop: props) {
-                    if (prop->isActive && prop->tileX == tx && prop->tileY == ty) {
-                        return prop;
+                    if (!prop->isActive || prop->isDestroyed) continue;
+
+                    for (int ix = 0; ix <= prop->tileSpace; ix++) {
+                        for (int iy = 0; iy <= prop->tileSpace; iy++) {
+                            if (prop->tileX + ix == tx && prop->tileY + iy == ty) {
+                                return prop;
+                            }
+                        }
                     }
                 }
                 return nullptr;
