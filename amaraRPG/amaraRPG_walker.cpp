@@ -190,6 +190,18 @@ namespace Amara {
                 play(standAnim(dir));
             }
 
+            bool isFacing(Amara::Direction dir) {
+                return direction == dir;
+            }
+
+            bool isFacing() {
+
+            }
+
+            void faceTowards() {
+                
+            }
+
             virtual void handleWalking() {
                 if (walkDirection != NoDir) {
                     int sx = x;

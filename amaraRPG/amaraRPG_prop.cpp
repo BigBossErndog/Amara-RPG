@@ -90,6 +90,24 @@ namespace Amara {
                 x = tileX * TILE_WIDTH + tileOffsetX;
                 y = tileY * TILE_HEIGHT + tileOffsetY;
             }
+
+            Amara::Direction getDirectionTo(Amara::Prop* other) {
+                int objx = other->tileX;
+                int objy = other->tileY;
+
+                if (tileX == objx && tileY == objy) {
+                    return Down;
+                }
+
+                float angle = atan2(objy - tileY, objx - tileX);
+                float dirNum = (int)round(angle/(M_PI/4)) % DirectionsInOrder.size();
+                if (dirNum < 0) {
+                    dirNum += 8;
+                }
+                Amara::Direction direction = Amara::DirectionsInOrder[dirNum];
+
+                return direction;
+            }
     };
 }
 

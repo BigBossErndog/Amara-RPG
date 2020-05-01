@@ -43,16 +43,16 @@ class CameraStuff: public Cutscene {
         void script() {
             start();
             if (once()) {
-                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT+TILE_WIDTH/2, 4, SINE);
+                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT+TILE_WIDTH/2, 4, SINE_INOUT);
             }
             walk(gnik, 15, 10);
             if (once()) {
                 gnik->play("downStand");
-                scene->mainCamera->zoomTo(2, 1, SINE);
+                scene->mainCamera->zoomTo(2, 1, SINE_INOUT);
             }
             wait(1);
             if (once()) {
-                scene->mainCamera->zoomTo(1, 1, SINE);
+                scene->mainCamera->zoomTo(1, 1, SINE_INOUT);
             }
             wait(1);
             tb->say("Hello mom, this textbox works now.");

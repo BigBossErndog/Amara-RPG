@@ -108,6 +108,14 @@ namespace Amara {
                         }
                     }
                 }
+                
+                Amara::Prop* prop;
+                for (std::deque<Amara::Prop*>::iterator it = props.begin(); it != props.end(); it++) {
+                    prop = *it;
+                    if (prop->isDestroyed || prop->rpgScene != this) {
+                        props.erase(it--);
+                    }
+                }
             }
             
             virtual void onPreload() {}
