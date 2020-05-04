@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AMARA_CUTSCENEBASE
 #define AMARA_CUTSCENEBASE
 

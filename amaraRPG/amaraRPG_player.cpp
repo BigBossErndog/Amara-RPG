@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AMARA_PLAYER
 #define AMARA_PLAYER
 

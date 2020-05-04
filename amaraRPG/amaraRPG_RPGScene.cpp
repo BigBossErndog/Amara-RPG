@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AMARA_AREA
 #define AMARA_AREA
 

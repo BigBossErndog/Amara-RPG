@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AMARA_PROP
 #define AMARA_PROP
 

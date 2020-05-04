@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AMARA_TILEHANDLING
 #define AMARA_TILEHANDLING
 

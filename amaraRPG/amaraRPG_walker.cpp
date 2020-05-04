@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AMARA_WALKER
 #define AMARA_WALKER
 

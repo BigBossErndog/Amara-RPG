@@ -61,7 +61,6 @@ class CameraStuff: public Cutscene {
             if (once()) {
                 scene->mainCamera->startFollow(gnik);
                 gnik->enableControls();
-                finish();
             }
         }
 };
@@ -108,7 +107,8 @@ class TestArea: public RPGScene {
                 {"texture", "teenGnik"},
                 {"tileX", 2},
                 {"tileY", 10},
-                {"walkSpeed", 1}
+                {"walkSpeed", 1},
+                {"flipHorizontal", true}
             });
             gnik->setOrigin(0.5, 70/80.0);
             // gnik->recite(new WalkTo(15, 10));
@@ -141,6 +141,9 @@ class TestArea: public RPGScene {
             controls->addButton("left", LEFTSTICK_LEFT);
             controls->addButton("right", LEFTSTICK_RIGHT);
 
+            controls->addKey("zoomIn", KEY_W);
+            controls->addKey("zoomOut", KEY_S);
+
             controls->addButton("walk", BUTTON_A);
             controls->addKey("walk", KEY_SPACE);
 
@@ -170,6 +173,13 @@ class TestArea: public RPGScene {
                     game->exitFullscreen();
                 }
             }
+            if (controls->isDown("zoomIn")) {
+                mainCamera->changeZoom(0.1);
+            }
+            if (controls->isDown("zoomOut")) {
+                mainCamera->changeZoom(-0.1);
+            }
+            gnik->flipHorizontal = true;
         }
 };
 
