@@ -36,6 +36,11 @@ namespace Amara {
                 textureKey.clear();
             }
 
+            Image(float gx, float gy) {
+                x = gx;
+                y = gy;
+            }
+
             Image(std::string givenKey): Amara::Actor() {
                 textureKey = givenKey;
             }

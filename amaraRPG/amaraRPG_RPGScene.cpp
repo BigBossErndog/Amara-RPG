@@ -5,7 +5,7 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class RPGScene : public Amara::Scene {
+    class RPGScene : public Amara::Scene, public Amara::WallFinder {
         public:
             std::deque<Amara::Prop*> props;
             Amara::Tilemap* tilemap = nullptr;
@@ -71,6 +71,9 @@ namespace Amara {
                     if (config.find("map_wallLayers") != config.end()) {
                         tilemap->setWalls(config["map_wallLayers"]);
                     }
+
+                    TILE_WIDTH = tilemap->tileWidth;
+                    TILE_HEIGHT = tilemap->tileHeight;
                 }
 
 
@@ -140,27 +143,39 @@ namespace Amara {
                 return prop;
             }
 
-            Amara::Prop* getPropAt(int tx, int ty) {
+            Amara::Prop* getPropAt(int tx, int ty, Amara::Prop* exclusion) {
                 for (Amara::Prop* prop: props) {
                     if (!prop->isActive || prop->isDestroyed) continue;
+                    if (prop == exclusion) continue;
 
-                    for (int ix = 0; ix <= prop->tileSpace; ix++) {
-                        for (int iy = 0; iy <= prop->tileSpace; iy++) {
-                            if (prop->tileX + ix == tx && prop->tileY + iy == ty) {
-                                return prop;
-                            }
-                        }
+                    if (tx < prop->tileX - prop->tilePaddingLeft) {
+                        continue;
                     }
+                    if (tx > prop->tileX + prop->tilePaddingRight) {
+                        continue;
+                    }
+                    if (ty < prop->tileY - prop->tilePaddingTop) {
+                        continue;
+                    }
+                    if (ty > prop->tileY + prop->tilePaddingBottom) {
+                        continue;
+                    }
+
+                    return prop;
                 }
                 return nullptr;
+            }
+            
+            Amara::Prop* getPropAt(int tx, int ty) {
+                return getPropAt(tx, ty, nullptr);
             }
 
             Amara::TilemapLayer* getLayer(std::string layerKey) {
                 return tilemap->getLayer(layerKey);
             }
 
-            bool isWall(int tx, int ty) {
-                Amara::Prop* prop = getPropAt(tx, ty);
+            bool isWall(int tx, int ty, Amara::Prop* propExclusion) {
+                Amara::Prop* prop = getPropAt(tx, ty, propExclusion);
                 if (prop != nullptr) {
                     if (prop->isActive && prop->isWall) {
                         return true;
@@ -180,6 +195,10 @@ namespace Amara {
                 return false;
             }
 
+            bool isWall(int tx, int ty) {
+                return isWall(tx, ty, nullptr);
+            }
+
             Amara::CutsceneBase* startCutscene(Amara::CutsceneBase* cutscene) {
                 cutscene->init(properties);
                 cutscene->prepare();
@@ -193,6 +212,13 @@ namespace Amara {
 
             bool inCutscene() {
                 return sm.inState("cutscene");
+            }
+
+            virtual int getMapWidth() {
+                return tilemap->getMapWidth();
+            }
+            virtual int getMapHeight() {
+                return tilemap->getMapHeight();
             }
     };
 }

@@ -107,8 +107,7 @@ class TestArea: public RPGScene {
                 {"texture", "teenGnik"},
                 {"tileX", 2},
                 {"tileY", 10},
-                {"walkSpeed", 1},
-                {"flipHorizontal", true}
+                {"walkSpeed", 1}
             });
             gnik->setOrigin(0.5, 70/80.0);
             // gnik->recite(new WalkTo(15, 10));
@@ -179,7 +178,6 @@ class TestArea: public RPGScene {
             if (controls->isDown("zoomOut")) {
                 mainCamera->changeZoom(-0.1);
             }
-            gnik->flipHorizontal = true;
         }
 };
 

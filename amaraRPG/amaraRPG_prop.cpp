@@ -13,7 +13,10 @@ namespace Amara {
             int tileX = 0;
             int tileY = 0;
 
-            int tileSpace = 0;
+            int tilePaddingTop = 0;
+            int tilePaddingBottom = 0;
+            int tilePaddingLeft = 0;
+            int tilePaddingRight = 0;
 
             int tileOffsetX = TILE_WIDTH/2;
             int tileOffsetY = TILE_HEIGHT/2;
@@ -51,8 +54,17 @@ namespace Amara {
                 if (config.find("tileOffsetY") != config.end()) {
                     tileOffsetY = config["tileOffsetY"];
                 }
-                if (config.find("tileSpace") != config.end()) {
-                    tileSpace = config["tileSpace"];
+                if (config.find("tilePaddingTop") != config.end()) {
+                    tilePaddingTop = config["tilePaddingTop"];
+                }
+                if (config.find("tilePaddingBottom") != config.end()) {
+                    tilePaddingBottom = config["tilePaddingBottom"];
+                }
+                if (config.find("tilePaddingLeft") != config.end()) {
+                    tilePaddingTop = config["tilePaddingLeft"];
+                }
+                if (config.find("tilePaddingRight") != config.end()) {
+                    tilePaddingTop = config["tilePaddingRight"];
                 }
                 snapToTile();
 
@@ -72,7 +84,10 @@ namespace Amara {
                 config["tileY"] = tileY;
                 config["tileOffsetX"] = tileOffsetX;
                 config["tileOffsetY"] = tileOffsetY;
-                config["tileSpace"] = tileSpace;
+                config["tilePaddingTop"] = tilePaddingTop;
+                config["tilePaddingBottom"] = tilePaddingBottom;
+                config["tilePaddingLeft"] = tilePaddingLeft;
+                config["tilePaddingRight"] = tilePaddingRight;
                 config["isWall"] = isWall;
                 return config;
             }
@@ -108,6 +123,19 @@ namespace Amara {
                 Amara::Direction direction = Amara::DirectionsInOrder[dirNum];
 
                 return direction;
+            }
+
+            void setTilePadding(int pt, int pb, int pl, int pr) {
+                tilePaddingTop = pt;
+                tilePaddingBottom = pb;
+                tilePaddingLeft = pl;
+                tilePaddingRight = pr;
+            }
+            void setTilePadding(int pt, int pl) {
+                setTilePadding(pt, pt, pl, pl);
+            }
+            void setTilePadding(int pt) {
+                setTilePadding(pt, pt);
             }
     };
 }

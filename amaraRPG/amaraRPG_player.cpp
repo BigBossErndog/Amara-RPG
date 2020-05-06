@@ -35,21 +35,6 @@ namespace Amara {
                 return config;
             }
 
-            bool interactWith(int ix, int iy) {
-                if (!isActive) return false;
-
-                int ox = Amara::getOffsetX(direction);
-                int oy = Amara::getOffsetY(direction);
-                int tx = tileX + ox;
-                int ty = tileY + oy;
-
-                if (tx == ix && ty == iy) {
-                    return true;
-                }
-
-                return false;
-            }
-
             void handleWalking() {
                 Amara::Walker::handleWalking();
                 if (controlsEnabled && rpgScene->sm.inState("duration")) {
@@ -143,6 +128,22 @@ namespace Amara {
                     if (tx == prop->tileX && ty == prop->tileY) {
                         return true;
                     }
+                }
+
+                return false;
+            }
+
+            bool interactWith(int ix, int iy) {
+                if (!isActive) return false;
+                if (isBusy()) return false;
+
+                int ox = Amara::getOffsetX(direction);
+                int oy = Amara::getOffsetY(direction);
+                int tx = tileX + ox;
+                int ty = tileY + oy;
+
+                if (controls->justDown("interact") && tx == ix && ty == iy) {
+                    return true;
                 }
 
                 return false;
