@@ -1,0 +1,12 @@
+{
+    "characters": {
+        "teenAyo": {
+            "texture": "teenAyo",
+            "battleTexture": "battle-teenAyo"
+        },
+        "gnikolas": {
+            "texture": "gnikolas",
+            "battleTexture": "battle-gnikolas"
+        }
+    }
+}

@@ -13,11 +13,32 @@ namespace Amara {
             std::deque<Amara::CutsceneBase*> cutscenes;
             Amara::CutsceneBase* currentCutscene = nullptr;
 
+            std::string area;
+            int floor = 0;
+
             nlohmann::json config;
 
             Amara::StateManager sm;
 
             RPGScene() {}
+
+            virtual void configure(nlohmann::json config) {
+                Amara::Scene::configure(config);
+                if (config.find("area") != config.end()) {
+                    area = config["area"];
+                }
+                if (config.find("floor") != config.end()) {
+                    floor = config["floor"];
+                }
+            }
+
+            virtual nlohmann::json toData() {
+				nlohmann::json config = Amara::Scene::toData();
+                config["key"] = scenePlugin->key;
+				config["area"] = area;
+                config["floor"] = floor;
+				return config;
+			}
 
             void preload() {
                 onPreload();
@@ -36,6 +57,7 @@ namespace Amara {
                 add(tilemap = new Amara::Tilemap());
 
                 if (!config.empty()) {
+                    int i = 0;
                     if (config.find("map_texture") != config.end()) {
                         tilemap->setTexture(config["map_texture"]);
                     }
@@ -59,11 +81,13 @@ namespace Amara {
                     if (config.find("map_aboveLayersDepth") != config.end()) {
                         aboveDepth = config["map_aboveLayersDepth"];
                     }
+                    i = 0;
                     if (config.find("map_aboveLayers") != config.end()) {
                         for (std::string layerKey: config["map_aboveLayers"]) {
                             layer = getLayer(layerKey);
                             if (layer) {
-                                layer->depth = aboveDepth;
+                                layer->depth = aboveDepth + i;
+                                i += 1;
                             }
                         }
                     }
