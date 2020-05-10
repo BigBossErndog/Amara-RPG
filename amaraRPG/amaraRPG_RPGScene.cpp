@@ -98,9 +98,8 @@ namespace Amara {
 
                     TILE_WIDTH = tilemap->tileWidth;
                     TILE_HEIGHT = tilemap->tileHeight;
+                    tilemap->setCameraBounds(mainCamera);
                 }
-
-
 
                 onCreate();
             }

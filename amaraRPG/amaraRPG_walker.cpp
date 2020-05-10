@@ -65,7 +65,7 @@ namespace Amara {
                 return false;
             }
 
-            bool walk(Amara::Direction dir, bool replaceAnim) {
+            bool canWalk(Amara::Direction dir) {
                 if (isBusy()) {
                     return false;
                 }
@@ -77,8 +77,6 @@ namespace Amara {
                 int ox = Amara::getOffsetX(dir);
                 int oy = Amara::getOffsetY(dir);
 
-                walkDirection = NoDir;
-
                 if (rpgScene->isWall(tileX + ox, tileY + oy)) {
                     if (pathTask != nullptr) {
                         delete pathTask;
@@ -86,10 +84,23 @@ namespace Amara {
                     }
                     return false;
                 }
+
+                return true;
+            }
+
+            bool walk(Amara::Direction dir, bool replaceAnim) {
+                if (!canWalk(dir)) {
+                    return false;
+                }
+
+                walkDirection = NoDir;
                 direction = dir;
 
                 walkDirection = dir;
                 movementSpeed = walkSpeed;
+
+                int ox = Amara::getOffsetX(dir);
+                int oy = Amara::getOffsetY(dir);
                 tileX += ox;
                 tileY += oy;
 

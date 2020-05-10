@@ -161,6 +161,10 @@ namespace Amara {
             virtual int getMapHeight() {
                 return height;
             }
+
+            void setCameraBounds(Amara::Camera* cam) {
+                cam->setBounds(x, y, widthInPixels, heightInPixels);
+            }
     };
 }
 
