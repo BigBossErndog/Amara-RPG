@@ -9,7 +9,9 @@ namespace Amara {
         public:
             Amara::Direction lastWalkDir = NoDir;
             Amara::Direction walkBuffer = NoDir;
+
             bool controlsEnabled = true;
+            bool allowRunning = false;
 
             Player(int gx, int gy, std::string tKey): Amara::Walker(gx, gy, tKey) {
                 isPlayer = true;
@@ -26,11 +28,15 @@ namespace Amara {
                 if (config.find("controlsEnabled") != config.end()) {
                     controlsEnabled = config["controlsEnabled"];
                 } 
+                if (config.find("allowRunning") != config.end()) {
+                    allowRunning = config["allowRunning"];
+                }
             }
 
             virtual nlohmann::json toData() {
                 nlohmann::json config = Amara::Walker::toData();
                 config["controlsEnabled"] = controlsEnabled;
+                config["allowRunning"] = allowRunning;
                 return config;
             }
 
@@ -41,7 +47,7 @@ namespace Amara {
                     Amara::Direction horDir = NoDir;
                     Amara::Direction lastPressDir = NoDir;
                     
-                    if (controls->isDown("up") && !controls->justDown("down")) {
+                    if (controls->isDown("up") && !controls->isDown("down")) {
                         if (controls->justDown("up")) {
                             lastPressDir = Up;
                             if (isBusy()) {
@@ -51,7 +57,7 @@ namespace Amara {
                         verDir = Up;
                     }
 
-                    if (controls->isDown("down") && !controls->justDown("up")) {
+                    if (controls->isDown("down") && !controls->isDown("up")) {
                         if (controls->justDown("down")) {
                             lastPressDir = Down;
                             if (isBusy()) {
@@ -81,7 +87,9 @@ namespace Amara {
                         horDir = Right;
                     }
 
-                    if (walkBuffer != NoDir && walk(walkBuffer)) {
+                    bool shouldRun = allowRunning && controls->isDown("run");
+
+                    if (walkBuffer != NoDir && ((shouldRun && run(walkBuffer)) || walk(walkBuffer))) {
                         lastWalkDir = walkBuffer;
                         walkBuffer = NoDir;
                     }
@@ -89,7 +97,7 @@ namespace Amara {
                         if (!isBusy()) walkBuffer = NoDir;
                         if (lastPressDir != NoDir) {
                             if (verDir == lastPressDir) {
-                                if (walk(verDir)) {
+                                if (((shouldRun && run(verDir)) || walk(verDir))) {
                                     lastWalkDir = verDir;
                                 }
                                 else {
@@ -97,7 +105,7 @@ namespace Amara {
                                 }
                             }
                             else if (horDir == lastPressDir) {
-                                if (walk(horDir)) {
+                                if (((shouldRun && run(horDir)) || walk(horDir))) {
                                     lastWalkDir = horDir;
                                 }
                                 else {
@@ -106,17 +114,17 @@ namespace Amara {
                             }
                         }
                         else {
-                            if (verDir == lastWalkDir && walk(verDir)) {
+                            if (verDir == lastWalkDir && ((shouldRun && run(verDir)) || walk(verDir))) {
                                 
                             }
-                            else if (horDir == lastWalkDir && walk(horDir)) {
+                            else if (horDir == lastWalkDir && ((shouldRun && run(horDir)) || walk(horDir))) {
                                 
                             }
                             else {
-                                if (verDir != NoDir && walk(verDir)) {
+                                if (verDir != NoDir && ((shouldRun && run(verDir)) || walk(verDir))) {
                                     lastWalkDir = verDir;
                                 }
-                                else if (horDir != NoDir && walk(horDir)) {
+                                else if (horDir != NoDir && ((shouldRun && run(horDir)) || walk(horDir))) {
                                     lastWalkDir = horDir;
                                 }
                                 else {
@@ -144,9 +152,8 @@ namespace Amara {
                 controlsEnabled = false;
             }
 
-            bool interactWith(Amara::Prop* prop) {
+            bool interactWith(int ix, int iy) {
                 if (!isActive) return false;
-                if (!prop->isActive) return false;
                 if (!controls->justDown("interact")) return false;
 
                 if (rpgScene->sm.inState("duration")) {
@@ -155,7 +162,7 @@ namespace Amara {
                     int tx = tileX + ox;
                     int ty = tileY + oy;
                     
-                    if (tx == prop->tileX && ty == prop->tileY) {
+                    if (tx == ix && ty == iy) {
                         return true;
                     }
                 }
@@ -163,19 +170,36 @@ namespace Amara {
                 return false;
             }
 
-            bool interactWith(int ix, int iy) {
-                if (!isActive) return false;
-                if (isBusy()) return false;
-
-                int ox = Amara::getOffsetX(direction);
-                int oy = Amara::getOffsetY(direction);
-                int tx = tileX + ox;
-                int ty = tileY + oy;
-
-                if (controls->justDown("interact") && tx == ix && ty == iy) {
-                    return true;
+            bool interactWith(Amara::Prop* prop) {
+                if (prop == nullptr) return false;
+                if (!prop->isActive) return false;
+                for (int i = prop->tileX - prop->tilePaddingLeft; i <= prop->tileX + prop->tilePaddingRight; i++) {
+                    for (int j = prop->tileY - prop->tilePaddingTop; j <= prop->tileY + prop->tilePaddingBottom; j++) {
+                        if (interactWith(i, j)) {
+                            return true;
+                        }
+                    }
                 }
+                return false;
+            }
 
+            bool stoodOn(int ix, int iy) {
+                if (isBusy()) return false;
+                if (!rpgScene->sm.inState("duration")) return false;
+                if (tileX == ix && tileY == iy) return true;
+            }
+
+            bool stoodOn(Amara::Prop* prop) {
+                if (prop == nullptr) return false;
+                if (!prop->isActive) return false;
+
+                for (int i = prop->tileX - prop->tilePaddingLeft; i <= prop->tileX + prop->tilePaddingRight; i++) {
+                    for (int j = prop->tileY - prop->tilePaddingTop; j <= prop->tileY + prop->tilePaddingBottom; j++) {
+                        if (stoodOn(i, j)) {
+                            return true;
+                        }
+                    }
+                }
                 return false;
             }
     };

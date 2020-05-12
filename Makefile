@@ -60,12 +60,18 @@ linux:
 	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_LINUX) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(BUILD_EXECUTABLE_LINUX)
 
 play:
+	rm -rf build/assets/*
+	cp -R assets build/assets
 	$(BUILD_EXECUTABLE_WIN)
 
 playwin:
+	rm -rf build/assets/*
+	cp -R assets build/assets
 	$(BUILD_EXECUTABLE_WIN)
 
 playlinux:
+	rm -rf build/assets/*
+	cp -R assets build/assets
 	./$(BUILD_EXECUTABLE_LINUX)
 
 setup-apt64:

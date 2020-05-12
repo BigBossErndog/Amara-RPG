@@ -25,6 +25,8 @@ namespace Amara {
             bool isWalker = false;
             bool isPlayer = false;
 
+            bool depthLocked = false;
+
             Prop(int gx, int gy, std::string tKey): Amara::Sprite(0, 0, tKey) {
                 tileX = gx;
                 tileY = gy;
@@ -94,6 +96,12 @@ namespace Amara {
 
             void create() {
                 snapToTile();
+            }
+
+            void update() {
+                if (!depthLocked) {
+                    depth = y;
+                }
             }
 
             void goTo(int gx, int gy) {

@@ -12,7 +12,7 @@ namespace Amara {
 
             float movementSpeed = 1;
             float walkSpeed = 1;
-            float runSpeed = 2;
+            float runSpeed = 4;
 
             bool justFinishedWalking = false;
 
@@ -56,6 +56,7 @@ namespace Amara {
                 }
                 justFinishedWalking = false;
                 handleWalking();
+                Amara::Prop::update();
             }
 
             bool isBusy() {
