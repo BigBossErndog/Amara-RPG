@@ -78,7 +78,7 @@ namespace Amara {
                 int ox = Amara::getOffsetX(dir);
                 int oy = Amara::getOffsetY(dir);
 
-                if (rpgScene->isWall(tileX + ox, tileY + oy)) {
+                if (rpgScene->isWall(tileX + ox, tileY + oy, dir)) {
                     if (pathTask != nullptr) {
                         delete pathTask;
                         pathTask = nullptr;
@@ -223,6 +223,17 @@ namespace Amara {
                     int oy = Amara::getOffsetY(walkDirection);
                     int tx = tileX * TILE_WIDTH + tileOffsetX;
                     int ty = tileY * TILE_HEIGHT + tileOffsetY;
+
+                    if (isPlayer && rpgScene->sm.state("duration") && controls->isDown("run")) {
+                        if (movementSpeed != runSpeed) {
+                            if (fmod(x, runSpeed) == fmod((float)tileOffsetX, runSpeed)) {
+                                if (fmod(y, runSpeed) == fmod((float)tileOffsetY, runSpeed)) {
+                                    movementSpeed = runSpeed;
+                                    play(Amara::runAnim(walkDirection));
+                                }
+                            }
+                        }
+                    }
 
                     x += ox * movementSpeed;
                     y += oy * movementSpeed;

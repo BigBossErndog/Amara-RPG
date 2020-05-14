@@ -9,7 +9,7 @@ namespace Amara {
         public:
             Amara::Direction lastWalkDir = NoDir;
             Amara::Direction walkBuffer = NoDir;
-
+            
             bool controlsEnabled = true;
             bool allowRunning = false;
 

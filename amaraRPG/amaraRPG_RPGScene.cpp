@@ -222,6 +222,16 @@ namespace Amara {
                 return isWall(tx, ty, nullptr);
             }
 
+            bool isWall(int tx, int ty, Amara::Direction dir) {
+                Amara::Prop* prop = getPropAt(tx, ty);
+                if (prop != nullptr) {
+                    if (prop->isActive && prop->isWall) {
+                        return true;
+                    }
+                }
+                return tilemap->isWall(tx, ty, dir);
+            }
+
             Amara::CutsceneBase* startCutscene(Amara::CutsceneBase* cutscene) {
                 cutscene->init(properties);
                 cutscene->prepare();
