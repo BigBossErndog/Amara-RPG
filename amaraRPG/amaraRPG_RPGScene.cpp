@@ -7,7 +7,6 @@
 namespace Amara {
     class RPGScene : public Amara::Scene, public Amara::WallFinder {
         public:
-            std::deque<Amara::Prop*> props;
             Amara::Tilemap* tilemap = nullptr;
 
             std::deque<Amara::CutsceneBase*> cutscenes;
@@ -46,7 +45,6 @@ namespace Amara {
 
             void create() {
                 sm.reset();
-                props.clear();
 
                 for (Amara::CutsceneBase* cutscene: cutscenes) {
                     delete cutscene;
@@ -135,14 +133,6 @@ namespace Amara {
                         }
                     }
                 }
-                
-                Amara::Prop* prop;
-                for (std::deque<Amara::Prop*>::iterator it = props.begin(); it != props.end(); it++) {
-                    prop = *it;
-                    if (prop->isDestroyed || prop->rpgScene != this) {
-                        props.erase(it--);
-                    }
-                }
             }
             
             virtual void onPreload() {}
@@ -153,21 +143,14 @@ namespace Amara {
             virtual void handleInteracts() {}
             virtual void handleEvents() {}
 
-            Amara::Prop* addProp(Amara::Prop* prop) {
-                props.push_back(prop);
-                prop->configure(this);
-                Amara::Scene::add(prop);
-                return prop;
-            }
-
-            Amara::Prop* addProp(Amara::Prop* prop, nlohmann::json config) {
-                addProp(prop);
-                prop->configure(this, config);
-                return prop;
-            }
-
             Amara::Prop* getPropAt(int tx, int ty, Amara::Prop* exclusion) {
-                for (Amara::Prop* prop: props) {
+                Amara::Prop* prop;
+                for (Amara::Entity* entity: entities) {
+                    if (entity->data.find("isProp") == entity->data.end() || !entity->data["isProp"]) {
+                        continue;
+                    }
+                    prop = (Amara::Prop*)entity;
+
                     if (!prop->isActive || prop->isDestroyed) continue;
                     if (prop == exclusion) continue;
 

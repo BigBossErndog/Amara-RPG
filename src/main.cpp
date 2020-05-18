@@ -101,7 +101,7 @@ class TestArea: public RPGScene {
             assets->addAnim("teenGnik", "leftWalk", {23, 22, 24, 22}, 6, true);
             assets->addAnim("teenGnik", "rightWalk", {33, 32, 34, 32}, 6, true);
 
-            addProp(gnik = new Player());
+            add(gnik = new Player());
             gnik->configure({
                 {"id","Gnikolas"},
                 {"texture", "teenGnik"},

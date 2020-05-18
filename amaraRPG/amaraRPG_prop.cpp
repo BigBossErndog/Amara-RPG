@@ -32,13 +32,16 @@ namespace Amara {
                 tileY = gy;
                 snapToTile();
             }
+            Prop(std::string tKey): Amara::Sprite(tKey) {}
             Prop(): Amara::Sprite() {}
             Prop(nlohmann::json config): Prop() {
                 configure(config);
             }
 
-            virtual void configure(Amara::RPGScene* gScene) {
-                rpgScene = gScene;
+            virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) override {
+                Amara::Sprite::init(gameProperties, givenScene, givenParent);
+                data["isProp"] = true;
+                rpgScene = (RPGScene*) givenScene;
             }
 
             virtual void configure(nlohmann::json config) {
@@ -73,11 +76,6 @@ namespace Amara {
                 if (config.find("isWall") != config.end()) {
                     isWall = config["isWall"];
                 }
-            }
-
-            virtual void configure(Amara::RPGScene* gScene, nlohmann::json config) {
-                configure(gScene);
-                configure(config);
             }
 
             virtual nlohmann::json toData() {
