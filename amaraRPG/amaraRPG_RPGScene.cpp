@@ -8,14 +8,13 @@ namespace Amara {
     class RPGScene : public Amara::Scene, public Amara::WallFinder {
         public:
             Amara::Tilemap* tilemap = nullptr;
+            nlohmann::json mapData;
 
             std::deque<Amara::CutsceneBase*> cutscenes;
             Amara::CutsceneBase* currentCutscene = nullptr;
 
             std::string area;
             int floor = 0;
-
-            nlohmann::json config;
 
             Amara::StateManager sm;
 
@@ -54,20 +53,20 @@ namespace Amara {
                 onPrepare();
                 add(tilemap = new Amara::Tilemap());
 
-                if (!config.empty()) {
+                if (!mapData.empty()) {
                     int i = 0;
-                    if (config.find("map_texture") != config.end()) {
-                        tilemap->setTexture(config["map_texture"]);
+                    if (mapData.find("texture") != mapData.end()) {
+                        tilemap->setTexture(mapData["texture"]);
                     }
-                    if (config.find("map_json") != config.end()) {
-                        tilemap->setTiledJson(config["map_json"]);
+                    if (mapData.find("json") != mapData.end()) {
+                        tilemap->setTiledJson(mapData["json"]);
                         tilemap->createAllLayers();
                     }
 
                     Amara::TilemapLayer* layer;
 
-                    if (config.find("map_hiddenLayers") != config.end()) {
-                        for (std::string layerKey: config["map_hiddenLayers"]) {
+                    if (mapData.find("hiddenLayers") != mapData.end()) {
+                        for (std::string layerKey: mapData["hiddenLayers"]) {
                             layer = getLayer(layerKey);
                             if (layer) {
                                 layer->setVisible(false);
@@ -76,12 +75,12 @@ namespace Amara {
                     }
 
                     int aboveDepth = tilemap->heightInPixels * 2;
-                    if (config.find("map_aboveLayersDepth") != config.end()) {
-                        aboveDepth = config["map_aboveLayersDepth"];
+                    if (mapData.find("aboveLayersDepth") != mapData.end()) {
+                        aboveDepth = mapData["aboveLayersDepth"];
                     }
                     i = 0;
-                    if (config.find("map_aboveLayers") != config.end()) {
-                        for (std::string layerKey: config["map_aboveLayers"]) {
+                    if (mapData.find("aboveLayers") != mapData.end()) {
+                        for (std::string layerKey: mapData["aboveLayers"]) {
                             layer = getLayer(layerKey);
                             if (layer) {
                                 layer->depth = aboveDepth + i;
@@ -90,8 +89,8 @@ namespace Amara {
                         }
                     }
 
-                    if (config.find("map_wallLayers") != config.end()) {
-                        tilemap->setWalls(config["map_wallLayers"]);
+                    if (mapData.find("wallLayers") != mapData.end()) {
+                        tilemap->setWalls(mapData["wallLayers"]);
                     }
 
                     TILE_WIDTH = tilemap->tileWidth;
@@ -188,17 +187,7 @@ namespace Amara {
                     }
                 }
 
-                Amara::TilemapLayer* layer;
-                if (config.find("map_wallLayers") != config.end()) {
-                    for (std::string layerKey: config["map_wallLayers"]) {
-                        layer = getLayer(layerKey);
-                        if (layer && layer->getTileAt(tx, ty).id != -1) {
-                            return true;
-                        }
-                    }
-                }
-
-                return false;
+                return tilemap->isWall(tx, ty);
             }
 
             bool isWall(int tx, int ty) {

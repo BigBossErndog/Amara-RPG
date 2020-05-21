@@ -84,11 +84,11 @@ class TestArea: public RPGScene {
         }
 
         void onPrepare() {
-            config["map_texture"] = "tiles";
-            config["map_wallLayers"] = { "walls" };
-            config["map_aboveLayers"] = { "above" };
-            config["map_hiddenLayers"] = { "walls" };
-            config["map_json"] = "reeds_home";
+            mapData["texture"] = "tiles";
+            mapData["wallLayers"] = { "walls" };
+            mapData["aboveLayers"] = { "above" };
+            mapData["hiddenLayers"] = { "walls" };
+            mapData["json"] = "reeds_home";
         }
 
         void onCreate() {
