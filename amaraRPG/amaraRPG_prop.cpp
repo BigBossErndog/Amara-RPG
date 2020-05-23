@@ -143,6 +143,17 @@ namespace Amara {
             void setTilePadding(int pt) {
                 setTilePadding(pt, pt);
             }
+
+            bool covers(int gx, int gy) {
+                for (int i = tileX - tilePaddingLeft; i <= tileX + tilePaddingRight; i++) {
+                    for (int j = tileY - tilePaddingTop; j <= tileY + tilePaddingBottom; j++) {
+                        if (i == gx && j == gy) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
     };
 }
 

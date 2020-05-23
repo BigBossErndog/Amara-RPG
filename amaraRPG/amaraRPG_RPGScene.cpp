@@ -153,20 +153,9 @@ namespace Amara {
                     if (!prop->isActive || prop->isDestroyed) continue;
                     if (prop == exclusion) continue;
 
-                    if (tx < prop->tileX - prop->tilePaddingLeft) {
-                        continue;
+                    if (prop->covers(tx, ty)) {
+                        return prop;
                     }
-                    if (tx > prop->tileX + prop->tilePaddingRight) {
-                        continue;
-                    }
-                    if (ty < prop->tileY - prop->tilePaddingTop) {
-                        continue;
-                    }
-                    if (ty > prop->tileY + prop->tilePaddingBottom) {
-                        continue;
-                    }
-
-                    return prop;
                 }
                 return nullptr;
             }
@@ -194,14 +183,18 @@ namespace Amara {
                 return isWall(tx, ty, nullptr);
             }
 
-            bool isWall(int tx, int ty, Amara::Direction dir) {
+            bool isWall(int tx, int ty, Amara::Prop* propExclusion, Amara::Direction dir) {
                 Amara::Prop* prop = getPropAt(tx, ty);
-                if (prop != nullptr) {
+                if (prop != nullptr && prop != propExclusion) {
                     if (prop->isActive && prop->isWall) {
                         return true;
                     }
                 }
                 return tilemap->isWall(tx, ty, dir);
+            }
+
+            bool isWall(int tx, int ty, Amara::Direction dir) {
+                return isWall(tx, ty, nullptr, dir);
             }
 
             Amara::CutsceneBase* startCutscene(Amara::CutsceneBase* cutscene) {

@@ -7,8 +7,9 @@
 namespace Amara {
     class Walker: public Amara::Prop {
         public:
-            Direction direction = Down;
-            Direction walkDirection = NoDir;
+            Amara::Direction direction = Down;
+            Amara::Direction walkDirection = NoDir;
+            Amara::Direction bumpDir = NoDir;
 
             float movementSpeed = 1;
             float walkSpeed = 1;
@@ -78,7 +79,7 @@ namespace Amara {
                 int ox = Amara::getOffsetX(dir);
                 int oy = Amara::getOffsetY(dir);
 
-                if (rpgScene->isWall(tileX + ox, tileY + oy, dir)) {
+                if (rpgScene->isWall(tileX + ox, tileY + oy, this, dir)) {
                     if (pathTask != nullptr) {
                         delete pathTask;
                         pathTask = nullptr;
@@ -90,7 +91,9 @@ namespace Amara {
             }
 
             bool walk(Amara::Direction dir, bool replaceAnim) {
+                bumpDir = NoDir;
                 if (!canWalk(dir)) {
+                    bumpDir = dir;
                     return false;
                 }
 
@@ -301,6 +304,31 @@ namespace Amara {
                     }
                     
                 }
+            }
+
+            bool bumped(Amara::Prop* prop) {
+                if (bumpDir != NoDir && !isBusy() && rpgScene->sm.inState("duration")) {
+                    int offsetX = Amara::getOffsetX(bumpDir);
+                    int offsetY = Amara::getOffsetY(bumpDir);
+                    
+                    for (int i = tileX - tilePaddingLeft; i <= tileX + tilePaddingRight; i++) {
+                        for (int j = tileY - tilePaddingTop; j <= tileY + tilePaddingBottom; j++) {
+                            if (prop->covers(i + offsetX, j + offsetY)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false; 
+            }
+
+            // Arguments for function pointer: Bumper, Bumpee, Direction
+            bool bumped(Amara::Prop* prop, void(*callBack)(Amara::Prop*, Amara::Prop*, Amara::Direction)) {
+                if (bumped(prop)) {
+                    callBack(this, prop, bumpDir);
+                    return true;
+                }
+                return false;
             }
     };
 
