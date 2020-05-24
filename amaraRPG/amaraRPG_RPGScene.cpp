@@ -10,6 +10,8 @@ namespace Amara {
             Amara::Tilemap* tilemap = nullptr;
             nlohmann::json mapData;
 
+            Amara::LightLayer* lighting = nullptr;
+
             std::deque<Amara::CutsceneBase*> cutscenes;
             Amara::CutsceneBase* currentCutscene = nullptr;
 
@@ -50,11 +52,16 @@ namespace Amara {
                 } 
                 cutscenes.clear();
 
+                lighting = nullptr;
+
                 onPrepare();
                 add(tilemap = new Amara::Tilemap());
 
+                int i = 0;
+                int aboveDepth = 0;
+
                 if (!mapData.empty()) {
-                    int i = 0;
+                    i = 0;
                     if (mapData.find("texture") != mapData.end()) {
                         tilemap->setTexture(mapData["texture"]);
                     }
@@ -74,7 +81,7 @@ namespace Amara {
                         }
                     }
 
-                    int aboveDepth = tilemap->heightInPixels * 2;
+                    aboveDepth = tilemap->heightInPixels + 1;
                     if (mapData.find("aboveLayersDepth") != mapData.end()) {
                         aboveDepth = mapData["aboveLayersDepth"];
                     }
@@ -99,6 +106,10 @@ namespace Amara {
                 }
 
                 onCreate();
+
+                if (lighting != nullptr) {
+                    lighting->depth = aboveDepth + i + 1;
+                }
             }
 
             void update() {

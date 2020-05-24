@@ -90,13 +90,7 @@ namespace Amara {
                 return true;
             }
 
-            bool walk(Amara::Direction dir, bool replaceAnim) {
-                bumpDir = NoDir;
-                if (!canWalk(dir)) {
-                    bumpDir = dir;
-                    return false;
-                }
-
+            void forceWalk(Amara::Direction dir, bool replaceAnim) {
                 walkDirection = NoDir;
                 direction = dir;
 
@@ -120,7 +114,16 @@ namespace Amara {
                 if (replaceAnim) {
                     play(Amara::walkAnim(dir));
                 }
+            }
 
+            bool walk(Amara::Direction dir, bool replaceAnim) {
+                bumpDir = NoDir;
+                if (!canWalk(dir)) {
+                    bumpDir = dir;
+                    return false;
+                }
+
+                forceWalk(dir, replaceAnim);
                 return true;
             }
 
