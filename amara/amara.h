@@ -62,6 +62,7 @@ namespace Amara {
 #endif
 
 #include "amara_game.cpp"
+
 #include "amara_sceneManager.cpp"
 #include "amara_scenePlugin.cpp"
 #include "amara_scene.cpp"
@@ -82,6 +83,7 @@ namespace Amara {
 #include "amara_layerContainer.cpp"
 #include "amara_canvas.cpp"
 
+#include "amara_lighting.cpp"
 #include "amara_particles.cpp"
 
 #include "amara_sprite.cpp"
@@ -99,6 +101,8 @@ namespace Amara {
 
 #include "amara_camera.cpp"
 #include "amara_fdeclare_tweens.cpp"
+
+#include "amara_actorGroup.cpp"
 
 #include "amara_actor.cpp"
 #include "amara_script.cpp"

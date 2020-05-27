@@ -6,6 +6,7 @@
 
 namespace Amara {
     enum AssetType {
+        JSONCONFIG,
         SURFACE,
         IMAGE,
         SPRITESHEET,
@@ -80,7 +81,6 @@ namespace Amara {
 
                 anim = new Amara::Animation(key, animKey, frames, frameRate, loop);
                 anims[animKey] = anim;
-                std::cout << "Added animation \"" << animKey << "\" to spritesheet \"" << key << "." << std::endl;
                 return anim;
             }
             Amara::Animation* addAnim(std::string animKey, int frame) {
