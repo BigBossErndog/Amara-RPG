@@ -164,7 +164,7 @@ namespace Amara {
             void rpgUpdate() {
                 update();
                 if (sm.state("start")) {
-                    if (transition != nullptr) {
+                    if (transition == nullptr) {
                         sm.switchState("duration");
                     }
                 }

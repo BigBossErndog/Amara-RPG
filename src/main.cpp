@@ -62,6 +62,7 @@ class CameraStuff: public Cutscene {
                 scene->mainCamera->startFollow(gnik);
                 gnik->enableControls();
             }
+            finishEvt();
         }
 };
 
