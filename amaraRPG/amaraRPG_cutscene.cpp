@@ -8,10 +8,35 @@ namespace Amara {
     class Cutscene: public Amara::CutsceneBase {
         public:
             Amara::RPGScene* rpgScene = nullptr;
+            Amara::ActorGroup* group = nullptr;
 
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::CutsceneBase::init(gameProperties);
                 rpgScene = (Amara::RPGScene*)scene;
+
+                if (group != nullptr) {
+                    delete group;
+                }
+                group = new ActorGroup(this);
+            }
+
+            virtual Amara::Actor* add(Amara::Actor* actor) {
+                scene->add(actor);
+                group->add(actor);
+                return actor;
+            }
+
+            void finish() {
+                Amara::CutsceneBase::finish();
+                onEnd();
+
+                group->destroyActors();
+                delete group;
+                group = nullptr;
+            }
+
+            virtual void onEnd() {
+                
             }
 
             bool walk(Amara::Walker* walker, Amara::Direction dir) {
