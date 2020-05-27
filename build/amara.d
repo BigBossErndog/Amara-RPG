@@ -88,6 +88,7 @@ build/amara.exe: src/main.cpp amara/amara.h \
  ext_lib/SDL2_net/win64/include/SDL2/SDL_net.h \
  ext_lib/SDL_FontCache/SDL_FontCache.c \
  ext_lib/SDL_FontCache/SDL_FontCache.h amara/amara_game.cpp amara/amara.h \
+ amara/amara_transitions.cpp amara/amara_sceneTransition.cpp \
  amara/amara_sceneManager.cpp amara/amara_scenePlugin.cpp \
  amara/amara_scene.cpp amara/amara_ltimer.cpp \
  amara/amara_tweens_entities.cpp amara/amara_tweens_camera.cpp \
@@ -100,12 +101,13 @@ build/amara.exe: src/main.cpp amara/amara.h \
  amara/amara_tilemap.cpp amara/amara_tilemapLayer.cpp \
  amara/amara_tile.cpp amara/amara_tileAnimation.cpp \
  amara/amara_trueTypeFont.cpp amara/amara_camera.cpp \
- amara/amara_fdeclare_tweens.cpp amara/amara_actorGroup.cpp \
- amara/amara_actor.cpp amara/amara_script.cpp amara/amara_entity.cpp \
- amara/amara_interactable.cpp amara/amara_wallFinder.cpp \
- amara/amara_assetManager.cpp amara/amara_audioGroup.cpp \
- amara/amara_loadManager.cpp amara/amara_loader.cpp amara/amara_music.cpp \
- amara/amara_sound.cpp amara/amara_audioBase.cpp amara/amara_asset.cpp \
+ amara/amara_fdeclare_tweens.cpp amara/amara_sceneTransitionBase.cpp \
+ amara/amara_actorGroup.cpp amara/amara_actor.cpp amara/amara_script.cpp \
+ amara/amara_entity.cpp amara/amara_interactable.cpp \
+ amara/amara_wallFinder.cpp amara/amara_assetManager.cpp \
+ amara/amara_audioGroup.cpp amara/amara_loadManager.cpp \
+ amara/amara_loader.cpp amara/amara_music.cpp amara/amara_sound.cpp \
+ amara/amara_audioBase.cpp amara/amara_asset.cpp \
  amara/amara_animation.cpp amara/amara_events.cpp amara/amara_mouse.cpp \
  amara/amara_pointer.cpp amara/amara_gamepadManager.cpp \
  amara/amara_gamepad.cpp amara/amara_stick.cpp amara/amara_button.cpp \

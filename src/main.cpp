@@ -83,7 +83,7 @@ class TestArea: public RPGScene {
             load->ttf("pressStart", "assets/press-start.regular.ttf", 8);
         }
 
-        void onPrepare() {
+        void prepare() {
             mapData["texture"] = "tiles";
             mapData["wallLayers"] = { "walls" };
             mapData["aboveLayers"] = { "above" };
@@ -91,7 +91,7 @@ class TestArea: public RPGScene {
             mapData["json"] = "reeds_home";
         }
 
-        void onCreate() {
+        void create() {
             assets->addAnim("teenGnik", "downStand", 0);
             assets->addAnim("teenGnik", "upStand", 10);
             assets->addAnim("teenGnik", "leftStand", 20);
@@ -157,7 +157,7 @@ class TestArea: public RPGScene {
             startCutscene(new CameraStuff());
         }
 
-        void onUpdate() {
+        void update() {
             if (controls->justDown("full")) {
                 if (!game->isFullscreen) {
                     int w = 480;

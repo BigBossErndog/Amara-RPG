@@ -40,11 +40,60 @@ namespace Amara {
 				return config;
 			}
 
-            void preload() {
-                onPreload();
+            virtual void run() {
+                properties->currentScene = this;
+
+                if (!initialLoaded) {
+                    load->run();
+                    if (!load->stillLoading) {
+                        if (transition != nullptr) {
+                            if (transition->finished) {
+                                initialLoaded = true;
+                                transition->complete();
+                                transition = nullptr;
+                            }
+                            else if (transition->waitingForPermission) {
+                                transition->grantPermission();
+                                setLoader(properties->loader);
+                                rpgCreate();
+                            }
+                            else if (transition->permissionGranted) {
+                                updateScene();
+                            }
+                        }
+                        else {
+                            initialLoaded = true;
+
+                            setLoader(properties->loader);
+                            rpgCreate();
+                        }
+                    } 
+                }
+                else {
+                    updateScene();
+                    if (transition != nullptr) {
+                        transition->update();
+                    }
+                }
+            }
+            void updateScene() {
+                rpgUpdate();
+                reciteScripts();
+                
+                for (Amara::Entity* entity : entities) {
+                    if (entity->isDestroyed || entity->parent != this) continue;
+                    entity->run();
+                }
+
+                for (Amara::Camera* cam : cameras) {
+                    if (cam->isDestroyed || cam->parent != this) continue;
+                    cam->run();
+                }
+
+                afterUpdate();
             }
 
-            void create() {
+            void rpgCreate() {
                 sm.reset();
 
                 for (Amara::CutsceneBase* cutscene: cutscenes) {
@@ -54,7 +103,7 @@ namespace Amara {
 
                 lighting = nullptr;
 
-                onPrepare();
+                prepare();
                 add(tilemap = new Amara::Tilemap());
 
                 int i = 0;
@@ -105,20 +154,22 @@ namespace Amara {
                     tilemap->setCameraBounds(mainCamera);
                 }
 
-                onCreate();
+                create();
 
                 if (lighting != nullptr) {
                     lighting->depth = aboveDepth + i + 1;
                 }
             }
 
-            void update() {
-                onUpdate();
+            void rpgUpdate() {
+                update();
                 if (sm.state("start")) {
-                    sm.switchState("duration");
+                    if (transition != nullptr) {
+                        sm.switchState("duration");
+                    }
                 }
                 else if (sm.state("duration")) {
-                    onDuration();
+                    duration();
                 }
                 else if (sm.state("cutscenes")) {
                     if (currentCutscene != nullptr) {
@@ -144,14 +195,6 @@ namespace Amara {
                     }
                 }
             }
-            
-            virtual void onPreload() {}
-            virtual void onPrepare() {}
-            virtual void onCreate() {}
-            virtual void onUpdate() {}
-            virtual void onDuration() {}
-            virtual void handleInteracts() {}
-            virtual void handleEvents() {}
 
             Amara::Prop* getPropAt(int tx, int ty, Amara::Prop* exclusion) {
                 Amara::Prop* prop;
@@ -229,6 +272,11 @@ namespace Amara {
             virtual int getMapHeight() {
                 return tilemap->getMapHeight();
             }
+
+            virtual void prepare() {}
+            virtual void duration() {}
+            virtual void handleInteracts() {}
+            virtual void handleEvents() {}
     };
 }
 
