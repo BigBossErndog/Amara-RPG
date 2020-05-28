@@ -1,4 +1,4 @@
-build/amara.exe: src/main.cpp amara/amara.h \
+build/amara.game: src/main.cpp amara/amara.h \
  ext_lib/nlohmann/include/nlohmann/json.hpp \
  ext_lib/nlohmann/include/nlohmann/json_fwd.hpp \
  ext_lib/nlohmann/include/nlohmann/detail/macro_scope.hpp \
@@ -29,64 +29,32 @@ build/amara.exe: src/main.cpp amara/amara.h \
  ext_lib/nlohmann/include/nlohmann/detail/json_pointer.hpp \
  ext_lib/nlohmann/include/nlohmann/adl_serializer.hpp \
  ext_lib/nlohmann/include/nlohmann/detail/macro_unscope.hpp \
- ext_lib/SDL2/win64/include/SDL2/SDL.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_main.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_stdinc.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_config.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_platform.h \
- ext_lib/SDL2/win64/include/SDL2/begin_code.h \
- ext_lib/SDL2/win64/include/SDL2/close_code.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_assert.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_atomic.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_audio.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_error.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_endian.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_mutex.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_thread.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_rwops.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_clipboard.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_cpuinfo.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_events.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_video.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_pixels.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_rect.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_surface.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_blendmode.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_keyboard.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_keycode.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_scancode.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_mouse.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_joystick.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_gamecontroller.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_quit.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_gesture.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_touch.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_filesystem.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_haptic.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_hints.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_loadso.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_log.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_messagebox.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_metal.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_power.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_render.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_sensor.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_shape.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_system.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_timer.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_version.h \
- ext_lib/SDL2_image/win64/include/SDL2/SDL_image.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_version.h \
- ext_lib/SDL2/win64/include/SDL2/begin_code.h \
- ext_lib/SDL2/win64/include/SDL2/close_code.h \
- ext_lib/SDL2_ttf/win64/include/SDL2/SDL_ttf.h \
- ext_lib/SDL2_mixer/win64/include/SDL2/SDL_mixer.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_stdinc.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_rwops.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_audio.h \
- ext_lib/SDL2/win64/include/SDL2/SDL_endian.h \
- ext_lib/SDL2_net/win64/include/SDL2/SDL_net.h \
- ext_lib/SDL_FontCache/SDL_FontCache.c \
+ /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
+ /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_config.h \
+ /usr/include/SDL2/SDL_platform.h /usr/include/SDL2/begin_code.h \
+ /usr/include/SDL2/close_code.h /usr/include/SDL2/SDL_assert.h \
+ /usr/include/SDL2/SDL_atomic.h /usr/include/SDL2/SDL_audio.h \
+ /usr/include/SDL2/SDL_error.h /usr/include/SDL2/SDL_endian.h \
+ /usr/include/SDL2/SDL_mutex.h /usr/include/SDL2/SDL_thread.h \
+ /usr/include/SDL2/SDL_rwops.h /usr/include/SDL2/SDL_clipboard.h \
+ /usr/include/SDL2/SDL_cpuinfo.h /usr/include/SDL2/SDL_events.h \
+ /usr/include/SDL2/SDL_video.h /usr/include/SDL2/SDL_pixels.h \
+ /usr/include/SDL2/SDL_rect.h /usr/include/SDL2/SDL_surface.h \
+ /usr/include/SDL2/SDL_blendmode.h /usr/include/SDL2/SDL_keyboard.h \
+ /usr/include/SDL2/SDL_keycode.h /usr/include/SDL2/SDL_scancode.h \
+ /usr/include/SDL2/SDL_mouse.h /usr/include/SDL2/SDL_joystick.h \
+ /usr/include/SDL2/SDL_gamecontroller.h /usr/include/SDL2/SDL_quit.h \
+ /usr/include/SDL2/SDL_gesture.h /usr/include/SDL2/SDL_touch.h \
+ /usr/include/SDL2/SDL_filesystem.h /usr/include/SDL2/SDL_haptic.h \
+ /usr/include/SDL2/SDL_hints.h /usr/include/SDL2/SDL_loadso.h \
+ /usr/include/SDL2/SDL_log.h /usr/include/SDL2/SDL_messagebox.h \
+ /usr/include/SDL2/SDL_metal.h /usr/include/SDL2/SDL_power.h \
+ /usr/include/SDL2/SDL_render.h /usr/include/SDL2/SDL_sensor.h \
+ /usr/include/SDL2/SDL_shape.h /usr/include/SDL2/SDL_system.h \
+ /usr/include/SDL2/SDL_timer.h /usr/include/SDL2/SDL_version.h \
+ /usr/include/SDL2/SDL_image.h /usr/include/SDL2/SDL.h \
+ /usr/include/SDL2/SDL_ttf.h /usr/include/SDL2/SDL_mixer.h \
+ /usr/include/SDL2/SDL_net.h ext_lib/SDL_FontCache/SDL_FontCache.c \
  ext_lib/SDL_FontCache/SDL_FontCache.h amara/amara_game.cpp amara/amara.h \
  amara/amara_transitions.cpp amara/amara_sceneTransition.cpp \
  amara/amara_sceneManager.cpp amara/amara_scenePlugin.cpp \
