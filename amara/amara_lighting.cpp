@@ -9,11 +9,28 @@ namespace Amara {
         public:
             int x = 0;
             int y = 0;
+            int z = 0;
             int width;
             int height;
             SDL_Color innerColor;
             SDL_Color outerColor;
             float fadeStart = 0;
+
+            float originX = 0.5;
+            float originY = 0.5;
+
+            int offsetX = 0;
+            int offsetY = 0;
+
+            float zoomFactorX = 1;
+            float zoomFactorY = 1;
+            float scrollFactorX = 1;
+            float scrollFactorY = 1;
+
+            float scaleX = 1;
+            float scaleY = 1;
+
+            SDL_Rect destRect;
 
             bool destroyed = false;
 
@@ -41,11 +58,52 @@ namespace Amara {
                 attachedTo = nullptr;
             }
 
+            void draw(Amara::GameProperties* properties, SDL_Renderer* gRenderer, int vx, int vy, int vw, int vh) {
+                bool skipDrawing = false;
+
+                float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
+                float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
+                
+                destRect.x = floor((x + offsetX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
+                destRect.y = floor((y-z + offsetY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
+                destRect.w = ceil((width * scaleX) * nzoomX);
+                destRect.h = ceil((height * scaleY) * nzoomY);
+
+                if (destRect.x + destRect.w <= 0) skipDrawing = true;
+                if (destRect.y + destRect.h <= 0) skipDrawing = true;
+                if (destRect.x >= vw) skipDrawing = true;
+                if (destRect.y >= vh) skipDrawing = true;
+                if (destRect.w <= 0) skipDrawing = true;
+                if (destRect.h <= 0) skipDrawing = true;
+                
+                if (!skipDrawing) {
+                    Amara::drawRadialGradient(
+                        gRenderer,
+                        destRect.x, destRect.y, destRect.w, destRect.h,
+                        innerColor, outerColor,
+                        fadeStart
+                    );
+                }
+            }
+
             virtual void update() {
                 if (attachedTo != nullptr) {
-                    x = attachedTo->x;
-                    y = attachedTo->y;
+                    if (attachedTo->isDestroyed) {
+                        attachedTo = nullptr;
+                    }
+                    else {
+                        x = attachedTo->x;
+                        y = attachedTo->y;
+                    }
                 }
+            }
+
+            void setOrigin(float gx, float gy) {
+                originX = gx;
+                originY = gy;
+            }
+            void setOrigin(float gi) {
+                setOrigin(gi, gi);
             }
 
             void destroy() {
@@ -174,7 +232,7 @@ namespace Amara {
                 Amara::Actor::draw(0, 0, vw, vh);
 
                 for (Amara::Light* light: lights) {
-                    drawRadialGradient(gRenderer, light->x, light->y, light->width, light->height, light->innerColor, light->outerColor, light->fadeStart);
+                    light->draw(properties, gRenderer, 0, 0, vw, vh);
                 }
 
                 SDL_SetRenderDrawColor(gRenderer, recColor.r, recColor.g, recColor.b, recColor.a);
