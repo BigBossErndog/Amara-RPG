@@ -189,6 +189,7 @@ namespace Amara {
                             }
                             if (shouldRun) {
                                 if (!run(currentPathTile.direction)) {
+                                    if (pathTask == nullptr) return false;
                                     delete pathTask;
                                     pathTask = nullptr;
                                     return false;
@@ -196,6 +197,7 @@ namespace Amara {
                             }
                             else {
                                 if (!walk(currentPathTile.direction)) {
+                                    if (pathTask == nullptr) return false;
                                     delete pathTask;
                                     pathTask = nullptr;
                                     return false;
