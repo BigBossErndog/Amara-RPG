@@ -272,6 +272,12 @@ namespace Amara {
             virtual int getMapHeight() {
                 return tilemap->getMapHeight();
             }
+            
+            virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
+                Amara::Scene::startTransition(gTransition);
+                sm.switchState("transition");
+                return transition;
+            }
 
             virtual void prepare() {}
             virtual void duration() {}

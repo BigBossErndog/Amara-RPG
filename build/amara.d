@@ -92,7 +92,8 @@ build/amara.exe: src/main.cpp amara/amara.h \
  amara/amara_sceneManager.cpp amara/amara_scenePlugin.cpp \
  amara/amara_scene.cpp amara/amara_ltimer.cpp \
  amara/amara_tweens_entities.cpp amara/amara_tweens_camera.cpp \
- amara/amara_tween.cpp amara/amara_textBox.cpp amara/amara_uiBox.cpp \
+ amara/amara_tween.cpp amara/amara_charaTextBox.cpp \
+ amara/amara_textBox.cpp amara/amara_uiBox.cpp \
  amara/amara_controlScheme.cpp amara/amara_control.cpp \
  amara/amara_layerContainer.cpp amara/amara_canvas.cpp \
  amara/amara_lighting.cpp amara/amara_particles.cpp \
