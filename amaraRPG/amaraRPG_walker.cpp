@@ -118,6 +118,7 @@ namespace Amara {
 
             bool walk(Amara::Direction dir, bool replaceAnim) {
                 bumpDir = NoDir;
+                if (isBusy()) return false;
                 if (!canWalk(dir)) {
                     bumpDir = dir;
                     return false;
@@ -153,7 +154,7 @@ namespace Amara {
                 return run(dir, true);
             }
 
-            bool walkTo(int gx, int gy) {
+            bool walkTo(int gx, int gy, bool shouldRun) {
                 if (isBusy()) {
                     return false;
                 }
@@ -186,10 +187,19 @@ namespace Amara {
                             while (currentPathTile.x == tileX && currentPathTile.y == tileY && currentPathTile.id > 0) {
                                 currentPathTile = pathTask->dequeue();
                             }
-                            if (!walk(currentPathTile.direction)) {
-                                delete pathTask;
-                                pathTask = nullptr;
-                                return false;
+                            if (shouldRun) {
+                                if (!run(currentPathTile.direction)) {
+                                    delete pathTask;
+                                    pathTask = nullptr;
+                                    return false;
+                                }
+                            }
+                            else {
+                                if (!walk(currentPathTile.direction)) {
+                                    delete pathTask;
+                                    pathTask = nullptr;
+                                    return false;
+                                }
                             }
                         }
                     }
@@ -199,6 +209,14 @@ namespace Amara {
                     pathTask->from(tileX, tileY)->to(gx, gy)->start();
                 }
                 return false;
+            }
+
+            bool walkTo(int gx, int gy) {
+                return walkTo(gx, gy, false);
+            }
+
+            bool runTo(int gx, int gy) {
+                return walkTo(gx, gy, true);
             }
 
             void face(Amara::Direction dir) {
@@ -307,6 +325,22 @@ namespace Amara {
                     }
                     
                 }
+            }
+
+            bool bumped(int gx, int gy) {
+                if (bumpDir != NoDir && !isBusy() && rpgScene->sm.inState("duration")) {
+                    int offsetX = Amara::getOffsetX(bumpDir);
+                    int offsetY = Amara::getOffsetY(bumpDir);
+                    
+                    for (int i = tileX - tilePaddingLeft; i <= tileX + tilePaddingRight; i++) {
+                        for (int j = tileY - tilePaddingTop; j <= tileY + tilePaddingBottom; j++) {
+                            if (i + offsetX == gx && j + offsetY == gy) {
+                                return true;
+                            } 
+                        }
+                    }
+                }
+                return false;
             }
 
             bool bumped(Amara::Prop* prop) {
