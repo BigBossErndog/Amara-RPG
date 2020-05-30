@@ -135,6 +135,7 @@ namespace Amara {
 
             void findDimensions() {
                 const char* txt = text.c_str();
+                if (fontAsset == nullptr) return;
                 if (wordWrap) {
                     width = wordWrapWidth * scaleX;
                     height = FC_GetColumnHeight(fontAsset->font, wordWrapWidth, txt) * scaleY;
@@ -146,11 +147,6 @@ namespace Amara {
             }
 
             void run() {
-                if (fontAsset != nullptr) {
-                    if (properties->renderTargetsReset) {
-                        fontAsset->reloadFontCache(gRenderer);
-                    }
-                }
                 Amara::Actor::run();
             }
 

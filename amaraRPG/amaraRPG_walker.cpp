@@ -242,6 +242,7 @@ namespace Amara {
             }
 
             virtual void handleWalking() {
+                bumpDir = NoDir;
                 if (walkDirection != NoDir) {
                     int sx = x;
                     int sy = y;

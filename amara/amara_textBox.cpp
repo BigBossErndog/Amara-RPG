@@ -49,6 +49,8 @@ namespace Amara {
 
             Amara::Color textColor = {0, 0, 0, 0};
 
+            TextBox() : Amara::UIBox() {}
+
             TextBox(float gx, float gy, int gw, int gh, std::string gTextureKey, std::string gFontKey): Amara::UIBox(gx, gy, gw, gh, gTextureKey) {
                 fontKey = gFontKey;
             }
@@ -99,6 +101,9 @@ namespace Amara {
                 }
                 if (config.find("marginRight") != config.end()) {
                     marginRight = config["marginRight"];
+                }
+                if (config.find("font") != config.end()) {
+                    setFont(config["font"]);
                 }
             }
 
