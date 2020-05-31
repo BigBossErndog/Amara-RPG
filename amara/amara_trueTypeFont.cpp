@@ -70,12 +70,17 @@ namespace Amara {
                 data["entityType"] = "trueTypeFont";
 			}
 
-            void setFont(std::string gFontKey) {
+            bool setFont(std::string gFontKey) {
                 fontAsset = (Amara::TTFAsset*)(load->get(gFontKey));
                 if (fontAsset != nullptr) {
                     fontKey = gFontKey;
                     findDimensions();
+                    return true;
                 }
+                else {
+                    std::cout << "Font with key: \"" << gFontKey << "\" was not found." << std::endl;
+                }
+                return false;
             }
 
             void setText(std::string newTxt) {
