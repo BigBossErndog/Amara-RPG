@@ -179,6 +179,10 @@ class TestArea: public RPGScene {
             if (controls->isDown("zoomOut")) {
                 mainCamera->changeZoom(-0.1);
             }
+
+            if (controls->justDown("confirm")) {
+                startTransition(new FillTransition(scenePlugin->key));
+            }
         }
 };
 

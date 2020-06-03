@@ -41,6 +41,8 @@ namespace Amara {
             int extraMarginLeft = 0;
             int extraMarginRight = 0;
 
+            int recWrapWidth = -1;
+
             int openSpeedX = 0;
             int openSpeedY = 0;
             int closeSpeedX = 0;
@@ -52,7 +54,11 @@ namespace Amara {
             Amara::StateManager* copySm = nullptr;
             Amara::StateManager mySm;
 
+            Amara::Entity* progressIcon = nullptr;
+
             Amara::Color textColor = {0, 0, 0, 0};
+
+            bool keepOpen = false;
 
             TextBox() : Amara::UIBox() {}
 
@@ -117,6 +123,32 @@ namespace Amara {
                 if (config.find("font") != config.end()) {
                     setFont(config["font"]);
                 }
+                if (config.find("openSpeedX") != config.end()) {
+                    openSpeedX = config["openSpeedX"];
+                }
+                if (config.find("openSpeedY") != config.end()) {
+                    openSpeedY = config["openSpeedY"];
+                }
+                if (config.find("closeSpeedX") != config.end()) {
+                    closeSpeedX = config["closeSpeedX"];
+                }
+                if (config.find("closeSpeedY") != config.end()) {
+                    closeSpeedY = config["closeSpeedY"];
+                }
+                if (config.find("openCloseSpeedX") != config.end()) {
+                    openSpeedX = config["openCloseSpeedX"];
+                    closeSpeedX = config["openCloseSpeedX"];
+                }
+                if (config.find("openCloseSpeedY") != config.end()) {
+                    openSpeedY = config["openCloseSpeedY"];
+                    closeSpeedY = config["openCloseSpeedY"];
+                }
+                if (config.find("openCloseSpeed") != config.end()) {
+                    setOpenCloseSpeed(config["openCloseSpeed"], config["openCloseSpeed"]);
+                }
+
+                setOpenSpeed(openSpeedX, openSpeedY);
+                setCloseSpeed(closeSpeedX, closeSpeedY);
             }
 
             void clearExtraMargins() {
@@ -126,15 +158,25 @@ namespace Amara {
                 extraMarginRight = 0;
             }
 
-            virtual void update() {
-                if (recText.compare(text) != 0) {
-                    setText(text);
-                }
+            Amara::Entity* addProgressIcon(Amara::Entity* icon) {
+                progressIcon = icon;
+                add(icon);
+                icon->setVisible(false);
+                return icon;
+            }
 
+            virtual void update() {
                 int nMarginTop = marginTop + extraMarginTop;
                 int nMarginBottom = marginBottom + extraMarginBottom;
                 int nMarginLeft = marginLeft + extraMarginLeft;
                 int nMarginRight = marginRight + extraMarginRight;
+
+                int wrapWidth = width - nMarginLeft - nMarginRight;
+
+                if (recText.compare(text) != 0 || wrapWidth != recWrapWidth) {
+                    recWrapWidth = wrapWidth;
+                    setText(text);
+                }
                 
                 if (!isProgressive) {
                     txtProgress = wrappedText;
@@ -153,7 +195,7 @@ namespace Amara {
                     }
                     if (progress >= wrappedText.length()) {
                         progress = wrappedText.length();
-                        txtProgress = text;
+                        txtProgress = wrappedText;
                         finishedProgress = true;
 
                     }
@@ -164,7 +206,7 @@ namespace Amara {
                 
                 txt->color = textColor;
                 txt->alignment = horizontalAlignment;
-                txt->setWordWrap(width - (nMarginLeft + nMarginRight));
+                txt->setWordWrap(false);
                 txt->setText(wrappedText);
 
                 switch (horizontalAlignment) {
@@ -211,7 +253,7 @@ namespace Amara {
                 txt->setWordWrap(false);
 
                 text = newText;
-                wrappedText = adjustText(newText, width - nMarginLeft - nMarginRight);
+                wrappedText = adjustText(newText, width - (nMarginLeft + nMarginRight));
                 recText = text;
 
                 finishedProgress = false;
@@ -220,18 +262,19 @@ namespace Amara {
                 progress = 0;
             }
 
-            std::string adjustText(std::string gText, int wrapWidth) {
+            std::string adjustText(std::string gText, float wrapWidth) {
                 std::string recText = txt->text;
                 std::string fText = "";
                 std::string word = "";
                 std::string pText = "";
-                int textWidth = 0;
+                float textWidth = 0;
                 char c;
+
+                txt->setWordWrap(false);
 
                 for (int i = 0; i < gText.length(); i++) {
                     c = gText.at(i);
                     if (c == ' ') {
-                        word += c;
                         pText = fText + word;
                         txt->setText(pText);
                         if (txt->width > wrapWidth) {
@@ -241,6 +284,16 @@ namespace Amara {
                         else {
                             fText += word;
                         }
+
+                        pText = fText + c;
+                        txt->setText(pText);
+                        if (txt->width > wrapWidth) {
+                            fText += '\n';
+                        }
+                        else {
+                            fText += c;
+                        }
+
                         word = "";
                     }
                     else {
@@ -337,6 +390,9 @@ namespace Amara {
                 if (sm.evt()) {
                     if (finishedProgress) {
                         autoProgressCounter = 0;
+                        if (!autoProgress && progressIcon != nullptr) {
+                            progressIcon->setVisible(true);
+                        }
                         sm.nextEvt();
                     }
 
@@ -351,6 +407,7 @@ namespace Amara {
                         }
                     }
                     else if (progressControl.empty() || controls->justDown(progressControl)) {
+                        progressIcon->setVisible(false);
                         sm.nextEvt();
                     }
                 }
@@ -379,6 +436,12 @@ namespace Amara {
             virtual bool open() {
                 Amara::StateManager& sm = checkSm();
                 bool toReturn = false;
+
+                if (sm.once()) {
+                    if (!keepOpen) {
+                        resetOpenSize();
+                    }
+                }
 
                 if (show()) {
                     setText("");
@@ -409,6 +472,7 @@ namespace Amara {
                     }
 
                     if (complete) {
+                        keepOpen = true;
                         sm.nextEvt();
                     }
 
@@ -448,6 +512,7 @@ namespace Amara {
                     }
 
                     if (complete) {
+                        keepOpen = false;
                         sm.nextEvt();
                     }
 
@@ -468,11 +533,10 @@ namespace Amara {
                 if (openSpeedX < 0) openSpeedX = 0;
                 if (openSpeedY < 0) openSpeedY = 0;
 
-                if (openSpeedX > 0) setOpenSize(0, openHeight);
-                if (openSpeedY > 0) setOpenSize(openWidth, 0);
+                resetOpenSize();
 
                 lockOpen = false;
-            }  
+            }
             void setOpenSpeed(int gy) {
                 setOpenSpeed(0, gy);
             }
@@ -505,6 +569,11 @@ namespace Amara {
             }
             void setOpenCloseSpeed() {
                 setOpenCloseSpeed(0);
+            }
+
+            void resetOpenSize() {
+                if (openSpeedX > 0) setOpenSize(0, openHeight);
+                if (openSpeedY > 0) setOpenSize(openWidth, 0);
             }
 
             virtual void setProgressControl(std::string gControl) {

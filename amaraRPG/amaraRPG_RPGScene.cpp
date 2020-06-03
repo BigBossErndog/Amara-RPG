@@ -44,6 +44,10 @@ namespace Amara {
                 properties->currentScene = this;
 
                 if (!initialLoaded) {
+                    if (transition != nullptr) {
+                        transition->update();
+                    }
+
                     load->run();
                     if (!load->stillLoading) {
                         if (transition != nullptr) {
@@ -274,6 +278,7 @@ namespace Amara {
             }
             
             virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
+                if (transition != nullptr) return nullptr;
                 Amara::Scene::startTransition(gTransition);
                 sm.switchState("transition");
                 return transition;

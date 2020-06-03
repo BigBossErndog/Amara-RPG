@@ -22,7 +22,7 @@ OTHER_LIB_PATHS = -I ext_lib/nlohmann/include -I ./src
 
 AMARA_PATH = -I ./amara -I ./amaraRPG
 
-COMPILER_FLAGS = -w -MMD
+COMPILER_FLAGS = -w
 # COMPILER_FLAGS = -w -Wl,-subsystem,windows
 
 all:

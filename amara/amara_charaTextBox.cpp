@@ -13,6 +13,8 @@ namespace Amara {
             Amara::Direction portraitAlignment = Left;
             Amara::Direction portraitVerticalAlignment = Down;
 
+            nlohmann::json defaultConfig;
+
             CharaTextBox(): Amara::TextBox() {}
             CharaTextBox(float gx, float gy, float gw, float gh, std::string gTextureKey, std::string gFontKey): Amara::TextBox(gx, gy, gw, gh, gTextureKey, gFontKey) {}
 
@@ -28,31 +30,38 @@ namespace Amara {
             }
 
             void configure(nlohmann::json& config) {
-                Amara::TextBox::configure(config);
-                configurePortrait(config);
+                if (config.find("textBox") != config.end()) {
+                    Amara::TextBox::configure(config["textBox"]);
+                }
+                if (config.find("portrait") != config.end()) {
+                    configurePortrait(config["portrait"]);
+                }
+                if (config.find("default") != config.end()) {
+                    defaultConfig = config["default"];
+                    configure(defaultConfig);
+                }
             }
 
             void configurePortrait(nlohmann::json& config) {
-                if (config.find("containerWidth") != config.end()) {
-                    container->width = config["containerWidth"];
+                if (config.find("portraitContainerWidth") != config.end()) {
+                    container->width = config["portraitContainerWidth"];
                 }
-                if (config.find("containerHeight") != config.end()) {
-                    container->height = config["containerHeight"];
+                if (config.find("portraitContainerHeight") != config.end()) {
+                    container->height = config["portraitContainerHeight"];
                 }
                 
-                if (config.find("containerX") != config.end()) {
-                    container->x = config["containerX"];
+                if (config.find("portraitContainerX") != config.end()) {
+                    container->x = config["portraitContainerX"];
                 }
-                if (config.find("containerY") != config.end()) {
-                    container->y = config["containerY"];
+                if (config.find("portraitContainerY") != config.end()) {
+                    container->y = config["portraitContainerY"];
                 }
-
-                if (config.find("containerXFromRight") != config.end()) {
-                    int gx = config["xFromRight"];
+                if (config.find("portraitContainerXFromRight") != config.end()) {
+                    int gx = config["portraitContainerXFromRight"];
                     container->x = width - container->width - gx;
                 }
-                if (config.find("containerYFromBottom") != config.end()) {
-                    int gy = config["containerYFromBottom"];
+                if (config.find("portraitContainerYFromBottom") != config.end()) {
+                    int gy = config["portraitContainerYFromBottom"];
                     container->y = height - container->height - gy;
                 }
 
@@ -86,20 +95,26 @@ namespace Amara {
                 if (config.find("portraitTexture") != config.end()) {
                     portrait->setTexture(config["portraitTexture"]);
                 }
+                if (config.find("portraitFrame") != config.end()) {
+                    portrait->setFrame(config["portraitFrame"]);
+                }
+                if (config.find("portraitAnimation") != config.end()) {
+                    portrait->play(config["portraitAnimation"]);
+                }
             }
 
             void manageMargins() {
                 switch (portraitAlignment) {
                     case Left:
-                        extraMarginLeft = container->width + marginLeft;
+                        extraMarginLeft = container->x + container->width + marginLeft;
                         break;
                     case Right:
-                        extraMarginRight = container->height + marginRight;
+                        extraMarginRight = (width - container->x) - marginRight;
                         break;
                 }
             }
 
-            bool say(nlohmann::json& charaData, std::string gText) {
+            bool say(nlohmann::json& charaData, std::string gText, bool(*showPortrait)(Amara::CharaTextBox*, Amara::Container*)) {
                 Amara::StateManager& sm = checkSm();
                 bool toReturn = false;
 
@@ -109,10 +124,27 @@ namespace Amara {
 
                 if (sm.once()) {
                     container->setVisible(true);
-                    configurePortrait(charaData);
+                    container->setAlpha(0);
+                    configure(defaultConfig);
+                    configure(charaData);
                     manageMargins();
                     setText("");
+                    if (keepOpen) {
+                        openWidth = width;
+                        openHeight = height;
+                    }
                     toReturn = true;
+                }
+
+                if (showPortrait != nullptr) {
+                    if (showPortrait(this, container)) {
+                        toReturn = true;
+                    }
+                }
+                else {
+                    if (sm.once()) {
+                        container->setAlpha(1);
+                    }
                 }
 
                 sm.wait(sayStartDelay);
@@ -125,6 +157,9 @@ namespace Amara {
                 if (sm.evt()) {
                     if (finishedProgress) {
                         autoProgressCounter = 0;
+                        if (!autoProgress && progressIcon != nullptr) {
+                            progressIcon->setVisible(true);
+                        }
                         sm.nextEvt();
                     }
 
@@ -139,11 +174,16 @@ namespace Amara {
                         }
                     }
                     else if (progressControl.empty() || controls->justDown(progressControl)) {
+                        progressIcon->setVisible(false);
                         sm.nextEvt();
                     }
                 }
 
                 return toReturn;
+            }
+
+            bool say(nlohmann::json& charaData, std::string gText) {
+                return say(charaData, gText, nullptr);
             }
 
             bool say(std::string gText) {
@@ -152,6 +192,7 @@ namespace Amara {
 
                 if (sm.once()) {
                     container->setVisible(false);
+                    configure(defaultConfig);
                     clearExtraMargins();
                     setText("");
                     toReturn = true;
@@ -172,6 +213,7 @@ namespace Amara {
                     container->setVisible(false);
                     setText("");
                     toReturn = true;
+                    keepOpen = false;
                 }
 
                 if (sm.evt()) {
@@ -197,6 +239,7 @@ namespace Amara {
                     }
 
                     if (complete) {
+                        keepOpen = false;
                         sm.nextEvt();
                     }
 

@@ -34,6 +34,7 @@ namespace Amara {
                 Amara::Prop::configure(config);
                 if (config.find("direction") != config.end()) {
                     direction = config["direction"];
+                    face(direction);
                 }
                 if (config.find("walkSpeed") != config.end()) {
                     walkSpeed = config["walkSpeed"];
