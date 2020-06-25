@@ -42,6 +42,9 @@ namespace Amara {
                 if (config.find("runSpeed") != config.end()) {
                     runSpeed = config["runSpeed"];
                 }
+                if (config.find("walk") != config.end()) {
+                    forceWalk(config["walk"]);
+                }
             }
 
             virtual nlohmann::json toData() {
@@ -115,6 +118,20 @@ namespace Amara {
                 if (replaceAnim) {
                     play(Amara::walkAnim(dir));
                 }
+            }
+
+            void forceWalk(Amara::Direction dir) {
+                forceWalk(dir, true);
+            }
+
+            void forceRun(Amara::Direction dir, bool replaceAnim) {
+                forceWalk(dir);
+                movementSpeed = runSpeed;
+                if (replaceAnim) play(Amara::runAnim(dir));
+            }
+
+            void forceRun(Amara::Direction dir) {
+                forceRun(dir, true);
             }
 
             bool walk(Amara::Direction dir, bool replaceAnim) {
@@ -207,8 +224,8 @@ namespace Amara {
                         }
                     }
                 }
-                if (pathTask == nullptr) {
-                    pathTask = new Amara::PathFindingTask(rpgScene->tilemap);
+                if (pathTask == nullptr && !rpgScene->locked) {
+                    pathTask = new Amara::PathFindingTask(rpgScene);
                     pathTask->from(tileX, tileY)->to(gx, gy)->start();
                 }
                 return false;

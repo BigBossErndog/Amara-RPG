@@ -47,9 +47,27 @@ namespace Amara {
                 return false;
             }
 
+            bool run(Amara::Walker* walker, Amara::Direction dir) {
+                if (once()) {
+                    walker->run(dir);
+                    return true;
+                }
+                return false;
+            }
+
             bool walk(Amara::Walker* walker, int tx, int ty) {
                 if (evt()) {
                     if (walker->walkTo(tx, ty)) {
+                        nextEvt();
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            bool run(Amara::Walker* walker, int tx, int ty) {
+                if (evt()) {
+                    if (walker->runTo(tx, ty)) {
                         nextEvt();
                     }
                     return true;

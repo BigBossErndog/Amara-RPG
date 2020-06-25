@@ -34,7 +34,7 @@ namespace Amara {
 
             virtual nlohmann::json toData() {
 				nlohmann::json config = Amara::Scene::toData();
-                config["key"] = scenePlugin->key;
+                config["key"] = scenes->key;
 				config["area"] = area;
                 config["floor"] = floor;
 				return config;

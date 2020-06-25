@@ -170,6 +170,17 @@ namespace Amara {
                 return false;
             }
 
+            bool interactWith(Amara::FloatRect rect) {
+                for (int i = rect.x; i < rect.x + rect.width; i++) {
+                    for (int j = rect.y; j < rect.y + rect.height; i++) {
+                        if (interactWith(i, j)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
             bool interactWith(Amara::Prop* prop) {
                 if (prop == nullptr) return false;
                 if (!prop->isActive) return false;
