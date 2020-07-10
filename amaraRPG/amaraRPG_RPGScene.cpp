@@ -77,6 +77,15 @@ namespace Amara {
                     updateScene();
                     if (transition != nullptr) {
                         transition->update();
+                        if (transition && transition->fromWake) {
+                            if (transition->finished) {
+                                transition->complete();
+                                transition = nullptr;
+                            }
+                            else if (transition->waitingForPermission) {
+                                transition->grantPermission();
+                            }
+                        }
                     }
                 }
             }
@@ -275,13 +284,6 @@ namespace Amara {
             }
             virtual int getMapHeight() {
                 return tilemap->getMapHeight();
-            }
-            
-            virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
-                if (transition != nullptr) return nullptr;
-                Amara::Scene::startTransition(gTransition);
-                sm.switchState("transition");
-                return transition;
             }
 
             virtual void prepare() {}

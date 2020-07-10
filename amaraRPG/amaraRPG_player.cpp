@@ -42,7 +42,7 @@ namespace Amara {
 
             void handleWalking() {
                 Amara::Walker::handleWalking();
-                if (controlsEnabled && rpgScene->sm.inState("duration")) {
+                if (controlsEnabled && rpgScene->sm.inState("duration") && !scene->transition) {
                     Amara::Direction verDir = NoDir;
                     Amara::Direction horDir = NoDir;
                     Amara::Direction lastPressDir = NoDir;
@@ -156,7 +156,7 @@ namespace Amara {
                 if (!isActive) return false;
                 if (!controls->justDown("interact")) return false;
 
-                if (rpgScene->sm.inState("duration")) {
+                if (rpgScene->sm.inState("duration") && !scene->transition) {
                     int ox = Amara::getOffsetX(direction);
                     int oy = Amara::getOffsetY(direction);
                     int tx = tileX + ox;
@@ -196,7 +196,7 @@ namespace Amara {
 
             bool stoodOn(int ix, int iy) {
                 if (isBusy()) return false;
-                if (!rpgScene->sm.inState("duration")) return false;
+                if (!rpgScene->sm.inState("duration") && !scene->transition) return false;
                 if (tileX == ix && tileY == iy) return true;
             }
 
