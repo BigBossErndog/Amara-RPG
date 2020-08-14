@@ -113,6 +113,15 @@ namespace Amara {
                 y = tileY * TILE_HEIGHT + tileOffsetY;
             }
 
+			bool isOn(float gx, float gy) {
+				if (round(x) == round(gx * TILE_WIDTH + tileOffsetX)) {
+					if (round(y) == round(gy * TILE_HEIGHT + tileOffsetY)) {
+						return true;
+					}
+				}
+				return false;
+			}
+
             Amara::Direction getDirectionTo(Amara::Prop* other) {
                 int objx = other->tileX;
                 int objy = other->tileY;

@@ -167,7 +167,7 @@ namespace Amara {
 
                 return false;
             }
-            
+
             bool run(Amara::Direction dir) {
                 return run(dir, true);
             }
@@ -256,7 +256,7 @@ namespace Amara {
             }
 
             void faceTowards() {
-                
+
             }
 
             virtual void handleWalking() {
@@ -344,7 +344,7 @@ namespace Amara {
                             }
                         }
                     }
-                    
+
                 }
             }
 
@@ -352,12 +352,12 @@ namespace Amara {
                 if (bumpDir != NoDir && !isBusy() && rpgScene->sm.inState("duration")) {
                     int offsetX = Amara::getOffsetX(bumpDir);
                     int offsetY = Amara::getOffsetY(bumpDir);
-                    
+
                     for (int i = tileX - tilePaddingLeft; i <= tileX + tilePaddingRight; i++) {
                         for (int j = tileY - tilePaddingTop; j <= tileY + tilePaddingBottom; j++) {
                             if (i + offsetX == gx && j + offsetY == gy) {
                                 return true;
-                            } 
+                            }
                         }
                     }
                 }
@@ -368,7 +368,7 @@ namespace Amara {
                 if (bumpDir != NoDir && !isBusy() && rpgScene->sm.inState("duration")) {
                     int offsetX = Amara::getOffsetX(bumpDir);
                     int offsetY = Amara::getOffsetY(bumpDir);
-                    
+
                     for (int i = tileX - tilePaddingLeft; i <= tileX + tilePaddingRight; i++) {
                         for (int j = tileY - tilePaddingTop; j <= tileY + tilePaddingBottom; j++) {
                             if (prop->covers(i + offsetX, j + offsetY)) {
@@ -377,7 +377,7 @@ namespace Amara {
                         }
                     }
                 }
-                return false; 
+                return false;
             }
 
             // Arguments for function pointer: Bumper, Bumpee, Direction

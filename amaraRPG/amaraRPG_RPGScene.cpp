@@ -71,7 +71,7 @@ namespace Amara {
                             setLoader(properties->loader);
                             rpgCreate();
                         }
-                    } 
+                    }
                 }
                 else {
                     updateScene();
@@ -92,7 +92,7 @@ namespace Amara {
             void updateScene() {
                 rpgUpdate();
                 reciteScripts();
-                
+
                 for (Amara::Entity* entity : entities) {
                     if (entity->isDestroyed || entity->parent != this) continue;
                     entity->run();
@@ -111,7 +111,7 @@ namespace Amara {
 
                 for (Amara::CutsceneBase* cutscene: cutscenes) {
                     delete cutscene;
-                } 
+                }
                 cutscenes.clear();
 
                 lighting = nullptr;
@@ -164,7 +164,9 @@ namespace Amara {
 
                     TILE_WIDTH = tilemap->tileWidth;
                     TILE_HEIGHT = tilemap->tileHeight;
-                    tilemap->setCameraBounds(mainCamera);
+					if (mapData.find("setBounds") != mapData.end() && mapData["setBounds"]) {
+	                    tilemap->setCameraBounds(mainCamera);
+					}
                 }
 
                 create();
@@ -226,7 +228,7 @@ namespace Amara {
                 }
                 return nullptr;
             }
-            
+
             Amara::Prop* getPropAt(int tx, int ty) {
                 return getPropAt(tx, ty, nullptr);
             }
