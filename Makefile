@@ -41,7 +41,7 @@ win64: $(SRC_FILES)
 	rm -rf build/*.dll
 	rm -rf build/assets/*
 	cp -R assets/ build/
-	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_WIN64) $(SDL_LIBRARY_PATHS_WIN64) $(COMPILER_FLAGS) -l mingw32 $(LINKER_FLAGS) -o $(BUILD_EXECUTABLE_WIN)
+	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_WIN64) $(SDL_LIBRARY_PATHS_WIN64) $(COMPILER_FLAGS) -l mingw32 -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic $(LINKER_FLAGS) -o $(BUILD_EXECUTABLE_WIN)
 	cp dlls/win64/* $(BUILD_PATH)/
 
 win32: $(SRC_FILES)
@@ -49,7 +49,7 @@ win32: $(SRC_FILES)
 	rm -rf build/*.dll
 	rm -rf build/assets/*
 	cp -R assets/ build/
-	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_WIN32) $(SDL_LIBRARY_PATHS_WIN32) $(COMPILER_FLAGS) -l mingw32 $(LINKER_FLAGS) -I ext_lib/SDL2-32/bin -o $(BUILD_EXECUTABLE_WIN)
+	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_WIN32) $(SDL_LIBRARY_PATHS_WIN32) $(COMPILER_FLAGS) -l mingw32 -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic $(LINKER_FLAGS) -I ext_lib/SDL2-32/bin -o $(BUILD_EXECUTABLE_WIN)
 	cp dlls/win32/* $(BUILD_PATH)/
 
 linux:
