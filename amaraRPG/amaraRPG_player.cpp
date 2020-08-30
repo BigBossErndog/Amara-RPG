@@ -9,7 +9,7 @@ namespace Amara {
         public:
             Amara::Direction lastWalkDir = NoDir;
             Amara::Direction walkBuffer = NoDir;
-            
+
             bool controlsEnabled = true;
             bool allowRunning = false;
 
@@ -27,7 +27,7 @@ namespace Amara {
                 Amara::Walker::configure(config);
                 if (config.find("controlsEnabled") != config.end()) {
                     controlsEnabled = config["controlsEnabled"];
-                } 
+                }
                 if (config.find("allowRunning") != config.end()) {
                     allowRunning = config["allowRunning"];
                 }
@@ -41,12 +41,12 @@ namespace Amara {
             }
 
             void handleWalking() {
-                Amara::Walker::handleWalking();
+				Amara::Walker::handleWalking();
                 if (controlsEnabled && rpgScene->sm.inState("duration") && !scene->transition) {
                     Amara::Direction verDir = NoDir;
                     Amara::Direction horDir = NoDir;
                     Amara::Direction lastPressDir = NoDir;
-                    
+
                     if (controls->isDown("up") && !controls->isDown("down")) {
                         if (controls->justDown("up")) {
                             lastPressDir = Up;
@@ -115,10 +115,10 @@ namespace Amara {
                         }
                         else {
                             if (verDir == lastWalkDir && ((shouldRun && run(verDir)) || walk(verDir))) {
-                                
+
                             }
                             else if (horDir == lastWalkDir && ((shouldRun && run(horDir)) || walk(horDir))) {
-                                
+
                             }
                             else {
                                 if (verDir != NoDir && ((shouldRun && run(verDir)) || walk(verDir))) {
@@ -161,7 +161,7 @@ namespace Amara {
                     int oy = Amara::getOffsetY(direction);
                     int tx = tileX + ox;
                     int ty = tileY + oy;
-                    
+
                     if (tx == ix && ty == iy) {
                         return true;
                     }
@@ -187,26 +187,6 @@ namespace Amara {
                 for (int i = prop->tileX - prop->tilePaddingLeft; i <= prop->tileX + prop->tilePaddingRight; i++) {
                     for (int j = prop->tileY - prop->tilePaddingTop; j <= prop->tileY + prop->tilePaddingBottom; j++) {
                         if (interactWith(i, j)) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
-
-            bool stoodOn(int ix, int iy) {
-                if (isBusy()) return false;
-                if (!rpgScene->sm.inState("duration") && !scene->transition) return false;
-                if (tileX == ix && tileY == iy) return true;
-            }
-
-            bool stoodOn(Amara::Prop* prop) {
-                if (prop == nullptr) return false;
-                if (!prop->isActive) return false;
-
-                for (int i = prop->tileX - prop->tilePaddingLeft; i <= prop->tileX + prop->tilePaddingRight; i++) {
-                    for (int j = prop->tileY - prop->tilePaddingTop; j <= prop->tileY + prop->tilePaddingBottom; j++) {
-                        if (stoodOn(i, j)) {
                             return true;
                         }
                     }

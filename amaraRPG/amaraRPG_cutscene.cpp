@@ -10,6 +10,8 @@ namespace Amara {
             Amara::RPGScene* rpgScene = nullptr;
             Amara::ActorGroup* group = nullptr;
 
+			Camera* cam;
+
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::CutsceneBase::init(gameProperties);
                 rpgScene = (Amara::RPGScene*)scene;
@@ -18,6 +20,7 @@ namespace Amara {
                     delete group;
                 }
                 group = new ActorGroup(this);
+				cam = scene->mainCamera;
             }
 
             virtual Amara::Actor* add(Amara::Actor* actor) {
@@ -36,7 +39,7 @@ namespace Amara {
             }
 
             virtual void onEnd() {
-                
+
             }
 
             bool walk(Amara::Walker* walker, Amara::Direction dir) {

@@ -90,8 +90,8 @@ namespace Amara {
                 }
             }
             void updateScene() {
+				reciteScripts();
                 rpgUpdate();
-                reciteScripts();
 
                 for (Amara::Entity* entity : entities) {
                     if (entity->isDestroyed || entity->parent != this) continue;
@@ -177,7 +177,6 @@ namespace Amara {
             }
 
             void rpgUpdate() {
-                update();
                 if (sm.state("start")) {
                     if (transition == nullptr) {
                         sm.switchState("duration");
@@ -209,6 +208,7 @@ namespace Amara {
                         }
                     }
                 }
+				update();
             }
 
             Amara::Prop* getPropAt(int tx, int ty, Amara::Prop* exclusion) {

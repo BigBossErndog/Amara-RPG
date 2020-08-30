@@ -37,11 +37,17 @@ namespace Amara {
             Prop(nlohmann::json config): Prop() {
                 configure(config);
             }
+			Prop(int gx, int gy): Amara::Sprite(0, 0) {
+				tileX = gx;
+				tileY = gy;
+				snapToTile();
+			}
 
             virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) override {
+				rpgScene = (RPGScene*) givenScene;
                 Amara::Sprite::init(gameProperties, givenScene, givenParent);
                 data["isProp"] = true;
-                rpgScene = (RPGScene*) givenScene;
+				snapToTile();
             }
 
             virtual void configure(nlohmann::json config) {
@@ -92,11 +98,8 @@ namespace Amara {
                 return config;
             }
 
-            void create() {
-                snapToTile();
-            }
-
-            void update() {
+            void run() {
+				Amara::Sprite::run();
                 if (!depthLocked) {
                     depth = y;
                 }
@@ -118,6 +121,19 @@ namespace Amara {
 					if (round(y) == round(gy * TILE_HEIGHT + tileOffsetY)) {
 						return true;
 					}
+				}
+				return false;
+			}
+
+			bool isOnX(float gx) {
+				if (round(x) == round(gx * TILE_WIDTH + tileOffsetX)) {
+					return true;
+				}
+				return false;
+			}
+			bool isOnY(float gy) {
+				if (round(y) == round(gy * TILE_HEIGHT + tileOffsetY)) {
+					return true;
 				}
 				return false;
 			}

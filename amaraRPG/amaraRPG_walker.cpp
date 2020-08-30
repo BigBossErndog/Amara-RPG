@@ -29,6 +29,11 @@ namespace Amara {
             Walker(nlohmann::json config): Walker() {
                 configure(config);
             }
+			Walker(int gx, int gy): Amara::Prop(0, 0) {
+				tileX = gx;
+				tileY = gy;
+				snapToTile();
+			}
 
             virtual void configure(nlohmann::json config) {
                 Amara::Prop::configure(config);
@@ -259,6 +264,11 @@ namespace Amara {
 
             }
 
+			void stopWalking() {
+				walkDirection = NoDir;
+				bumpDir = NoDir;
+			}
+
             virtual void handleWalking() {
                 bumpDir = NoDir;
                 if (walkDirection != NoDir) {
@@ -344,7 +354,6 @@ namespace Amara {
                             }
                         }
                     }
-
                 }
             }
 
@@ -363,6 +372,14 @@ namespace Amara {
                 }
                 return false;
             }
+
+			bool bumpedX(int gx) {
+				return bumped(gx, tileY);
+			}
+
+			bool bumpedY(int gy) {
+				return bumped(tileX, gy);
+			}
 
             bool bumped(Amara::Prop* prop) {
                 if (bumpDir != NoDir && !isBusy() && rpgScene->sm.inState("duration")) {
@@ -385,6 +402,36 @@ namespace Amara {
                 if (bumped(prop)) {
                     callBack(this, prop, bumpDir);
                     return true;
+                }
+                return false;
+            }
+
+			bool stoodOn(int ix, int iy) {
+                if (isBusy()) return false;
+                if (!rpgScene->sm.inState("duration") || scene->transition) return false;
+                if (tileX == ix && tileY == iy) {
+					return true;
+				}
+				return false;
+            }
+
+			bool stoodOnX(int ix) {
+				return stoodOn(ix, tileY);
+			}
+			bool stoodOnY(int iy) {
+				return stoodOn(tileX, iy);
+			}
+
+            bool stoodOn(Amara::Prop* prop) {
+                if (prop == nullptr) return false;
+                if (!prop->isActive) return false;
+
+                for (int i = prop->tileX - prop->tilePaddingLeft; i <= prop->tileX + prop->tilePaddingRight; i++) {
+                    for (int j = prop->tileY - prop->tilePaddingTop; j <= prop->tileY + prop->tilePaddingBottom; j++) {
+                        if (stoodOn(i, j)) {
+                            return true;
+                        }
+                    }
                 }
                 return false;
             }
