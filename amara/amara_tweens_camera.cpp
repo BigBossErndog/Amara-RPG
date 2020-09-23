@@ -6,7 +6,7 @@
 
 namespace Amara {
     class Tween_ScrollCamera: public Tween {
-        public: 
+        public:
             Amara::Camera* cam;
 
             bool center = false;
@@ -27,7 +27,7 @@ namespace Amara {
             Tween_ScrollCamera(float tx, float ty, float tt, Amara::Easing gEasing): Tween_ScrollCamera(tx, ty, tt, gEasing, true) {}
             Tween_ScrollCamera(float tx, float ty, float tt): Tween_ScrollCamera(tx, ty, tt, LINEAR) {}
             Tween_ScrollCamera(float tx, float ty): Tween_ScrollCamera(tx, ty, 1) {}
-            
+
             void prepare(Amara::Actor* gCam) {
                 cam = (Amara::Camera*)gCam;
                 if (center) {
@@ -39,11 +39,11 @@ namespace Amara {
                     startY = cam->scrollY;
                 }
             }
-            
+
             void script() {
-                Amara::Tween::script();
+                Amara::Tween::progressFurther();
                 float nx = 0, ny = 0;
-                
+
                 switch (easing) {
                     case LINEAR:
                         nx = linearEase(startX, targetX, progress);
@@ -52,6 +52,14 @@ namespace Amara {
                     case SINE_INOUT:
                         nx = sineInOutEase(startX, targetX, progress);
                         ny = sineInOutEase(startY, targetY, progress);
+                        break;
+                    case SINE_IN:
+                        nx = sineInEase(startX, targetX, progress);
+                        ny = sineInEase(startY, targetY, progress);
+                        break;
+                    case SINE_OUT:
+                        nx = sineOutEase(startX, targetX, progress);
+                        ny = sineOutEase(startY, targetY, progress);
                         break;
                 }
 
@@ -62,6 +70,16 @@ namespace Amara {
                     cam->setScroll(nx, ny);
                 }
             }
+
+			void finish() {
+				if (center) {
+                    cam->centerOn(targetX, targetY);
+                }
+                else {
+                    cam->setScroll(targetX, targetY);
+                }
+				Amara::Tween::finish();
+			}
     };
 
     class Tween_CameraZoom: public Amara::Tween {
@@ -85,7 +103,7 @@ namespace Amara {
             }
 
             void script() {
-                Amara::Tween::script();
+                Amara::Tween::progressFurther();
                 float nzx = 0, nzy = 0;
                 switch (easing) {
                     case LINEAR:
@@ -96,11 +114,19 @@ namespace Amara {
                         nzx = sineInOutEase(zStartX, zTarget, progress);
                         nzy = sineInOutEase(zStartY, zTarget, progress);
                         break;
+                    case SINE_IN:
+                        nzx = sineInEase(zStartX, zTarget, progress);
+                        nzy = sineInEase(zStartY, zTarget, progress);
+                        break;
+                    case SINE_OUT:
+                        nzx = sineOutEase(zStartX, zTarget, progress);
+                        nzy = sineOutEase(zStartY, zTarget, progress);
+                        break;
                 }
                 cam->setZoom(nzx, nzy);
             }
     };
-    
+
     Amara::Script* createTween_ScrollCamera(float tx, float ty, double tt, Amara::Easing gEasing, bool center) {
         return (new Tween_ScrollCamera(tx, ty, tt, gEasing, center));
     };

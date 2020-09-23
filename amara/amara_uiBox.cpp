@@ -25,13 +25,18 @@ namespace Amara {
             int width = 0;
             int height = 0;
 
-            int minWidth = 8;
-            int minHeight = 8;
+            int minWidth = 0;
+            int minHeight = 0;
 
             int openWidth = 0;
             int openHeight = 0;
             bool lockOpen = false;
-            
+
+            int openSpeedX = 0;
+            int openSpeedY = 0;
+            int closeSpeedX = 0;
+            int closeSpeedY = 0;
+
             int boxTextureWidth = 0;
             int boxTextureHeight = 0;
             int imageWidth = 0;
@@ -42,7 +47,20 @@ namespace Amara {
             float originX = 0;
             float originY = 0;
 
+            Amara::Alignment boxHorizontalAlignment = ALIGN_CENTER;
+            Amara::Alignment boxVerticalAlignment = ALIGN_CENTER;
+
+            Amara::StateManager* copySm = nullptr;
+            Amara::StateManager mySm;
+
+            bool keepOpen = false;
+
             UIBox() {}
+
+            UIBox(Amara::StateManager* gsm) {
+                copyStateManager(gsm);
+                setVisible(false);
+            }
 
             UIBox(float gx, float gy, int gw, int gh, std::string gTextureKey): UIBox() {
                 x = gx;
@@ -72,7 +90,7 @@ namespace Amara {
                 data["entityType"] = "uiBox";
             }
 
-            virtual void configure(nlohmann::json& config) {
+            virtual void configure(nlohmann::json config) {
                 Amara::Actor::configure(config);
 
                 if (config.find("width") != config.end()) {
@@ -83,15 +101,101 @@ namespace Amara {
                     height = config["height"];
                     openHeight = height;
                 }
+                if (config.find("xFromRight") != config.end()) {
+                    int xFromRight = config["xFromRight"];
+                    x = scene->mainCamera->width - width - xFromRight;
+                }
+                if (config.find("yFromBottom") != config.end()) {
+                    int yFromBottom = config["yFromBottom"];
+                    y = scene->mainCamera->height - height - yFromBottom;
+                }
+				if (config.find("relativeXFromRight") != config.end()) {
+					float relativeX = config["relativeXFromRight"];
+					x = scene->mainCamera->width - scene->mainCamera->width*relativeX - width;
+				}
+				if (config.find("relativeYFromBottom") != config.end()) {
+					float relativeY = config["relativeYFromBottom"];
+					y = scene->mainCamera->height - scene->mainCamera->height*relativeY - height;
+				}
+				if (config.find("relativeXFromCenter") != config.end()) {
+					float relativeX = config["relativeXFromCenter"];
+					x = scene->mainCamera->width/2.0 + scene->mainCamera->width*relativeX/2.0 - width/2.0;
+				}
+				if (config.find("relativeYFromCenter") != config.end()) {
+					float relativeY = config["relativeYFromCenter"];
+					y = scene->mainCamera->height/2.0 + scene->mainCamera->height*relativeY/2.0 - height/2.0;
+				}
+                if (config.find("minWidth") != config.end()) {
+                    minWidth = config["minWidth"];
+                }
+                if (config.find("minHeight") != config.end()) {
+                    minHeight = config["minHeight"];
+                }
                 if (config.find("texture") != config.end()) {
                     setTexture(config["texture"]);
                 }
+                if (config.find("openSpeedX") != config.end()) {
+                    openSpeedX = config["openSpeedX"];
+                }
+                if (config.find("openSpeedY") != config.end()) {
+                    openSpeedY = config["openSpeedY"];
+                }
+                if (config.find("closeSpeedX") != config.end()) {
+                    closeSpeedX = config["closeSpeedX"];
+                }
+                if (config.find("closeSpeedY") != config.end()) {
+                    closeSpeedY = config["closeSpeedY"];
+                }
+                if (config.find("openCloseSpeedX") != config.end()) {
+                    openSpeedX = config["openCloseSpeedX"];
+                    closeSpeedX = config["openCloseSpeedX"];
+                }
+                if (config.find("openCloseSpeedY") != config.end()) {
+                    openSpeedY = config["openCloseSpeedY"];
+                    closeSpeedY = config["openCloseSpeedY"];
+                }
+                if (config.find("openCloseSpeed") != config.end()) {
+                    setOpenCloseSpeed(config["openCloseSpeed"], config["openCloseSpeed"]);
+                }
+				if (config.find("fixedWithinBounds") != config.end() && config["fixedWithinBounds"]) {
+					if (x < 0) x = 0;
+					if (y < 0) y = 0;
+					if (x + width > scene->mainCamera->width) {
+						x = scene->mainCamera->width - width;
+					}
+					if (y + height > scene->mainCamera->height) {
+						y = scene->mainCamera->height - height;
+					}
+				}
+
+                setOpenSpeed(openSpeedX, openSpeedY);
+                setCloseSpeed(closeSpeedX, closeSpeedY);
             }
 
             virtual void drawBoxPart(int part) {
                 bool skipDrawing = false;
                 int partX = 0, partY = 0, partWidth = 0, partHeight = 0;
-                
+
+                float horizontalAlignmentFactor = 0.5;
+                float verticalAlignmentFactor = 0.5;
+
+                switch (boxHorizontalAlignment) {
+                    case ALIGN_LEFT:
+                        horizontalAlignmentFactor = 0;
+                        break;
+                    case ALIGN_RIGHT:
+                        horizontalAlignmentFactor = 1;
+                        break;
+                }
+                switch(boxVerticalAlignment) {
+                    case ALIGN_TOP:
+                        verticalAlignmentFactor = 0;
+                        break;
+                    case ALIGN_BOTTOM:
+                        verticalAlignmentFactor = 1;
+                        break;
+                }
+
                 partX = floor((part % 3) * boxTextureWidth/(float)3);
                 partY = floor(floor(part/(float)3) * boxTextureHeight/(float)3);
                 partWidth = ceil((float)boxTextureWidth/(float)3);
@@ -99,29 +203,29 @@ namespace Amara {
 
                 switch (part % 3) {
                     case 0:
-                        destRect.x = (width - openWidth)/2;
+                        destRect.x = (width - openWidth)*horizontalAlignmentFactor;
                         destRect.w = partWidth;
                         break;
                     case 1:
-                        destRect.x = (width - openWidth)/2 + partWidth;
+                        destRect.x = (width - openWidth)*horizontalAlignmentFactor + partWidth;
                         destRect.w = openWidth - partWidth*2;
                         break;
                     case 2:
-                        destRect.x = (width - openWidth)/2 + openWidth - partWidth;
+                        destRect.x = (width - openWidth)*horizontalAlignmentFactor + openWidth - partWidth;
                         destRect.w = partWidth;
                         break;
                 }
                 switch ((int)floor(part/(float)3)) {
                     case 0:
-                        destRect.y = (height - openHeight)/2;
+                        destRect.y = (height - openHeight)*verticalAlignmentFactor;
                         destRect.h = partHeight;
                         break;
                     case 1:
-                        destRect.y = (height - openHeight)/2 + partHeight;
+                        destRect.y = (height - openHeight)*verticalAlignmentFactor + partHeight;
                         destRect.h = openHeight - partHeight*2;
                         break;
                     case 2:
-                        destRect.y = (height - openHeight)/2 + openHeight - partHeight;
+                        destRect.y = (height - openHeight)*verticalAlignmentFactor + openHeight - partHeight;
                         destRect.h = partHeight;
                         break;
                 }
@@ -148,7 +252,7 @@ namespace Amara {
                                 srcRect.h = partHeight;
                                 break;
                         }
-                        
+
                         SDL_RenderCopy(
                             gRenderer,
                             (SDL_Texture*)(texture->asset),
@@ -198,8 +302,8 @@ namespace Amara {
                 SDL_RenderSetViewport(properties->gRenderer, &viewport);
 
                 float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
-                float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY; 
-                
+                float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
+
                 destRect.x = floor((x*scaleX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
                 destRect.y = floor((y*scaleY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
                 destRect.w = ceil((width * scaleX) * nzoomX);
@@ -321,6 +425,177 @@ namespace Amara {
             }
             void setOrigin(float gi) {
                 setOrigin(gi, gi);
+            }
+
+            void copyStateManager(Amara::StateManager* gsm) {
+                copySm = gsm;
+            }
+            void copyStateManager(Amara::StateManager& gsm) {
+                copySm = &gsm;
+            }
+
+            Amara::StateManager& checkSm() {
+                if (copySm != nullptr) {
+                    return *copySm;
+                }
+                else {
+                    return mySm;
+                }
+            }
+
+            virtual bool show() {
+                Amara::StateManager& sm = checkSm();
+                if (sm.once()) {
+                    setVisible(true);
+                    return true;
+                }
+                return false;
+            }
+
+            virtual bool hide() {
+                Amara::StateManager& sm = checkSm();
+                if (sm.once()) {
+                    setVisible(false);
+                    return true;
+                }
+                return false;
+            }
+
+            virtual bool open() {
+                Amara::StateManager& sm = checkSm();
+                bool toReturn = false;
+
+                if (sm.once()) {
+                    if (!keepOpen) {
+                        resetOpenSize();
+                    }
+                }
+
+                if (show()) {
+                    toReturn = true;
+                }
+
+                if (sm.evt()) {
+                    bool complete = true;
+
+                    if (openSpeedX > 0) {
+                        openWidth += openSpeedX;
+                        if (openWidth >= width) {
+                            openWidth = width;
+                        }
+                        else {
+                            complete = false;
+                        }
+                    }
+
+                    if (openSpeedY > 0) {
+                        openHeight += openSpeedY;
+                        if (openHeight >= height) {
+                            openHeight = height;
+                        }
+                        else {
+                            complete = false;
+                        }
+                    }
+
+                    if (complete) {
+                        keepOpen = true;
+                        sm.nextEvt();
+                    }
+
+                    toReturn = true;
+                }
+            }
+
+            virtual bool close() {
+                Amara::StateManager& sm = checkSm();
+                bool toReturn = false;
+
+                if (sm.evt()) {
+                    bool complete = true;
+                    if (closeSpeedX > 0) {
+                        openWidth -= closeSpeedX;
+                        if (openWidth <= minWidth) {
+                            openWidth = minWidth;
+                        }
+                        else {
+                            complete = false;
+                        }
+                    }
+
+                    if (closeSpeedY > 0) {
+                        openHeight -= closeSpeedY;
+                        if (openHeight <= minHeight) {
+                            openHeight = minHeight;
+                        }
+                        else {
+                            complete = false;
+                        }
+                    }
+
+                    if (complete) {
+                        keepOpen = false;
+                        sm.nextEvt();
+                    }
+
+                    toReturn = true;
+                }
+
+                if (hide()) {
+                    toReturn = true;
+                }
+
+                return toReturn;
+            }
+
+            void setOpenSpeed(int gx, int gy) {
+                openSpeedX = gx;
+                openSpeedY = gy;
+
+                if (openSpeedX < 0) openSpeedX = 0;
+                if (openSpeedY < 0) openSpeedY = 0;
+
+                resetOpenSize();
+
+                lockOpen = false;
+            }
+            void setOpenSpeed(int gy) {
+                setOpenSpeed(0, gy);
+            }
+            void setOpenSpeed() {
+                setOpenSpeed(0);
+            }
+
+            void setCloseSpeed(int gx, int gy) {
+                closeSpeedX = gx;
+                closeSpeedY = gy;
+
+                if (closeSpeedX < 0) closeSpeedX = 0;
+                if (closeSpeedY < 0) closeSpeedY = 0;
+
+                lockOpen = false;
+            }
+            void setCloseSpeed(int gy) {
+                setCloseSpeed(0, gy);
+            }
+            void setCloseSpeed() {
+                setCloseSpeed(0);
+            }
+
+            void setOpenCloseSpeed(int gx, int gy) {
+                setOpenSpeed(gx, gy);
+                setCloseSpeed(gx, gy);
+            }
+            void setOpenCloseSpeed(int gy) {
+                setOpenCloseSpeed(0, gy);
+            }
+            void setOpenCloseSpeed() {
+                setOpenCloseSpeed(0);
+            }
+
+            void resetOpenSize() {
+                if (openSpeedX > 0) setOpenSize(0, openHeight);
+                if (openSpeedY > 0) setOpenSize(openWidth, 0);
             }
 
             ~UIBox() {

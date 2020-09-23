@@ -18,8 +18,9 @@
     #include <algorithm>
     #include <functional>
     #include <math.h>
+    #include <random>
     #include <nlohmann/json.hpp>
-#endif 
+#endif
 
 #ifndef AMARA_SDL
 #define AMARA_SDL
@@ -66,6 +67,10 @@ namespace Amara {
 #include "amara_transitions.cpp"
 #include "amara_sceneTransition.cpp"
 
+#include "amara_charaTextBox.cpp"
+#include "amara_textBox.cpp"
+#include "amara_uiBox.cpp"
+
 #include "amara_sceneManager.cpp"
 #include "amara_scenePlugin.cpp"
 #include "amara_scene.cpp"
@@ -75,9 +80,7 @@ namespace Amara {
 #include "amara_tweens_camera.cpp"
 #include "amara_tween.cpp"
 
-#include "amara_charaTextBox.cpp"
-#include "amara_textBox.cpp"
-#include "amara_uiBox.cpp"
+#include "amara_filLRect.cpp"
 
 #include "amara_controlScheme.cpp"
 #include "amara_control.cpp"
@@ -109,6 +112,7 @@ namespace Amara {
 #include "amara_actorGroup.cpp"
 
 #include "amara_textureGeneration.cpp"
+#include "amara_random.cpp"
 
 #include "amara_actor.cpp"
 #include "amara_script.cpp"

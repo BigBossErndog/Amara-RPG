@@ -17,14 +17,20 @@ namespace Amara {
                 script->init(properties, this);
                 script->prepare();
                 script->prepare(this);
+                return script;
             }
 
             void reciteScripts() {
+                for (Amara::Script* script: scripts) {
+                    if (!script->finished) {
+                        script->script();
+                        script->script(this);
+                    }
+                }
+
                 Amara::Script* script;
-                for (auto it = scripts.begin(); it != scripts.end(); it++) {
+                for (auto it = scripts.begin(); it != scripts.end(); ++it) {
                     script = *it;
-                    script->script();
-                    script->script(this);
                     if (script->finished) {
                         if (script->chainedScript != nullptr) {
                             recite(script->chainedScript);
@@ -59,7 +65,44 @@ namespace Amara {
                 scripts.clear();
             }
 
-            ~Actor() {
+			void clearScript(std::string gid) {
+				Amara::Script* script;
+                for (auto it = scripts.begin(); it != scripts.end(); ++it) {
+                    script = *it;
+                    if (script->id.compare(gid) == 0) {
+                        if (script->chainedScript != nullptr) {
+                            recite(script->chainedScript);
+                        }
+                        scripts.erase(it--);
+                        if (script->deleteOnFinish) {
+                            delete script;
+                        }
+						return;
+                    }
+                }
+			}
+
+			Amara::Script* getScript(std::string gid) {
+				for (Amara::Script* script: scripts) {
+					if (script->id.compare(gid) == 0) {
+						return script;
+					}
+				}
+				return nullptr;
+			}
+
+			void cancelScripts() {
+				for (Amara::Script* script: scripts) {
+					script->cancel();
+					script->cancel(this);
+                    if (script->deleteOnFinish) {
+                        delete script;
+                    }
+                }
+                scripts.clear();
+			}
+
+            virtual ~Actor() {
                 clearScripts();
             }
     };

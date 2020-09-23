@@ -8,13 +8,15 @@ namespace Amara {
     class Game;
 
     enum SceneTask {
+        RUN,
         STOP,
         START,
         RESTART,
         PAUSE,
         RESUME,
         SLEEP,
-        WAKE
+        WAKE,
+		BRINGTOFRONT
     };
 
     class ScenePlugin {
@@ -56,6 +58,20 @@ namespace Amara {
                 return nullptr;
             }
 
+            void run() {
+                tasks.push_back(RUN);
+            }
+
+            void run(std::string key) {
+                std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
+                if (got != sceneMap->end()) {
+                    got->second->scenes->run();
+                }
+                else {
+                    std::cout << "Scene \"" << key << "\" was not found." << std::endl;
+                }
+            }
+
             void start() {
                 tasks.push_back(START);
             }
@@ -64,42 +80,49 @@ namespace Amara {
                 std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
                 if (got != sceneMap->end()) {
                     stop(this->key);
-                    got->second->scenePlugin->start();
+                    got->second->scenes->start();
                 }
             }
 
             void stop(std::string key) {
                 std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
                 if (got != sceneMap->end()) {
-                    got->second->scenePlugin->stop();
+                    got->second->scenes->stop();
                 }
             }
 
             void resume(std::string key) {
                 std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
                 if (got != sceneMap->end()) {
-                    got->second->scenePlugin->resume();
+                    got->second->scenes->resume();
                 }
             }
 
             void restart(std::string key) {
                 std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
                 if (got != sceneMap->end()) {
-                    got->second->scenePlugin->restart();
+                    got->second->scenes->restart();
                 }
             }
 
             void sleep(std::string key) {
                 std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
                 if (got != sceneMap->end()) {
-                    got->second->scenePlugin->sleep();
+                    got->second->scenes->sleep();
                 }
             }
 
             void wake(std::string key) {
                 std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
                 if (got != sceneMap->end()) {
-                    got->second->scenePlugin->wake();
+                    got->second->scenes->wake();
+                }
+            }
+
+			void bringToFront(std::string key) {
+                std::unordered_map<std::string, Amara::Scene*>::iterator got = sceneMap->find(key);
+                if (got != sceneMap->end()) {
+                    got->second->scenes->bringToFront();
                 }
             }
 
@@ -127,10 +150,21 @@ namespace Amara {
                 tasks.push_back(WAKE);
             }
 
+			void bringToFront() {
+				tasks.push_back(BRINGTOFRONT);
+			}
+
             void manageTasks() {
                 for (size_t i = 0; i < tasks.size(); i++) {
                     SceneTask curTask = tasks.at(i);
                     switch (curTask) {
+                        case RUN:
+                            isActive = true;
+                            isPaused = false;
+                            isSleeping = false;
+                            scene->init();
+                            scene->onStart();
+                            break;
                         case START:
                             isActive = true;
                             isPaused = false;
@@ -144,6 +178,7 @@ namespace Amara {
                             isSleeping = false;
                             scene->clearScripts();
                             scene->onStop();
+                            scene->destroyEntities();
                             break;
                         case RESTART:
                             isActive = true;
@@ -182,6 +217,15 @@ namespace Amara {
                                 scene->onWake();
                             }
                             break;
+						case BRINGTOFRONT:
+							for (int i = 0; i < sceneList->size(); i++) {
+								Scene* s = sceneList->at(i);
+								if (s == scene) {
+									sceneList->erase(sceneList->begin() + i);
+									sceneList->push_back(s);
+								}
+							}
+							break;
                     }
                 }
                 tasks.clear();

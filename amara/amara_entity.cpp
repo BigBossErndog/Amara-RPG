@@ -13,7 +13,7 @@ namespace Amara {
 	class PhysicsBase: public Amara::FloatRect {
 		public:
 			bool deleteWithParent = true;
-			
+
 			virtual void run() {}
 	};
 
@@ -27,7 +27,7 @@ namespace Amara {
 			return (entity1->depth < entity2->depth);
 		}
 	};
-	
+
 	class Entity : public Amara::SortedEntity, public Amara::Interactable {
 		public:
 			Amara::GameProperties* properties = nullptr;
@@ -60,11 +60,14 @@ namespace Amara {
 			float scaleX = 1;
 			float scaleY = 1;
 
+			float cameraOffsetX = 0;
+			float cameraOffsetY = 0;
+
 			float scrollFactorX = 1;
 			float scrollFactorY = 1;
 			float zoomFactorX = 1;
 			float zoomFactorY = 1;
-			
+
 			float angle = 0;
 			float alpha = 1;
 
@@ -79,7 +82,7 @@ namespace Amara {
 
 			virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
 				Amara::Interactable::init(gameProperties);
-				
+
 				properties = gameProperties;
 				game = properties->game;
 				scene = givenScene;
@@ -92,7 +95,7 @@ namespace Amara {
 				load = properties->loader;
 
 				isActive = true;
-				data["entityType"] = "data";
+				data["entityType"] = "entity";
 				create();
 			}
 
@@ -104,12 +107,40 @@ namespace Amara {
 				if (config.find("id") != config.end()) {
                     id = config["id"];
                 }
+
 				if (config.find("x") != config.end()) {
 					x = config["x"];
 				}
 				if (config.find("y") != config.end()) {
 					y = config["y"];
 				}
+				if (config.find("xFromRight") != config.end()) {
+					int xFromRight = config["xFromRight"];
+					x = properties->resolution->width - xFromRight;
+				}
+				if (config.find("yFromBottom") != config.end()) {
+					int yFromBottom = config["yFromBottom"];
+					y = properties->resolution->height - yFromBottom;
+				}
+
+				if (config.find("relativeX") != config.end()) {
+					float relativeX = config["relativeX"];
+					x = properties->resolution->width * relativeX;
+				}
+				if (config.find("relativeY") != config.end()) {
+					float relativeY = config["relativeY"];
+					y = properties->resolution->height * relativeY;
+				}
+
+				if (config.find("relativeXFromCenter") != config.end()) {
+					float relativeX = config["relativeXFromCenter"];
+					x = properties->resolution->width/2.0 + properties->resolution->width*relativeX/2.0;
+				}
+				if (config.find("relativeYFromCenter") != config.end()) {
+					float relativeY = config["relativeYFromCenter"];
+					y = properties->resolution->height/2.0 + properties->resolution->height*relativeY/2.0;
+				}
+
 				if (config.find("scaleX") != config.end()) {
 					scaleX = config["scaleX"];
 				}
@@ -122,11 +153,19 @@ namespace Amara {
 				if (config.find("scrollFactorY") != config.end()) {
 					scrollFactorY = config["scrollFactorY"];
 				}
+				if (config.find("scrollFactor") != config.end()) {
+					scrollFactorX = config["zoomFactor"];
+					scrollFactorY = config["zoomFactor"];
+				}
 				if (config.find("zoomFactorX") != config.end()) {
 					zoomFactorX = config["zoomFactorX"];
 				}
 				if (config.find("zoomFactorY") != config.end()) {
 					zoomFactorY = config["zoomFactorY"];
+				}
+				if (config.find("zoomFactor") != config.end()) {
+					zoomFactorX = config["zoomFactor"];
+					zoomFactorY = config["zoomFactor"];
 				}
 				if (config.find("isVisible") != config.end()) {
 					isVisible = config["isVisible"];
@@ -134,8 +173,27 @@ namespace Amara {
 				if (config.find("alpha") != config.end()) {
 					alpha = config["alpha"];
 				}
+				if (config.find("depth") != config.end()) {
+					depth = config["depth"];
+				}
+				if (config.find("cameraOffsetX") != config.end()) {
+					cameraOffsetX = config["cameraOffsetX"];
+				}
+				if (config.find("cameraOffsetY") != config.end()) {
+					cameraOffsetY = config["cameraOffsetY"];
+				}
 				if (config.find("data") != config.end()) {
 					data = config["data"];
+				}
+				if (config.find("bringToFront") != config.end()) {
+					if (config["bringToFront"]) {
+						bringToFront();
+					}
+				}
+				if (config.find("sendToBack") != config.end()) {
+					if (config["sendToBack"]) {
+						sendToBack();
+					}
 				}
 			}
 
@@ -152,6 +210,9 @@ namespace Amara {
 				config["zoomFactorY"] = zoomFactorY;
 				config["isVisible"] = isVisible;
 				config["alpha"] = alpha;
+				config["depth"] = depth;
+				config["cameraOffsetX"] = cameraOffsetX;
+				config["cameraOffsetY"] = cameraOffsetY;
 				config["data"] = data;
 				return config;
 			}
@@ -177,9 +238,9 @@ namespace Amara {
 				float recZoomFactorY = properties->zoomFactorY * zoomFactorY;
 				float recAngle = properties->angle + angle;
 				float recAlpha = properties->alpha * alpha;
-				
+
 				stable_sort(entities.begin(), entities.end(), sortEntities());
-				
+
 				Amara::Entity* entity;
 				for (auto it = entities.begin(); it != entities.end(); it++) {
                     entity = *it;
@@ -189,7 +250,7 @@ namespace Amara {
                         continue;
                     }
 					if (!entity->isVisible) continue;
-					
+
 					properties->scrollX = recScrollX;
 					properties->scrollY = recScrollY;
 					properties->offsetX = recOffsetX;
@@ -231,7 +292,7 @@ namespace Amara {
 				for (Amara::Entity* entity : entities) {
 					if (entity->id.compare(find) == 0) {
 						return entity;
-					} 
+					}
 				}
 				return nullptr;
 			}
@@ -261,6 +322,10 @@ namespace Amara {
 				return nullptr;
 			}
 
+			virtual void removeEntities() {
+				entities.clear();
+			}
+
 			virtual Amara::Entity* add(Amara::PhysicsBase* gPhysics) {
 				if (physics != nullptr) {
 					delete physics;
@@ -285,13 +350,8 @@ namespace Amara {
 				entities.clear();
 			}
 
-			virtual void destroy(bool recursiveDestroy) {
-				parent = nullptr;
-
-				Amara::Entity* child;
-				int numChildren = entities.size();
-				for (size_t i = 0; i < numChildren; i++) {
-					child = entities.at(i);
+			virtual void destroyEntities(bool recursiveDestroy) {
+				for (Amara::Entity* child: entities) {
 					if (recursiveDestroy) {
 						child->destroy();
 					}
@@ -299,9 +359,17 @@ namespace Amara {
 						child->parent = nullptr;
 					}
 				}
-				if (!recursiveDestroy) {
-					entities.clear();
-				}
+				entities.clear();
+			}
+
+			virtual void destroyEntities() {
+				destroyEntities(true);
+			}
+
+			virtual void destroy(bool recursiveDestroy) {
+				parent = nullptr;
+
+				destroyEntities(recursiveDestroy);
 
 				isDestroyed = true;
 				isActive = false;
@@ -371,8 +439,17 @@ namespace Amara {
 			virtual void bringToFront() {
 				std::vector<Amara::Entity*>& rSceneEntities = parent->entities;
 				for (Amara::Entity* entity: rSceneEntities) {
-					if (depth <= entity->depth) {
+					if (entity != this && depth <= entity->depth) {
 						depth = entity->depth + 1;
+					}
+				}
+			}
+
+			virtual void sendToBack() {
+				std::vector<Amara::Entity*>& rSceneEntities = parent->entities;
+				for (Amara::Entity* entity: rSceneEntities) {
+					if (entity != this && depth >= entity->depth) {
+						depth = entity->depth - 1;
 					}
 				}
 			}
@@ -382,6 +459,10 @@ namespace Amara {
 				if (entity == nullptr) return;
 				x = attachedTo->x + attachmentOffsetX;
 				y = attachedTo->y + attachmentOffsetY;
+			}
+			virtual void attachTo(Amara::Entity* entity, float gx, float gy) {
+				setAttachmentOffset(gx, gy);
+				attachTo(entity);
 			}
 			virtual void dettach() {
 				attachedTo = nullptr;

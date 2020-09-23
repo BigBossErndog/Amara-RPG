@@ -13,8 +13,7 @@ namespace Amara {
             std::vector<Amara::AudioGroup*> groups;
             std::vector<Amara::AudioBase*> sounds;
 
-            Amara::AudioBase* lastPlayed = nullptr;
-            Amara::AudioBase* currentlyPlaying = nullptr;
+			bool rootGroup = false;
 
             AudioGroup(std::string gKey) {
                 key = gKey;
@@ -30,12 +29,15 @@ namespace Amara {
             Amara::AudioGroup* add(Amara::AudioGroup* gGroup) {
                 groups.push_back(gGroup);
                 gGroup->properties = properties;
+				if (properties) gGroup->load = properties->loader;
+				gGroup->parent = this;
                 return gGroup;
             }
 
             Amara::AudioBase* add(Amara::AudioBase* sound) {
                 sounds.push_back(sound);
                 sound->group = this;
+				sound->parent = this;
                 return sound;
             }
 
@@ -51,6 +53,7 @@ namespace Amara {
                     }
                     return add(sound);
                 }
+				SDL_Log("Audio not found: \"%s\"", fKey);
                 return nullptr;
             }
 
@@ -66,6 +69,7 @@ namespace Amara {
                         return group;
                     }
                 }
+				SDL_Log("AudioGroup not found: \"%s\"", fKey);
                 return nullptr;
             }
 
@@ -83,6 +87,14 @@ namespace Amara {
                         return sound;
                     }
                 }
+
+				if (rootGroup) {
+	                sound = (Amara::AudioBase*)load->get(fKey);
+	                if (sound != nullptr) {
+	                    return sound;
+	                }
+				}
+
                 return nullptr;
             }
 
@@ -99,13 +111,28 @@ namespace Amara {
                     return audio;
                 }
 
+				for (Amara::AudioGroup* group: groups) {
+					audio = group->get(fKey);
+					if (audio != nullptr) {
+						return audio;
+					}
+				}
+
+				if (rootGroup) {
+	                audio = (Amara::AudioBase*)load->get(fKey);
+	                if (audio != nullptr) {
+	                    return audio;
+	                }
+				}
+
                 return nullptr;
             }
 
             Amara::AudioBase* play(std::string fKey) {
                 Amara::AudioBase* audio = get(fKey);
                 if (audio != nullptr) {
-                    lastPlayed = nullptr;
+                    lastPlayed = audio;
+					currentlyPlaying = audio;
                     audio->play();
                 }
 
@@ -128,7 +155,37 @@ namespace Amara {
                         currentlyPlaying = nullptr;
                     }
                 }
-            } 
+            }
+
+			void configure(nlohmann::json config) {
+				if (config.find("audioGroups") != config.end()) {
+					nlohmann::json& aGroups = config["audioGroups"];
+					for (std::string gKey: aGroups) {
+						add(new Amara::AudioGroup(gKey));
+					}
+				}
+				if (config.find("music") != config.end()) {
+					configure(config["music"]);
+					return;
+				}
+				if (config.find("sound") != config.end()) {
+					configure(config["sound"]);
+					return;
+				}
+				for (nlohmann::json& m: config) {
+					std::string mKey = m["key"];
+					if (m.find("group") != m.end()) {
+						std::string gKey = m["group"];
+						Amara::AudioGroup* g = getGroup(gKey);
+						if (g) {
+							g->add(mKey);
+						}
+						else {
+							SDL_Log("AudioGroup not found: \"%s\"", gKey.c_str());
+						}
+					}
+				}
+			}
     };
 }
 

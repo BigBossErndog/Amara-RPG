@@ -21,6 +21,8 @@ namespace Amara {
             Amara::AssetManager* assets = nullptr;
             Amara::Loader* load = nullptr;
 
+			std::string id;
+
             bool deleteOnFinish = true;
 
             Amara::Script* chainedScript = nullptr;
@@ -52,15 +54,18 @@ namespace Amara {
                 audio = properties->audio;
                 assets = properties->assets;
                 load = properties->loader;
+
+                finished = false;
+                reset();
             }
 
             virtual void init(Amara::GameProperties* gameProperties, Amara::Actor* parentActor) {
                 init(gameProperties);
                 parent = parentActor;
             }
-            
+
             bool finished = false;
-            
+
             virtual void finish() {
                 finished = true;
             }
@@ -71,10 +76,13 @@ namespace Amara {
             }
 
             virtual void prepare() {}
-            virtual void prepare(Amara::Actor* entity) {}
-            
+            virtual void prepare(Amara::Actor* actor) {}
+
             virtual void script() {}
-            virtual void script(Amara::Actor* entity) {}
+            virtual void script(Amara::Actor* actor) {}
+
+			virtual void cancel() {}
+			virtual void cancel(Amara::Actor* actor) {}
     };
 }
 

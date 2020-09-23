@@ -97,15 +97,12 @@ namespace Amara {
                         stopFollow();
                     }
                     else {
-                        float tx = (float)followTarget->x;
-                        float ty = (float)followTarget->y;
-
-                        float cx = (width/(zoomX*zoomScale))/2 - (width/(oldZoomX*zoomScale))/2;
-                        float cy = (height/(zoomY*zoomScale))/2 - (height/(oldZoomY*zoomScale))/2;
+                        float tx = followTarget->x + followTarget->cameraOffsetX;
+                        float ty = followTarget->y + followTarget->cameraOffsetY;
 
                         float nx = (oldCenterX - tx) * (1 - lerpX) + tx;
                         float ny = (oldCenterY - ty) * (1 - lerpY) + ty;
-                        
+
                         centerOn(nx, ny);
                     }
                 }
@@ -138,8 +135,8 @@ namespace Amara {
                 if (zoomY < 0) zoomY = 0.00001;
 
                 if (lockedToBounds) {
-                    if (width/(zoomX*zoomScale) > boundX + boundW) {
-                        scrollX = boundX - ((width/(zoomX*zoomScale)) - (boundX + boundW))/2;
+                    if (width/(zoomX*zoomScale) > boundW) {
+                        scrollX = boundX - ((width/(zoomX*zoomScale)) - (boundW))/2;
                     }
                     else if (scrollX < boundX) {
                         scrollX = boundX;
@@ -148,9 +145,9 @@ namespace Amara {
                         scrollX = (boundX + boundW) - (width/(zoomX*zoomScale));
                     }
 
-                    
-                    if (height/(zoomY*zoomScale) > boundY + boundH) {
-                        scrollY = boundY - ((height/(zoomY*zoomScale)) - (boundY + boundH))/2;
+
+                    if (height/(zoomY*zoomScale) > boundH) {
+                        scrollY = boundY - ((height/(zoomY*zoomScale)) - (boundH))/2;
                     }
                     else if (scrollY < boundY) {
                         scrollY = boundY;
@@ -200,6 +197,21 @@ namespace Amara {
                     transition->draw(dx, dy, dw, dh);
                 }
             }
+			void drawToTexture(SDL_Texture* tx) {
+				SDL_Texture* recTarget = SDL_GetRenderTarget(properties->gRenderer);
+				SDL_SetRenderTarget(properties->gRenderer, tx);
+
+				float recX = x;
+				float recY = y;
+				x = 0;
+				y = 0;
+				draw(0, 0, width, height);
+
+				x = recX;
+				y = recY;
+
+				SDL_SetRenderTarget(properties->gRenderer, recTarget);
+			}
 
             void assignAttributes() {
                 resetPassOnProperties();
@@ -310,15 +322,65 @@ namespace Amara {
 				}
             }
 
-            Amara::Script* scrollTo(float tx, float ty, double tt, Amara::Easing gEasing, bool center) {
+            Amara::Script* scrollTo(float gx, float gy, double tt, Amara::Easing gEasing, bool center) {
+				float tx = gx;
+				float ty = gy;
+
+				stopFollow();
+
+				if (center) {
+					tx -= (width/(zoomX*zoomScale))/2;
+					ty -= (height/(zoomY*zoomScale))/2;
+				}
+
+				if (lockedToBounds) {
+                    if (width/(zoomX*zoomScale) > boundW) {
+                        tx = boundX - ((width/(zoomX*zoomScale)) - (boundW))/2;
+                    }
+                    else if (tx < boundX) {
+                        tx = boundX;
+                    }
+                    else if (tx + width/(zoomX*zoomScale) > boundX + boundW) {
+                        tx = (boundX + boundW) - (width/(zoomX*zoomScale));
+                    }
+
+                    if (height/(zoomY*zoomScale) > boundH) {
+                        ty = boundY - ((height/(zoomY*zoomScale)) - (boundH))/2;
+                    }
+                    else if (ty < boundY) {
+                        ty = boundY;
+                    }
+                    else if (ty + height/(zoomY*zoomScale) > boundY + boundH) {
+                        ty = (boundY + boundH) - (height/(zoomY*zoomScale));
+                    }
+                }
+
+				if (center) {
+					tx += (width/(zoomX*zoomScale))/2;
+					ty += (height/(zoomY*zoomScale))/2;
+				}
+
                 return recite(createTween_ScrollCamera(tx, ty, tt, gEasing, center));
             }
             Amara::Script* scrollTo(float tx, float ty, double tt, Amara::Easing gEasing) {
                 return scrollTo(tx, ty, tt, gEasing, true);
             }
             Amara::Script* scrollTo(float tx, float ty, double tt) {
-                return scrollTo(tx, ty, tt, LINEAR, true);
+                return scrollTo(tx, ty, tt, LINEAR);
             }
+			Amara::Script* scrollTo(Entity* target, double tt, Amara::Easing gEasing, bool center) {
+				return scrollTo(
+					target->x + target->cameraOffsetX,
+					target->y + target->cameraOffsetY,
+					tt, gEasing, center
+				);
+			}
+			Amara::Script* scrollTo(Entity* target, double tt, Amara::Easing gEasing) {
+				return scrollTo(target, tt, gEasing, true);
+			}
+			Amara::Script* scrollTo(Entity* target, double tt) {
+				return scrollTo(target, tt, LINEAR);
+			}
 
             Amara::Script* zoomTo(float zt, float tt, Amara::Easing gEasing) {
                 return recite(createTween_CameraZoom(zt, tt, gEasing));

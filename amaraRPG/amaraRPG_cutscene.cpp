@@ -15,7 +15,6 @@ namespace Amara {
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::CutsceneBase::init(gameProperties);
                 rpgScene = (Amara::RPGScene*)scene;
-
                 if (group != nullptr) {
                     delete group;
                 }

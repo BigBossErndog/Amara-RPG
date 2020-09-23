@@ -23,6 +23,10 @@ namespace Amara {
             bool sleepScene = false;
             bool wakeScene = false;
 
+            bool fromWake = false;
+
+            SceneTransitionBase() {}
+
             SceneTransitionBase(std::string gNextScene) {
                 nextSceneKey = gNextScene;
             }
@@ -51,13 +55,15 @@ namespace Amara {
             virtual void finish() {
                 finished = true;
             }
-            void finishEvt() {
+            bool finishEvt() {
                 if (once()) {
                     finish();
+                    return true;
                 }
+                return false;
             }
 
-            virtual void configure(nlohmann::json& config) {
+            virtual void configure(nlohmann::json config) {
                 if (config.find("sleepScene") != config.end()) {
                     sleepScene = config["sleepScene"];
                 }
@@ -74,15 +80,14 @@ namespace Amara {
             }
 
             virtual bool startNextScene() {}
-            virtual void create() {}
-            virtual void update() {}
             virtual void draw(int vx, int vy, int vw, int vh) {
                 resetPassOnProperties();
                 Amara::Actor::draw(vx, vy, vw, vh);
             }
 
             virtual void complete() {
-                Amara::Actor::properties->taskManager->queueDeletion(this);   
+                Amara::Actor::properties->taskManager->queueDeletion(this);
+				destroyEntities();
             }
 
             virtual ~SceneTransitionBase() {}

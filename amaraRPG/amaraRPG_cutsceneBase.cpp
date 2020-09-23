@@ -7,6 +7,10 @@
 namespace Amara {
     class CutsceneBase: public Amara::Script {
         public:
+            virtual void init(Amara::GameProperties* gProperties) {
+                Amara::Script::init(gProperties);
+            }
+
             bool fadeIn(Amara::Actor* actor, float speed, float targetAlpha) {
                 if (evt()) {
                     actor->alpha += speed;

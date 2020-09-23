@@ -265,8 +265,13 @@ namespace Amara {
             }
 
 			void stopWalking() {
+				if (walkDirection != NoDir) {
+					tileX -= Amara::getOffsetX(walkDirection);
+					tileY -= Amara::getOffsetY(walkDirection);
+				}
 				walkDirection = NoDir;
 				bumpDir = NoDir;
+				snapToTile();
 			}
 
             virtual void handleWalking() {
@@ -438,6 +443,45 @@ namespace Amara {
     };
 
     typedef Walker NPC;
+
+	class WalkTo: public Amara::Script {
+		public:
+			Walker* walker;
+			float toX;
+			float toY;
+
+			Amara::Direction dirOnEnd = NoDir;
+
+			WalkTo(float tx, float ty) {
+				toX = tx;
+				toY = ty;
+			}
+
+			WalkTo(float tx, float ty, Amara::Direction gDirOnEnd): WalkTo(tx, ty) {
+				dirOnEnd = gDirOnEnd;
+			}
+
+			void finish() {
+				if (dirOnEnd != NoDir) {
+					walker->face(dirOnEnd);
+				}
+				Amara::Script::finish();
+			}
+
+			void prepare(Actor* actor) {
+				walker = (Walker*)actor;
+			}
+
+			void script() {
+				start();
+				if (evt()) {
+					if (walker->walkTo(toX, toY)) {
+						nextEvt();
+					}
+				}
+				finishEvt();
+			}
+	};
 }
 
 #endif

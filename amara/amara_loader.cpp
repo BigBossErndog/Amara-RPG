@@ -42,6 +42,15 @@ namespace Amara {
                 return nullptr;
             }
 
+			nlohmann::json& getJSON(std::string key) {
+				Amara::JsonFile* jf = (Amara::JsonFile*)(get(key));
+				if (jf != nullptr) {
+					return jf->getJSON();
+				}
+				nlohmann::json empty;
+				return empty;
+			}
+
 			virtual bool remove(std::string key) {
 				Amara::Asset* asset = get(key);
 				if (asset != nullptr) {
@@ -178,7 +187,7 @@ namespace Amara {
 
 					style = TTF_STYLE_NORMAL;
 					if (asset.find("style") != asset.end()) {
-						nlohmann::json& jsonStyles = asset["styles"];
+						nlohmann::json& jsonStyles = asset["style"];
 						if (jsonStyles.is_array()) {
 							for (nlohmann::json& jsonStyle: jsonStyles) {
 								strStyle = jsonStyle;
@@ -191,6 +200,11 @@ namespace Amara {
 						}
 						else {
 							strStyle = asset["style"];
+							if (strStyle.compare("bold") == 0) style |= TTF_STYLE_BOLD;
+							if (strStyle.compare("italic") == 0) style |= TTF_STYLE_ITALIC;
+							if (strStyle.compare("underline") == 0) style |= TTF_STYLE_UNDERLINE;
+							if (strStyle.compare("strikethrough") == 0) style |= TTF_STYLE_STRIKETHROUGH;
+							if (strStyle.compare("outline") == 0) style |= TTF_STYLE_OUTLINE;
 						}
 					}
 
@@ -282,7 +296,7 @@ namespace Amara {
 					in.close();
 
 					std::cout << "Loaded JSON asset config file: " << path << std::endl;
-					
+
 					nlohmann::json config = nlohmann::json::parse(contents);
 					if (config.find("surface") != config.end()) {
 						loadSurfacesFromJSON(config["surface"]);
@@ -315,7 +329,7 @@ namespace Amara {
 				}
 				return success;
 			}
-			
+
 			virtual void reset() {}
 			virtual void run() {}
 			virtual int numTasks() {}

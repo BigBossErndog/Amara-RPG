@@ -16,8 +16,34 @@ namespace Amara {
             float fadeInSpeed = 0.1;
             float fadeOutSpeed = 0.1;
 
-            FillTransition(std::string gNextScene): Amara::SceneTransition(gNextScene) {};
+            FillTransition(): Amara::SceneTransition() {}
+            FillTransition(float inSpeed, float outSpeed): FillTransition() {
+                fadeInSpeed = inSpeed;
+                fadeOutSpeed = outSpeed;
+            }
+            FillTransition(float speed): FillTransition(speed, speed) {}
 
+            FillTransition(std::string gNextScene): Amara::SceneTransition(gNextScene) {}
+
+            FillTransition(std::string gNextScene, float inSpeed, float outSpeed): Amara::FillTransition(gNextScene) {
+                fadeInSpeed = inSpeed;
+                fadeOutSpeed = outSpeed;
+            }
+
+            FillTransition(std::string gNextScene, float speed): FillTransition(gNextScene, speed, speed) {}
+
+            void configure(nlohmann::json config) {
+                Amara::SceneTransition::configure(config);
+                if (config.find("fadeInSpeed") != config.end()) {
+                    fadeInSpeed = config["fadeInSpeed"];
+                }
+                if (config.find("fadeOutSpeed") != config.end()) {
+                    fadeOutSpeed = config["fadeOutSpeed"];
+                }
+                if (config.find("fadeSpeed") != config.end()) {
+                    setSpeed(config["fadeSpeed"]);
+                }
+            }
 
             void setColor(int r, int g, int b, int a) {
                 color.r = r;
@@ -75,10 +101,10 @@ namespace Amara {
                 viewport.h = vh;
                 SDL_RenderSetViewport(properties->gRenderer, &viewport);
 
-                drawnRect.x = 0;
-                drawnRect.y = 0;
-                drawnRect.w = vw;
-                drawnRect.h = vh;
+                drawnRect.x = -1;
+                drawnRect.y = -1;
+                drawnRect.w = vw+2;
+                drawnRect.h = vh+2;
 
                 int newAlpha = (float)color.a * alpha;
                 SDL_SetRenderDrawBlendMode(properties->gRenderer, SDL_BLENDMODE_BLEND);

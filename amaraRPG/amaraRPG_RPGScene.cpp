@@ -49,6 +49,7 @@ namespace Amara {
                     }
 
                     load->run();
+
                     if (!load->stillLoading) {
                         if (transition != nullptr) {
                             if (transition->finished) {
@@ -179,7 +180,13 @@ namespace Amara {
             void rpgUpdate() {
                 if (sm.state("start")) {
                     if (transition == nullptr) {
-                        sm.switchState("duration");
+                        if (currentCutscene) {
+                            sm.switchState("cutscenes");
+
+                        }
+                        else {
+                            sm.switchState("duration");
+                        }
                     }
                 }
                 else if (sm.state("duration")) {
@@ -208,9 +215,22 @@ namespace Amara {
                         }
                     }
                 }
+				else if (sm.state("transition")) {
+					if (!transition) {
+						sm.returnState();
+					}
+				}
 				update();
             }
 
+			virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
+                Amara::Scene::startTransition(gTransition);
+				if (transition) {
+					sm.switchState("transition");
+				}
+                return transition;
+            }
+            
             Amara::Prop* getPropAt(int tx, int ty, Amara::Prop* exclusion) {
                 Amara::Prop* prop;
                 for (Amara::Entity* entity: entities) {

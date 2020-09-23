@@ -111,10 +111,28 @@ namespace Amara {
                 snapToTile();
             }
 
+			void setTileX(int gx) {
+				tileX = gx;
+				snapTileX();
+			}
+
+			void setTileY(int gy) {
+				tileY = gy;
+				snapTileY();
+			}
+
             void snapToTile() {
                 x = tileX * TILE_WIDTH + tileOffsetX;
                 y = tileY * TILE_HEIGHT + tileOffsetY;
             }
+
+			void snapTileX() {
+				x = tileX * TILE_WIDTH + tileOffsetX;
+			}
+
+			void snapTileY() {
+				y = tileY * TILE_HEIGHT + tileOffsetY;
+			}
 
 			bool isOn(float gx, float gy) {
 				if (round(x) == round(gx * TILE_WIDTH + tileOffsetX)) {

@@ -13,7 +13,7 @@ namespace Amara {
         public:
             std::string key;
             Amara::LoadManager* loadManager = nullptr;
-            Amara::ScenePlugin* scenePlugin = nullptr;
+            Amara::ScenePlugin* scenes = nullptr;
 
             Amara::SceneTransitionBase* transition = nullptr;
 
@@ -21,7 +21,6 @@ namespace Amara {
             std::vector<Amara::Camera*> cameras;
 
             bool initialLoaded = false;
-            bool initialCreated = false;
 
             Scene(): Actor() {
 
@@ -46,12 +45,12 @@ namespace Amara {
 
                 transition = nullptr;
 
-                scenePlugin = gScenePlugin;
+                scenes = gScenePlugin;
                 isActive = false;
             }
 
             virtual void init() {
-                initialLoaded = false; 
+                initialLoaded = false;
 
                 setLoader(loadManager);
                 load->reset();
@@ -66,7 +65,7 @@ namespace Amara {
                     entity->destroy();
                 }
                 entities.clear();
-                
+
                 add(mainCamera = new Amara::Camera());
                 preload();
                 std::cout << "START LOADING TASKS: " << load->numTasks() << " loading tasks." << std::endl;
@@ -111,11 +110,11 @@ namespace Amara {
 
                 if (!initialLoaded) {
                     if (transition != nullptr) {
-                        transition->update();
+                        transition->run();
                     }
 
                     load->run();
-
+					
                     if (!load->stillLoading) {
                         if (transition != nullptr) {
                             if (transition->finished) {
@@ -143,7 +142,16 @@ namespace Amara {
                 else {
                     updateScene();
                     if (transition != nullptr) {
-                        transition->update();
+                        transition->run();
+                        if (transition && transition->fromWake) {
+                            if (transition->finished) {
+                                transition->complete();
+                                transition = nullptr;
+                            }
+                            else if (transition->waitingForPermission) {
+                                transition->grantPermission();
+                            }
+                        }
                     }
                 }
             }
@@ -151,7 +159,7 @@ namespace Amara {
             virtual void updateScene() {
                 update();
                 reciteScripts();
-                
+
                 for (Amara::Entity* entity : entities) {
                     if (entity->isDestroyed || entity->parent != this) continue;
                     entity->run();
@@ -177,7 +185,7 @@ namespace Amara {
                 int vx, vy = 0;
                 float ratioRes = ((float)properties->resolution->width / (float)properties->resolution->height);
                 float ratioWin = ((float)properties->window->width / (float)properties->window->height);
-                
+
                 if (ratioRes < ratioWin) {
                     upScale = ((float)properties->window->height/(float)properties->resolution->height);
                     offset = ((float)properties->window->width - ((float)properties->resolution->width * upScale))/2;
@@ -209,6 +217,23 @@ namespace Amara {
                 transition = gTransition;
                 transition->init(properties, this);
                 return transition;
+            }
+
+            virtual void removeTransition() {
+                if (transition != nullptr && !initialLoaded && !load->stillLoading && transition->permissionGranted) {
+                    transition->finish();
+                    transition->complete();
+                    transition = nullptr;
+                    initialLoaded = true;
+                }
+            }
+
+            virtual void destroyEntities() {
+                Amara::Entity::destroyEntities();
+                for (Amara::Camera* cam: cameras) {
+                    delete cam;
+                }
+                cameras.clear();
             }
 
             virtual void preload() {}

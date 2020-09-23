@@ -21,6 +21,10 @@ namespace Amara {
                 return loader->get(key);
             }
 
+            nlohmann::json& getJSON(std::string key) {
+                return loader->getJSON(key);
+            }
+
             bool add(std::string key, SDL_Texture* tx, bool replace) {
                 return loader->add(key, tx, replace);
             }
@@ -45,7 +49,7 @@ namespace Amara {
             Amara::Animation* addAnim(std::string textureKey, std::string animKey, std::vector<int> frames, int frameRate, bool loop) {
                 Amara::Asset* asset = get(textureKey);
                 if (asset == nullptr) {
-                    std::cout << "Couldn't find animation \"" << textureKey << "\"" << std::endl;
+                    std::cout << "Couldn't find texture \"" << textureKey << "\" for animation \"" << animKey << "\"" << std::endl;
                     return nullptr;
                 }
                 if (asset->type == SPRITESHEET) {

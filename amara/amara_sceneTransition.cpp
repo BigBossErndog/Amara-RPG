@@ -7,15 +7,16 @@
 namespace Amara {
     class SceneTransition: public Amara::SceneTransitionBase {
         public:
+            SceneTransition(): Amara::SceneTransitionBase() {}
             SceneTransition(std::string gNextScene): Amara::SceneTransitionBase(gNextScene) {}
 
             bool startNextScene() {
                 if (once()) {
                     if (sleepScene) {
-                        startScene->scenePlugin->sleep();
+                        startScene->scenes->sleep();
                     }
                     else {
-                        startScene->scenePlugin->stop();
+                        startScene->scenes->stop();
                     }
 
                     if (startScene != endScene) {
@@ -23,16 +24,35 @@ namespace Amara {
                     }
     
                     if (endScene != nullptr) {
+                        endScene->transition = this;
                         if (wakeScene) {
-                            endScene->scenePlugin->wake();
+                            endScene->scenes->wake();
+                            fromWake = true;
                         }
                         else {
-                            endScene->scenePlugin->start();
+                            endScene->scenes->start();
                         }
                     }
                     return true;
                 }
                 return false;
+            }
+
+            virtual void configure(nlohmann::json config) {
+                Amara::SceneTransitionBase::configure(config);
+
+                if (config.find("nextScene") != config.end()) {
+                    nextSceneKey = config["nextScene"];
+                    if (endScene) {
+                        endScene->transition = nullptr;
+                    }
+                    if (sceneManager) {
+                        endScene = sceneManager->get(nextSceneKey);
+                        if (endScene != nullptr) {
+                            endScene->transition = this;
+                        }
+                    }
+                }
             }
 
             virtual void init(Amara::GameProperties* gProperties,Amara::Scene* gStartScene) {
@@ -43,12 +63,7 @@ namespace Amara {
                 startScene->transition = this;
 
                 endScene = sceneManager->get(nextSceneKey);
-                if (endScene != nullptr) {
-                    endScene->transition = this;
-                }
-
-                sleepScene = false;
-                wakeScene = false;
+                fromWake = false;
 
                 finished = false;
                 reset();
