@@ -132,6 +132,9 @@ namespace Amara {
                         tilemap->setTiledJson(mapData["json"]);
                         tilemap->createAllLayers();
                     }
+                    if (mapData.find("config") != mapData.end()) {
+                        tilemap->configure(mapData["config"]);
+                    }
 
                     Amara::TilemapLayer* layer;
 
