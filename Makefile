@@ -33,6 +33,11 @@ all:
 cpamara:
 	cp -T -r ../amara/amara ./amara
 
+cplibs:
+	cp -T -r ../amara/ext_lib ./ext_lib
+	cp -T -r ../amaraRPG/ext_lib ./ext_lib
+	cp -T -r ../amaraRPG/dlls ./dlls
+
 clean:
 	rm -rf $(BUILD_PATH)/*
 

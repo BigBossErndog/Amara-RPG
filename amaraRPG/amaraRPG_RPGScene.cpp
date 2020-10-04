@@ -107,7 +107,7 @@ namespace Amara {
                 afterUpdate();
             }
 
-            void rpgCreate() {
+            virtual void rpgCreate() {
                 sm.reset();
 
                 for (Amara::CutsceneBase* cutscene: cutscenes) {
@@ -177,7 +177,7 @@ namespace Amara {
                 }
             }
 
-            void rpgUpdate() {
+            virtual void rpgUpdate() {
                 if (sm.state("start")) {
                     if (transition == nullptr) {
                         if (currentCutscene) {
