@@ -18,8 +18,8 @@ namespace Amara {
             int tilePaddingLeft = 0;
             int tilePaddingRight = 0;
 
-            int tileOffsetX = TILE_WIDTH/2;
-            int tileOffsetY = TILE_HEIGHT/2;
+            int tileOffsetX = Amara::TILE_WIDTH/2;
+            int tileOffsetY = Amara::TILE_HEIGHT/2;
 
             bool isWall = true;
             bool isWalker = false;
@@ -122,21 +122,21 @@ namespace Amara {
 			}
 
             void snapToTile() {
-                x = tileX * TILE_WIDTH + tileOffsetX;
-                y = tileY * TILE_HEIGHT + tileOffsetY;
+                x = tileX * Amara::TILE_WIDTH + tileOffsetX;
+                y = tileY * Amara::TILE_HEIGHT + tileOffsetY;
             }
 
 			void snapTileX() {
-				x = tileX * TILE_WIDTH + tileOffsetX;
+				x = tileX * Amara::TILE_WIDTH + tileOffsetX;
 			}
 
 			void snapTileY() {
-				y = tileY * TILE_HEIGHT + tileOffsetY;
+				y = tileY * Amara::TILE_HEIGHT + tileOffsetY;
 			}
 
 			bool isOn(float gx, float gy) {
-				if (round(x) == round(gx * TILE_WIDTH + tileOffsetX)) {
-					if (round(y) == round(gy * TILE_HEIGHT + tileOffsetY)) {
+				if (round(x) == round(gx * Amara::TILE_WIDTH + tileOffsetX)) {
+					if (round(y) == round(gy * Amara::TILE_HEIGHT + tileOffsetY)) {
 						return true;
 					}
 				}
@@ -144,13 +144,13 @@ namespace Amara {
 			}
 
 			bool isOnX(float gx) {
-				if (round(x) == round(gx * TILE_WIDTH + tileOffsetX)) {
+				if (round(x) == round(gx * Amara::TILE_WIDTH + tileOffsetX)) {
 					return true;
 				}
 				return false;
 			}
 			bool isOnY(float gy) {
-				if (round(y) == round(gy * TILE_HEIGHT + tileOffsetY)) {
+				if (round(y) == round(gy * Amara::TILE_HEIGHT + tileOffsetY)) {
 					return true;
 				}
 				return false;
@@ -196,6 +196,28 @@ namespace Amara {
                     }
                 }
                 return false;
+            }
+
+            bool isNextTo(int gx, int gy, bool diagonal) {
+                for (int i = tileX-tilePaddingLeft; i <= tileX+tilePaddingRight; i++) {
+                    for (int j = tileY-tilePaddingTop; j <= tileY+tilePaddingBottom; j++) {
+                        if (!diagonal && i == j) continue;
+                        if (i == gx && j == gy) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+            bool isNextTo(int gx, int gy) {
+                return isNextTo(gx, gy, false);
+            }
+
+            bool isNextTo(Amara::Prop* other, bool diagonal) {
+                return isNextTo(other->tileX, other->tileY, diagonal);
+            }
+            bool isNextTo(Amara::Prop* other) {
+                return isNextTo(other, false);
             }
     };
 }

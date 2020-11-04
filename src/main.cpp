@@ -6,7 +6,7 @@ using namespace std;
 
 class WalkTo: public Script {
     public:
-        Amara::Player* gnik;
+        Amara::PlayerProp* gnik;
         int x = 0, y = 0;
 
         WalkTo(int tx, int ty) {
@@ -15,7 +15,7 @@ class WalkTo: public Script {
         }
 
         void prepare(Amara::Actor* actor) {
-            gnik = (Amara::Player*)actor;
+            gnik = (Amara::PlayerProp*)actor;
             // gnik->disableControls();
         }
 
@@ -29,12 +29,12 @@ class WalkTo: public Script {
 class CameraStuff: public Cutscene {
     public:
         Scene* scene;
-        Player* gnik;
+        PlayerProp* gnik;
         TextBox* tb;
 
         void prepare(Actor* actor) {
             scene = (Scene*)actor;
-            gnik = (Player*)scene->get("Gnikolas");
+            gnik = (PlayerProp*)scene->get("Gnikolas");
             gnik->controlsEnabled = false;
             tb = (TextBox*)scene->get("textBox");
             tb->copyStateManager(this);
@@ -69,7 +69,7 @@ class CameraStuff: public Cutscene {
 class TestArea: public RPGScene {
     public:
         TextBox* box;
-        Player* gnik;
+        PlayerProp* gnik;
 
         TestArea() {
             
@@ -102,7 +102,7 @@ class TestArea: public RPGScene {
             assets->addAnim("teenGnik", "leftWalk", {23, 22, 24, 22}, 6, true);
             assets->addAnim("teenGnik", "rightWalk", {33, 32, 34, 32}, 6, true);
 
-            add(gnik = new Player());
+            add(gnik = new PlayerProp());
             gnik->configure({
                 {"id","Gnikolas"},
                 {"texture", "teenGnik"},
@@ -181,7 +181,7 @@ class TestArea: public RPGScene {
             }
 
             if (controls->justDown("confirm")) {
-                startTransition(new FillTransition(scenePlugin->key));
+                startTransition(new FillTransition(scenes->key));
             }
         }
 };

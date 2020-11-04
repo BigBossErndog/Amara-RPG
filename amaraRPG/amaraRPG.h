@@ -10,7 +10,7 @@ namespace Amara {
 
 #include "amaraRPG_cutscene.cpp"
 
-#include "amaraRPG_player.cpp"
+#include "amaraRPG_playerProp.cpp"
 #include "amaraRPG_walker.cpp"
 
 #include "amaraRPG_RPGScene.cpp"

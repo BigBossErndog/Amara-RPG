@@ -114,6 +114,7 @@ namespace Amara {
                     delete cutscene;
                 }
                 cutscenes.clear();
+                currentCutscene = nullptr;
 
                 lighting = nullptr;
 
@@ -166,8 +167,8 @@ namespace Amara {
                         tilemap->setWalls(mapData["wallLayers"]);
                     }
 
-                    TILE_WIDTH = tilemap->tileWidth;
-                    TILE_HEIGHT = tilemap->tileHeight;
+                    Amara::TILE_WIDTH = tilemap->tileWidth;
+                    Amara::TILE_HEIGHT = tilemap->tileHeight;
 					if (mapData.find("setBounds") != mapData.end() && mapData["setBounds"]) {
 	                    tilemap->setCameraBounds(mainCamera);
 					}
