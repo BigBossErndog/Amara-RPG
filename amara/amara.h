@@ -37,15 +37,15 @@
 
 namespace Amara {
     enum Direction {
-        NoDir,
-        Up,
-        UpLeft,
-        UpRight,
-        Down,
-        DownLeft,
-        DownRight,
-        Left,
-        Right
+        NoDir = 0,
+        Up = 1,
+        UpLeft = 2,
+        UpRight = 4,
+        Down = 8,
+        DownLeft = 16,
+        DownRight = 32,
+        Left = 64,
+        Right = 128
     };
 
     std::vector<Amara::Direction> DirectionsInOrder = { Right, DownRight, Down, DownLeft, Left, UpLeft, Up, UpRight };
@@ -76,11 +76,13 @@ namespace Amara {
 #include "amara_scene.cpp"
 #include "amara_ltimer.cpp"
 
+#include "amara_physics.cpp"
+
 #include "amara_tweens_entities.cpp"
 #include "amara_tweens_camera.cpp"
 #include "amara_tween.cpp"
 
-#include "amara_filLRect.cpp"
+#include "amara_fillRect.cpp"
 
 #include "amara_controlScheme.cpp"
 #include "amara_control.cpp"

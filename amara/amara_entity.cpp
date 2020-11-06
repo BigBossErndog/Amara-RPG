@@ -9,12 +9,85 @@ namespace Amara {
 	class Scene;
 	class InputManager;
 	class ControlScheme;
+	class TilemapLayer;
+	class Entity;
 
-	class PhysicsBase: public Amara::FloatRect {
+	enum PhysicsShape {
+		PHYSICS_RECTANGLE = 0,
+		PHYSICS_CIRCLE = 1,
+		PHYSICS_LINE = 2,
+		PHYSICS_TILEMAP_LAYER = 3
+	};
+
+	typedef struct PhysicsProperties {
+		FloatRect rect;
+		FloatCircle circle;
+		FloatLine line;
+		TilemapLayer* tilemapLayer;
+	} PhysicsProperties;
+
+	class PhysicsBase {
 		public:
+			Entity* parent = nullptr;
 			bool deleteWithParent = true;
+			std::vector<PhysicsBase*> collisionTargets;
 
+			int shape = -1;
+			PhysicsProperties properties;
+
+			float x = 0;
+			float y = 0;
+			float accelerationX = 0;
+			float accelerationY = 0;
+			float velocityX = 0;
+			float velocityY = 0;
+			float frictionX = 0;
+			float frictionY = 0;
+			
+			float correctionRate = 0.2;
+
+			bool isPushable = true;
+			bool isPushing = false;
+
+			float pushFrictionX = 1;
+			float pushFrictionY = 1;
+
+			virtual void create() {}
 			virtual void run() {}
+			virtual void updateProperties() {}
+
+			virtual bool collidesWith(Amara::Entity* other) {}
+			virtual bool collidesWith(Amara::PhysicsBase* other) {}
+
+			virtual void addCollisionTarget(Amara::Entity* other) {}
+			virtual void addCollisionTarget(Amara::PhysicsBase* gBody) {
+				if (gBody != nullptr) collisionTargets.push_back(gBody);
+			}
+
+			void makePushable() {
+				isPushable = true;
+			}
+			void makePushable(float pfx, float pfy) {
+				if (pfx == 0 && pfy == 0) {
+					isPushable = false;
+					return;
+				}
+				makePushable();
+				pushFrictionX = pfx;
+				pushFrictionY = pfy;
+			}
+			void makePushable(float pf) {
+				makePushable(pf, pf);
+			}
+
+			void removeCollisionTarget(Amara::PhysicsBase* gBody) {
+				for (int i = 0; i < collisionTargets.size(); i++) {
+					if (collisionTargets[i] == gBody) {
+						collisionTargets.erase(collisionTargets.begin() + i);
+						return;
+					}
+				}
+			}
 	};
 
 	class SortedEntity {
@@ -326,15 +399,15 @@ namespace Amara {
 				entities.clear();
 			}
 
-			virtual Amara::Entity* add(Amara::PhysicsBase* gPhysics) {
-				if (physics != nullptr) {
-					delete physics;
-				}
+			virtual void addPhysics(Amara::PhysicsBase* gPhysics) {
 				physics = gPhysics;
+				physics->parent = this;
+				physics->updateProperties();
+				physics->create();
 			}
 
-			virtual void remove(Amara::PhysicsBase* fPhysics) {
-				if (physics == fPhysics) {
+			virtual void removePhysics() {
+				if (physics) {
 					delete physics;
 					physics = nullptr;
 				}

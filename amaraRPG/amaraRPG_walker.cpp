@@ -58,14 +58,14 @@ namespace Amara {
                 return config;
             }
 
-            void update() {
+            void run() {
                 if (justFinishedWalking && !isBusy()) {
                     std::string standAnimKey = Amara::standAnim(direction);
                     if (anims->get(standAnimKey)) play(standAnimKey);
                 }
                 justFinishedWalking = false;
                 handleWalking();
-                Amara::Prop::update();
+                Amara::Prop::run();
             }
 
             bool isBusy() {
