@@ -5,11 +5,14 @@
 namespace Amara {
     class PhysicsBody: public Amara::PhysicsBase {
     public:
-        int bumpDirections = 0;
-
         using Amara::PhysicsBase::addCollisionTarget;
         void addCollisionTarget(Amara::Entity* other) {
             addCollisionTarget(other->physics);
+        }
+
+        using Amara::PhysicsBase::removeCollisionTarget;
+        Amara::PhysicsBase* removeCollisionTarget(Amara::Entity* other) {
+            return removeCollisionTarget(other->physics);
         }
 
         using Amara::PhysicsBase::collidesWith;
@@ -19,13 +22,20 @@ namespace Amara {
 
         bool hasCollided(bool pushingX, bool pushingY) {
             bool col = false;
-            for (Amara::PhysicsBase* body: collisionTargets) {
-                if (collidesWith(body)) {
+            Amara::PhysicsBase* body;
+            for (auto it = collisionTargets.begin(); it != collisionTargets.end(); ++it) {
+                body = *it;
+                if (body->isDestroyed) {
+                    collisionTargets.erase(it--);
+                }
+                else if (collidesWith(body)) {
+                    bumped = body;
                     if (body->isPushable) {
                         if (pushingX) body->velocityX += velocityX * body->pushFrictionX;
                         if (pushingY) body->velocityY += velocityY * body->pushFrictionY;
                     }
                     if (pushingX || pushingY) {
+                        if (body->isPushable) isPushing = true;
                         col = true;
                         continue;
                     }
@@ -40,6 +50,7 @@ namespace Amara {
         }
 
         void run() {
+            bumped = nullptr;
             bumpDirections = 0;
             isPushing = false;
 
@@ -96,6 +107,14 @@ namespace Amara {
                 velocityY = velocityY * frictionY;
             }
 		}
+
+        void destroy() {
+            Amara::PhysicsBase::destroy();
+            if (parent) {
+                parent->physics = nullptr;
+                parent = nullptr;
+            }
+        }
     };
 
     class PhysicsRectangle: public Amara::PhysicsBody {

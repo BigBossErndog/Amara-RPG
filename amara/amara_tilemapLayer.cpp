@@ -107,6 +107,17 @@ namespace Amara {
                 data["entityType"] = "tilemapLayer";
             }
 
+            void configure(nlohmann::json config) {
+                Amara::Actor::configure(config);
+
+                if (config.find("tiles") != config.end()) {
+                    nlohmann::json& jtiles = config["tiles"];
+                    for (int i = 0; i < jtiles.size(); i++) {
+                        setTile(i, jtiles[i]);
+                    }
+                }
+            }
+
             void setupLayer(std::string gTextureKey, std::string gTiledJsonKey, std::string gLayerKey) {
                 textureKey = gTextureKey;
                 tiledJsonKey = gTiledJsonKey;
@@ -217,6 +228,10 @@ namespace Amara {
                     std::cout << "Texture with key: \"" << gTextureKey << "\" was not found." << std::endl;
                 }
                 return false;
+            }
+
+            int getTileIdAt(int gx, int gy) {
+                return getTileAt(gx, gy).id;
             }
 
             Amara::Tile& getTileAt(int gx, int gy) {
@@ -434,6 +449,23 @@ namespace Amara {
                     return tiledGID2ID(id, firstgid);
                 }
                 return -1;
+            }
+
+            bool isBlockingPath(int gx, int gy, bool allowDiagonal) {
+                if (getTileIdAt(gx-1,gy) != -1 && getTileIdAt(gx+1,gy) != -1) return true;
+                if (getTileIdAt(gx,gy-1) != -1 && getTileIdAt(gx,gy+1) != -1) return true;
+
+                if (!allowDiagonal) {
+                    if (getTileIdAt(gx-1,gy-1) != -1 && getTileIdAt(gx+1,gy-1) != -1) return true;
+                    if (getTileIdAt(gx+1,gy-1) != -1 && getTileIdAt(gx+1,gy+1) != -1) return true;
+                    if (getTileIdAt(gx+1,gy+1) != -1 && getTileIdAt(gx-1,gy+1) != -1) return true;
+                    if (getTileIdAt(gx-1,gy+1) != -1 && getTileIdAt(gx-1,gy-1) != -1) return true;
+                }
+                return false;
+            }
+
+            bool isBlockingPath(int gx, int gy) {
+                return isBlockingPath(gx, gy, false);
             }
     };
 }

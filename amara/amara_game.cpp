@@ -13,6 +13,7 @@ namespace Amara {
 			Amara::GameProperties* properties;
 
 			nlohmann::json globalData;
+			std::unordered_map<std::string, void*> globalObjects;
 
 			std::string name;
 			bool quit = false;
@@ -261,6 +262,7 @@ namespace Amara {
 					// Manage frame catch up and slow down
 					manageFPSEnd();
 
+					deleteEntities();
 					deleteObjects();
 					deleteTransitions();
 					taskManager->run();
@@ -268,9 +270,23 @@ namespace Amara {
 				close();
 			}
 
-			void deleteObjects() {
+			void deleteEntities() {
 				std::vector<Amara::Entity*>& deleteQueue = taskManager->getEntityQueue();
 				Amara::Entity* obj;
+                int size = deleteQueue.size();
+                if (testing && size > 0) {
+                    std::cout << "TaskManager: Deleting " << size << " entities." << std::endl;
+                }
+                for (size_t i = 0; i < size; i++) {
+                    obj = deleteQueue.at(i);
+                    delete obj;
+                }
+                deleteQueue.clear();
+			}
+
+			void deleteObjects() {
+				std::vector<void*>& deleteQueue = taskManager->getObjectQueue();
+				void* obj;
                 int size = deleteQueue.size();
                 if (testing && size > 0) {
                     std::cout << "TaskManager: Deleting " << size << " objects." << std::endl;
@@ -300,6 +316,32 @@ namespace Amara {
 				// Start a specific scene
 				scenes->start(startKey);
 				start();
+			}
+
+			void addGlobalObject(std::string gKey, void* gObj) {
+				globalObjects[gKey] = gObj;
+			}
+
+			void* getGlobalObject(std::string gKey) {
+				return globalObjects[gKey];
+			}
+
+			void* removeGlobalObject(std::string gKey, bool del) {
+				void* obj = globalObjects[gKey];
+				globalObjects.erase(gKey);
+				if (del) {
+					delete obj;
+					return nullptr;
+				}
+				return obj;
+			}
+
+			void* removeGlobalObject(std::string gKey) {
+				return removeGlobalObject(gKey, false);
+			}
+
+			void deleteGlobalObject(std::string gKey) {
+				removeGlobalObject(gKey, true);
 			}
 
 			void setFPS(int newFps, bool lockLogicSpeed) {

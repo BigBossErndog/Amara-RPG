@@ -20,6 +20,7 @@
     #include <math.h>
     #include <random>
     #include <nlohmann/json.hpp>
+    #include <MurmurHash3.cpp>
 #endif
 
 #ifndef AMARA_SDL
@@ -49,7 +50,7 @@ namespace Amara {
     };
 
     std::vector<Amara::Direction> DirectionsInOrder = { Right, DownRight, Down, DownLeft, Left, UpLeft, Up, UpRight };
-    std::vector<Amara::Direction> FourDirections = { Down, Left, Up, Right };
+    std::vector<Amara::Direction> FourDirections = { Right, Down, Left, Up };
     std::vector<Amara::Direction> DiagonalDirections = { DownLeft, UpLeft, UpRight, DownRight };
 }
 
@@ -81,6 +82,8 @@ namespace Amara {
 #include "amara_tweens_entities.cpp"
 #include "amara_tweens_camera.cpp"
 #include "amara_tween.cpp"
+
+#include "amara_freeWalker.cpp"
 
 #include "amara_fillRect.cpp"
 

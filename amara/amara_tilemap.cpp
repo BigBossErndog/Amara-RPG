@@ -56,10 +56,7 @@ namespace Amara {
                 nlohmann::json& jlayers = mapping["layers"];
                 for (nlohmann::json& jlayer: jlayers) {
                     TilemapLayer* tilemapLayer = createLayer(jlayer["key"], mapWidth, mapHeight, tileWidth, tileHeight);
-                    nlohmann::json& jtiles = jlayer["tiles"];
-                    for (int i = 0; i < jtiles.size(); i++) {
-                        tilemapLayer->setTile(i, jtiles[i]);
-                    }
+                    tilemapLayer->configure(jlayer);
                 }
             }
 
@@ -307,6 +304,19 @@ namespace Amara {
                     return tiledGID2ID(id, firstgid);
                 }
                 return -1;
+            }
+
+            float getTileX(int tx) {
+                return tx * tileWidth;
+            }
+            float getTileY(int ty) {
+                return ty * tileHeight;
+            }
+            float getMidTileX(int tx) {
+                return (tx + 0.5) * tileWidth;
+            }
+            float getMidTileY(int ty) {
+                return (ty + 0.5) * tileHeight; 
             }
     };
 }
