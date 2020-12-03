@@ -445,7 +445,7 @@ namespace Amara {
             }
     };
 
-    typedef Walker NPC;
+    typedef Walker NPCProp;
 
 	class WalkTo: public Amara::Script {
 		public:
