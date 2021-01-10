@@ -197,7 +197,7 @@ namespace Amara {
                     duration();
                 }
                 else if (sm.state("cutscenes")) {
-                    if (currentCutscene != nullptr) {
+                    if (currentCutscene != nullptr && !currentCutscene->finished) {
                         currentCutscene->script();
                         currentCutscene->script(this);
                     }

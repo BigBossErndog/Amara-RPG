@@ -199,8 +199,8 @@ namespace Amara {
             }
 
             bool isNextTo(int gx, int gy, bool diagonal) {
-                for (int i = tileX-tilePaddingLeft; i <= tileX+tilePaddingRight; i++) {
-                    for (int j = tileY-tilePaddingTop; j <= tileY+tilePaddingBottom; j++) {
+                for (int i = tileX-tilePaddingLeft-1; i <= tileX+tilePaddingRight+1; i++) {
+                    for (int j = tileY-tilePaddingTop-1; j <= tileY+tilePaddingBottom+1; j++) {
                         if (!diagonal && i == j) continue;
                         if (i == gx && j == gy) {
                             return true;

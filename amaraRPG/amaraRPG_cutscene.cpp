@@ -12,6 +12,8 @@ namespace Amara {
 
 			Camera* cam;
 
+            Amara::Cutscene* chainedCutscene = nullptr;
+
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::CutsceneBase::init(gameProperties);
                 rpgScene = (Amara::RPGScene*)scene;
@@ -30,11 +32,25 @@ namespace Amara {
 
             void finish() {
                 Amara::CutsceneBase::finish();
+                if (chainedCutscene) {
+                    rpgScene->startCutscene(chainedCutscene);
+                }
                 onEnd();
 
                 group->destroyActors();
                 delete group;
                 group = nullptr;
+            }
+
+            Amara::Cutscene* chain(Amara::Cutscene* gCutscene) {
+                chainedCutscene = gCutscene;
+                return chainedCutscene;
+            }
+
+            Amara::Cutscene* unchain() {
+                Amara::Cutscene* rec = chainedCutscene;
+                chainedCutscene = nullptr;
+                return rec;
             }
 
             virtual void onEnd() {
