@@ -262,9 +262,16 @@ namespace Amara {
             }
 
             bool isWall(int tx, int ty, Amara::Prop* propExclusion) {
-                Amara::Prop* prop = getPropAt(tx, ty, propExclusion);
-                if (prop != nullptr) {
-                    if (prop->isActive && prop->isWall) {
+                Amara::Prop* prop;
+                for (Amara::Entity* entity: entities) {
+                    if (!entity->isActive || entity->isDestroyed) continue;
+                    if (entity->data.find("isProp") == entity->data.end() || !entity->data["isProp"]) {
+                        continue;
+                    }
+                    prop = (Amara::Prop*)entity;
+                    if (tx != prop->tileX || ty != prop->tileY) continue;
+                    if (prop == propExclusion) continue;
+                    if (prop->isWall) {
                         return true;
                     }
                 }
@@ -277,12 +284,20 @@ namespace Amara {
             }
 
             bool isWall(int tx, int ty, Amara::Prop* propExclusion, Amara::Direction dir) {
-                Amara::Prop* prop = getPropAt(tx, ty);
-                if (prop != nullptr && prop != propExclusion) {
-                    if (prop->isActive && prop->isWall) {
+                Amara::Prop* prop;
+                for (Amara::Entity* entity: entities) {
+                    if (!entity->isActive || entity->isDestroyed) continue;
+                    if (entity->data.find("isProp") == entity->data.end() || !entity->data["isProp"]) {
+                        continue;
+                    }
+                    prop = (Amara::Prop*)entity;
+                    if (tx != prop->tileX || ty != prop->tileY) continue;
+                    if (prop == propExclusion) continue;
+                    if (prop->isWall) {
                         return true;
                     }
                 }
+
                 return tilemap->isWall(tx, ty, dir);
             }
 

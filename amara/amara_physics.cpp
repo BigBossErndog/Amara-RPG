@@ -20,6 +20,58 @@ namespace Amara {
             return collidesWith(other->physics);
         }
 
+        using Amara::PhysicsBase::willCollideWith;
+        bool willCollideWith(Amara::Entity* other) {
+            return willCollideWith(other->physics);
+        }
+        bool willCollideWith(Amara::PhysicsBase* other) {
+            bool collided = false;
+
+            float recVelX = velocityX + accelerationX;
+            float recVelY = velocityY + accelerationY;
+
+            float recX = (parent) ? parent->x : x;
+            float recY = (parent) ? parent->y : y;
+
+            if (parent) {
+                parent->x += recVelX;
+                parent->y += recVelY;
+            }
+            else {
+                x += recVelX;
+                y += recVelY;
+            }
+
+            updateProperties();
+            collided = collidesWith(other);
+
+            if (parent) {
+                parent->x = recX;
+                parent->y = recY;
+            }
+            else {
+                x = recX;
+                y = recY;
+            }
+
+            return collided;
+        }
+
+        bool willCollide() {
+            Amara::PhysicsBase* body;
+            for (auto it = collisionTargets.begin(); it != collisionTargets.end(); ++it) {
+                body = *it;
+                if (body->isDestroyed) {
+                    collisionTargets.erase(it--);
+                }
+                else if (willCollideWith(body)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        using Amara::PhysicsBase::hasCollided;
         bool hasCollided(bool pushingX, bool pushingY) {
             bool col = false;
             Amara::PhysicsBase* body;
@@ -45,10 +97,6 @@ namespace Amara {
             return col;
         }
 
-        bool hasCollided() {
-            return hasCollided(false, false);
-        }
-
         void run() {
             bumped = nullptr;
             bumpDirections = 0;
@@ -63,6 +111,7 @@ namespace Amara {
 
             if (!hasCollided()) {
                 if (parent) parent->x = targetX;
+                else x = targetX;
                 updateProperties();
                 if (hasCollided(true, false)) {
                     if (velocityX > 0) bumpDirections += Right;
@@ -78,7 +127,8 @@ namespace Amara {
                     velocityX = 0;
                 }
 
-                if (parent != nullptr) parent->y = targetY;
+                if (parent) parent->y = targetY;
+                else y = targetY;
                 updateProperties();
                 if (hasCollided(false, true)) {
                     if (velocityY > 0) bumpDirections += Down;
@@ -143,6 +193,7 @@ namespace Amara {
         }
 
         bool collidesWith(Amara::PhysicsBase* body) {
+            if (!body->isActive) return false;
             switch (body->shape) {
                 case PHYSICS_RECTANGLE:
                     body->updateProperties();
@@ -179,6 +230,7 @@ namespace Amara {
         }
 
         bool collidesWith(Amara::PhysicsBase* body) {
+            if (!body->isActive) return false;
             switch (body->shape) {
                 case PHYSICS_RECTANGLE:
                     body->updateProperties();
@@ -223,6 +275,7 @@ namespace Amara {
         }
 
         bool collidesWith(Amara::PhysicsBody* body) {
+            if (!body->isActive) return false;
             switch (body->shape) {
                 case PHYSICS_RECTANGLE:
                     body->updateProperties();
@@ -284,7 +337,7 @@ namespace Amara {
                 tx = tile.x * tilemapLayer->tileWidth + px;
                 ty = tile.y * tilemapLayer->tileHeight + py;
 
-                properties.rect = { tilemapLayer->x + tx, tilemapLayer->y + ty, tilemapLayer->tileWidth, tilemapLayer->tileHeight };
+                properties.rect = { tilemapLayer->x + tx, tilemapLayer->y + ty, (float)tilemapLayer->tileWidth, (float)tilemapLayer->tileHeight };
 
                 if (Amara::overlapping(&properties.rect, &body->properties.line)) {
                     return true;
@@ -297,6 +350,7 @@ namespace Amara {
         }
 
         bool collidesWith(Amara::PhysicsBase* body) {
+            if (!body->isActive) return false;
             Amara::TilemapLayer* tilemapLayer = properties.tilemapLayer;
 
             float sx, sy, ex, ey, tx, ty;
@@ -334,7 +388,7 @@ namespace Amara {
                     tx = tile.x * tilemapLayer->tileWidth + px;
                     ty = tile.y * tilemapLayer->tileHeight + py;
 
-                    properties.rect = { tilemapLayer->x + tx, tilemapLayer->y + ty, tilemapLayer->tileWidth, tilemapLayer->tileHeight };
+                    properties.rect = { tilemapLayer->x + tx, tilemapLayer->y + ty, (float)tilemapLayer->tileWidth, (float)tilemapLayer->tileHeight };
                     switch (body->shape) {
                         case PHYSICS_RECTANGLE:
                             if (Amara::overlapping(&properties.rect, &body->properties.rect)) {
@@ -388,8 +442,13 @@ namespace Amara {
         }
 
         bool collidesWith(Amara::PhysicsBase* other) {
-            for (Amara::PhysicsBase* body: members) {
+            for (auto it = members.begin(); it != members.end(); ++it) {
+                Amara::PhysicsBase* body = *it;
+                if (body->isDestroyed) {
+                    members.erase(it--);
+                }
                 if (body == other) continue;
+                if (!body->isActive) continue;
                 if (body->collidesWith(other)) {
                     return true;
                 }

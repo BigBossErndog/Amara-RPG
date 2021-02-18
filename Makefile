@@ -32,6 +32,8 @@ all:
 
 cpamara:
 	cp -T -r ../amara/amara ./amara
+	cp -T -r ../amara/amaraWeb ./amaraWeb
+	cp -T -r ../amara/ext_lib ./ext_lib
 
 cplibs:
 	cp -T -r ../amara/ext_lib ./ext_lib

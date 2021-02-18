@@ -15,6 +15,8 @@ namespace Amara {
 			nlohmann::json globalData;
 			std::unordered_map<std::string, void*> globalObjects;
 
+			Amara::MessageQueue messages = MessageQueue();
+
 			std::string name;
 			bool quit = false;
 			bool dragged = false;
@@ -69,13 +71,18 @@ namespace Amara {
 			SDL_Event e;
 
 			bool testing = true;
+			bool hardwareRendering = true;
 
-			Game(std::string givenName) {
+			Game(std::string givenName, bool gRendering) {
 				name = givenName;
 
 				properties = new Amara::GameProperties();
 				properties->game = this;
+
+				hardwareRendering = gRendering;
 			}
+
+			Game(std::string givenName): Game(givenName, true) {}
 
 			bool init(int startWidth, int startHeight) {
 				SDL_SetMainReady();
@@ -107,13 +114,11 @@ namespace Amara {
 				// Setting up joy sticks
 				if (SDL_Init(SDL_INIT_JOYSTICK) < 0) {
 					SDL_Log("Game Error: Failed to initialize Joystick.");
-					return false;
 				}
 
 				// Setting up controllers
 				if (controllerEnabled && SDL_Init(SDL_INIT_GAMECONTROLLER) < 0) {
 					SDL_Log("Game Error: Failed to initialize Game Controller.");
-					return false;
 				}
 
 				// Creating the window
@@ -136,7 +141,14 @@ namespace Amara {
 				SDL_UpdateWindowSurface(gWindow);
 
 				// Setting up the Renderer
-				gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
+				if (hardwareRendering) {
+					gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
+					SDL_Log("Started on Hardware Accelerated Rendering.");
+				}
+				else {
+					gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
+					SDL_Log("Started on Software Rendering.");
+				}
 				if (gRenderer == NULL) {
 					SDL_Log("Game Error: Renderer failed to start. SDL Error: %s\n", SDL_GetError());
 					return false;
@@ -196,7 +208,11 @@ namespace Amara {
 				input->keyboard = new Amara::Keyboard(properties);
 				input->mouse = new Amara::Mouse(properties);
 				input->gamepads = new Amara::GamepadManager(properties);
+				input->touches = new Amara::TouchManager(properties);
 				properties->input = input;
+
+				messages.clear();
+				properties->messages = &messages;
 
 				writer = new FileWriter();
 
@@ -252,22 +268,32 @@ namespace Amara {
 			void start() {
 				// Game Loop
 				while (!quit) {
-					manageFPSStart();
-
-					writeProperties();
-
-					// Draw Screen
-					draw();
-
-					// Manage frame catch up and slow down
-					manageFPSEnd();
-
-					deleteEntities();
-					deleteObjects();
-					deleteTransitions();
-					taskManager->run();
+					gameLoop();
 				}
 				close();
+			}
+
+			void start(std::string startKey) {
+				// Start a specific scene
+				scenes->start(startKey);
+				start();
+			}
+
+			void gameLoop() {
+				manageFPSStart();
+
+				writeProperties();
+
+				// Draw Screen
+				draw();
+
+				// Manage frame catch up and slow down
+				manageFPSEnd();
+
+				deleteEntities();
+				deleteObjects();
+				deleteTransitions();
+				taskManager->run();
 			}
 
 			void deleteEntities() {
@@ -310,12 +336,6 @@ namespace Amara {
                     delete obj;
                 }
                 deleteQueue.clear();
-			}
-
-			void start(std::string startKey) {
-				// Start a specific scene
-				scenes->start(startKey);
-				start();
 			}
 
 			void addGlobalObject(std::string gKey, void* gObj) {
@@ -428,8 +448,6 @@ namespace Amara {
 				isFullscreen = false;
 			}
 
-		protected:
-
 			void writeProperties() {
 				properties->gWindow = gWindow;
 				properties->gSurface = gSurface;
@@ -459,6 +477,7 @@ namespace Amara {
 				if (quit) return;
 				handleEvents();
 				if (quit) return;
+				messages.update();
 				events->manage();
 				scenes->run();
 				scenes->manageTasks();
@@ -480,6 +499,9 @@ namespace Amara {
 
 				/// Draw to renderer
 				SDL_RenderPresent(gRenderer);
+				if (!hardwareRendering) {
+					SDL_UpdateWindowSurface(gWindow);
+				}
 			}
 
 			void manageFPSStart() {
@@ -520,6 +542,7 @@ namespace Amara {
 				input->keyboard->manage();
 				input->mouse->manage();
 				input->gamepads->manage();
+				input->touches->manage();
 
 				renderTargetsReset = false;
 				renderDeviceReset = false;
@@ -533,9 +556,11 @@ namespace Amara {
 					}
 					else if (e.type == SDL_KEYDOWN) {
 						input->keyboard->press(e.key.keysym.sym);
+						input->keyboard->isActivated = true;
 					}
 					else if (e.type == SDL_KEYUP) {
 						input->keyboard->release(e.key.keysym.sym);
+						input->keyboard->isActivated = true;
 					}
 					else if (e.type == SDL_MOUSEMOTION || e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) {
 						int mx, my;
@@ -550,6 +575,9 @@ namespace Amara {
 						int vx, vy = 0;
 						float ratioRes = ((float)properties->resolution->width / (float)properties->resolution->height);
 						float ratioWin = ((float)properties->window->width / (float)properties->window->height);
+
+						input->mouse->isActivated = true;
+						if (e.type == SDL_MOUSEMOTION) input->mouse->moved = true;
 
 						if (ratioRes < ratioWin) {
 							upScale = ((float)properties->window->height/(float)properties->resolution->height);
@@ -591,6 +619,8 @@ namespace Amara {
 						int mul = (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) ? -1 : 1;
 						input->mouse->scrollX = e.wheel.x * mul;
 						input->mouse->scrollY = e.wheel.y * mul;
+
+						input->mouse->isActivated = true;
 					}
 					else if (e.type == SDL_WINDOWEVENT && (e.window.event == SDL_WINDOWEVENT_MOVED)) {
 						dragged = true;
@@ -624,20 +654,70 @@ namespace Amara {
 						SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.cbutton.which);
 						Amara::Gamepad* gamepad = input->gamepads->get(controller);
 						if (gamepad != nullptr) gamepad->press(e.cbutton.button);
+						input->gamepads->isActivated = true;
 					}
 					else if (e.type == SDL_CONTROLLERBUTTONUP) {
 						SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.cbutton.which);
 						Amara::Gamepad* gamepad = input->gamepads->get(controller);
 						if (gamepad != nullptr) gamepad->release(e.cbutton.button);
+						input->gamepads->isActivated = true;
 					}
 					else if (e.type == SDL_CONTROLLERAXISMOTION) {
 						SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.caxis.which);
 						Amara::Gamepad* gamepad = input->gamepads->get(controller);
 						if (gamepad != nullptr) gamepad->push(e.caxis.axis, e.caxis.value);
+						input->gamepads->isActivated = true;
+					}
+					if (e.type == SDL_FINGERDOWN) {
+						Amara::TouchPointer* pointer = input->touches->newPointer(e.tfinger.fingerId);
+						if (pointer) {
+							pointer->press();
+							pointer->virtualizeXY(e);
+						}
+
+						input->touches->isActivated = true;
+					}
+					else if (e.type == SDL_FINGERMOTION) {
+						Amara::TouchPointer* pointer = input->touches->getPointer(e.tfinger.fingerId);
+						if (pointer) {
+							pointer->virtualizeXY(e);
+						}
+
+						input->touches->isActivated = true;
+					}
+					else if (e.type == SDL_FINGERUP) {
+						Amara::TouchPointer* pointer = input->touches->getPointer(e.tfinger.fingerId);
+						if (pointer) {
+							pointer->release();
+							pointer->virtualizeXY(e);
+
+							input->touches->removePointer(pointer->id);
+						}
+
+						input->touches->isActivated = true;
 					}
 				}
 
 				controls->run();
+				input->mouse->afterManage();
+				
+				input->mode = InputMode_None;
+				if (input->keyboard->isActivated) {
+					input->mode |= InputMode_Keyboard;
+					input->lastMode = InputMode_Keyboard;
+				}
+				if (input->mouse->isActivated) {
+					input->mode |= InputMode_Mouse;
+					input->lastMode = InputMode_Mouse;
+				}
+				if (input->gamepads->isActivated) {
+					input->mode |= InputMode_Gamepad;
+					input->lastMode = InputMode_Gamepad;
+				}
+				if (input->touches->isActivated) {
+					input->mode |= InputMode_Touch;
+					input->lastMode = InputMode_Touch;
+				}
 			}
 	};
 }

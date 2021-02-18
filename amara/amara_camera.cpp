@@ -37,6 +37,7 @@ namespace Amara {
             float offsetY = 0;
 
             Amara::Entity* followTarget = nullptr;
+            bool followEnabled = true;
             float lerpX = 1;
             float lerpY = 1;
 
@@ -52,13 +53,23 @@ namespace Amara {
 
             Camera(float gw, float gh) : Camera() {
                 definedDimensions = true;
-                width = gw;
-                height = gh;
+                setSize(gw, gh);
             }
 
             Camera(float gx, float gy, int gw, int gh): Camera(gw, gh) {
                 x = gx;
                 y = gy;
+            }
+
+            void setSize(int gw, int gh) {
+                width = gw;
+                height = gh;
+                definedDimensions = true;
+            }
+            void setSize(float gx, float gy, float gw, float gh) {
+                x = gx;
+                y = gy;
+                setSize(gw, gh);
             }
 
             virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* gParent) {
@@ -95,7 +106,7 @@ namespace Amara {
 				update();
                 updateValues();
 
-                if (followTarget != nullptr) {
+                if (followTarget != nullptr && followEnabled) {
                     if (followTarget->isDestroyed || !followTarget->isActive) {
                         stopFollow();
                     }
@@ -189,6 +200,7 @@ namespace Amara {
                     entity = *it;
                     if (entity->isDestroyed || entity->scene != scene) {
                         rSceneEntities.erase(it--);
+                        continue;
                     }
                     if (!entity->isVisible) continue;
                     assignAttributes();
@@ -226,6 +238,7 @@ namespace Amara {
 
             void startFollow(Amara::Entity* entity, float lx, float ly) {
                 followTarget = entity;
+                followEnabled = true;
                 lerpX = lx;
                 lerpY = ly;
             }
@@ -389,6 +402,22 @@ namespace Amara {
             }
             Amara::Script* zoomTo(float zt, float tt) {
                 return zoomTo(zt, tt, LINEAR);
+            }
+
+            float getXAfterScrolling(float gx) {
+                float nzoomX = 1 + (zoomX-1)*zoomFactorX;
+                return nzoomX * (gx - scrollX);
+            }
+            float getYAfterScrolling(float gy) {
+                float nzoomY = 1 + (zoomY-1)*zoomFactorY;
+                return nzoomY * (gy - scrollY);
+            }
+
+            float getXAfterScrolling(Amara::Entity* entity) {
+                return getXAfterScrolling(entity->x);
+            }
+            float getYAfterScrolling(Amara::Entity* entity) {
+                return getYAfterScrolling(entity->y);
             }
 
             ~Camera() {

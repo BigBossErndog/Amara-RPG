@@ -91,7 +91,7 @@ namespace Amara {
                         heightInPixels = tileHeight * height;
                     }
                     else {
-                        SDL_Log("Tiled JSON \"%s\" was not found.", gTiledJsonKey);
+                        SDL_Log("Tiled JSON \"%s\" was not found.", gTiledJsonKey.c_str());
                     }
                 }
             }
@@ -164,6 +164,24 @@ namespace Amara {
 
             Amara::TilemapLayer* createLayer(std::string layerKey) {
                 return createLayer(layerKey, 0, 0);
+            }
+
+            Amara::TilemapLayer* createEmptyLayer(std::string layerKey) {
+                Amara::TilemapLayer* newLayer;
+                ((Amara::Entity*)scene)->add(newLayer = new Amara::TilemapLayer(width, height, tileWidth, tileHeight));
+                layers[layerKey] = newLayer;
+
+                if (!textureKey.empty()) {
+                    newLayer->setTexture(textureKey);
+                }
+                
+                newLayer->id = layerKey;
+
+                newLayer->x = x;
+                newLayer->y = y;
+                newLayer->setTilemap(this, this);
+
+                return newLayer;
             }
 
             void createAllLayers() {
@@ -249,6 +267,17 @@ namespace Amara {
                 Amara::Tile tile;
                 for (Amara::TilemapLayer* layer: walls) {
                     tile = layer->getTileAt(gx, gy);
+                    if (tile.id >= 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            bool isWallAtXY(int gx, int gy) {
+                Amara::Tile tile;
+                for (Amara::TilemapLayer* layer: walls) {
+                    tile = layer->getTileAtXY(gx, gy);
                     if (tile.id >= 0) {
                         return true;
                     }

@@ -15,13 +15,19 @@ namespace Amara {
         SCENERIGHTRELEASE,
         SCENEMIDDLERELEASE,
 
+        SCENETOUCHDOWN,
+        SCENETOUCHUP,
+
         OBJECTLEFTCLICK,
         OBJECTRIGHTCLICK,
         OBJECTMIDDLECLICK,
 
         OBJECTLEFTRELEASE,
         OBJECTRIGHTRELEASE,
-        OBJECTMIDDLERELEASE
+        OBJECTMIDDLERELEASE,
+
+        OBJECTTOUCHDOWN,
+        OBJECTTOUCHUP
     };
 
     class Event {
@@ -68,6 +74,12 @@ namespace Amara {
                 if (mouse->middle->justDown) {
                     addEvent(SCENEMIDDLECLICK);
                     addEvent(OBJECTMIDDLECLICK);
+                }
+
+                std::vector<TouchPointer*>& fingers = input->touches->pointers;
+                for (TouchPointer* finger: fingers) {
+                    if (finger->justDown) addEvent(OBJECTTOUCHDOWN);
+                    if (finger->justUp) addEvent(OBJECTTOUCHUP);
                 }
             }
     };

@@ -9,6 +9,7 @@ namespace Amara {
     class Actor: public Amara::Entity {
         public:
             std::vector<Amara::Script*> scripts;
+            bool actingPaused = false;
 
             Actor(): Amara::Entity() {}
 
@@ -20,7 +21,16 @@ namespace Amara {
                 return script;
             }
 
+            virtual Amara::Script* chain(Amara::Script* script) {
+                if (scripts.size() > 0) {
+                    Amara::Script* lastScript = scripts.back();
+                    return lastScript->chain(script);
+                }
+                return recite(script);
+            }
+
             void reciteScripts() {
+                if (scripts.size() == 0 || actingPaused) return;
                 for (Amara::Script* script: scripts) {
                     if (!script->finished) {
                         script->script();
@@ -28,18 +38,25 @@ namespace Amara {
                     }
                 }
 
+                std::vector<Script*> chained;
+                chained.clear();
+
                 Amara::Script* script;
                 for (auto it = scripts.begin(); it != scripts.end(); ++it) {
                     script = *it;
                     if (script->finished) {
                         if (script->chainedScript != nullptr) {
-                            recite(script->chainedScript);
+                            chained.push_back(script->chainedScript);
+                            script->chainedScript = nullptr;
                         }
                         scripts.erase(it--);
                         if (script->deleteOnFinish) {
                             delete script;
                         }
                     }
+                }
+                for (Amara::Script* chain: chained) {
+                    recite(chain);
                 }
             }
 
@@ -101,6 +118,13 @@ namespace Amara {
                 }
                 scripts.clear();
 			}
+
+            void pauseActing() {
+                actingPaused = true;
+            }
+            void resumeActing() {
+                actingPaused = false;
+            }
 
             virtual ~Actor() {
                 clearScripts();

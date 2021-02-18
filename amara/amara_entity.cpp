@@ -33,6 +33,7 @@ namespace Amara {
 			bool deleteWithParent = true;
 			std::vector<PhysicsBase*> collisionTargets;
 
+			bool isActive = false;
 			bool isDestroyed = false;
 
 			int shape = -1;
@@ -64,6 +65,16 @@ namespace Amara {
 
 			virtual bool collidesWith(Amara::Entity* other) {}
 			virtual bool collidesWith(Amara::PhysicsBase* other) {}
+
+			virtual bool willCollideWith(Amara::Entity* other) {}
+			virtual bool willCollideWith(Amara::PhysicsBase* other) {}
+
+			virtual bool willCollide() {}
+
+			virtual bool hasCollided(bool pushingX, bool pushingY) {}
+			bool hasCollided() {
+				return hasCollided(false, false);
+			}
 
 			virtual void addCollisionTarget(Amara::Entity* other) {}
 			virtual void addCollisionTarget(Amara::PhysicsBase* gBody) {
@@ -108,7 +119,15 @@ namespace Amara {
 				}
 			}
 
+			void activate() {
+				isActive = true;
+			}
+			void deactivate() {
+				isActive = false;
+			}
+
 			virtual void destroy() {
+				isActive = false;
 				isDestroyed = true;
 				gameProperties->taskManager->queueDeletion(this);
 			}
@@ -145,6 +164,7 @@ namespace Amara {
 			std::vector<Amara::Entity*> entities;
 
 			Amara::PhysicsBase* physics = nullptr;
+			bool pushedMessages = false;
 
 			nlohmann::json data;
 
@@ -280,7 +300,7 @@ namespace Amara {
 					cameraOffsetY = config["cameraOffsetY"];
 				}
 				if (config.find("data") != config.end()) {
-					data = config["data"];
+					data.update(config["data"]);
 				}
 				if (config.find("bringToFront") != config.end()) {
 					if (config["bringToFront"]) {
@@ -313,10 +333,24 @@ namespace Amara {
 				config["data"] = data;
 				return config;
 			}
-
+			
 			Amara::Entity* setId(std::string newId) {
 				id = newId;
 				return this;
+			}
+
+			bool hasDataProperty(std::string gKey) {
+				if (data.find(gKey) != data.end()) {
+					return true;
+				} 
+				return false;
+			}
+
+			bool isDataProperty(std::string gKey) {
+				if (hasDataProperty(gKey) && data[gKey].is_boolean() && data[gKey]) {
+					return true;
+				}
+				return false;
 			}
 
 			virtual void draw(int vx, int vy, int vw, int vh) {
@@ -366,10 +400,12 @@ namespace Amara {
 			}
 
 			virtual void run() {
+				updateMessages();
+
 				Amara::Interactable::run();
 				update();
 				if (physics != nullptr) {
-					physics->run();
+					if (physics->isActive) physics->run();
 
 					if (physics->isDestroyed) {
 						removePhysics();
@@ -431,6 +467,7 @@ namespace Amara {
 
 			virtual void addPhysics(Amara::PhysicsBase* gPhysics) {
 				physics = gPhysics;
+				physics->isActive = true;
 				physics->parent = this;
 				physics->gameProperties = properties;
 				physics->updateProperties();
@@ -602,6 +639,26 @@ namespace Amara {
 
 			virtual void setLoader(Amara::Loader* gLoader) {
 				setLoader(gLoader, true);
+			}
+
+			void updateMessages() {
+				if (pushedMessages) {
+					Amara::MessageQueue& messages = *(properties->messages);
+					for (auto it = messages.begin(); it != messages.end(); ++it) {
+						Message msg = *it;
+						if (msg.parent == this) {
+							messages.queue.erase(it--);
+						}
+					}
+					pushedMessages = false;
+				}
+			}
+			void broadcastMessage(std::string key, nlohmann::json gData) {
+				properties->messages->broadcast(this, key, gData);
+				pushedMessages = true;
+			}
+			Message& getMessage(std::string key) {
+				return properties->messages->get(key);
 			}
 
 			virtual void create() {}

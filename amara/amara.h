@@ -29,8 +29,10 @@
     #include <SDL_image.h>
     #include <SDL_ttf.h>
     #include <SDL_mixer.h>
-    #include <SDL_net.h>
     #include <SDL_FontCache.c>
+    #ifndef AMARA_WEB
+        #include <SDL_net.h>
+    #endif
 #endif
 
 #ifndef AMARA_DIRECTIONS
@@ -139,6 +141,7 @@ namespace Amara {
 #include "amara_animation.cpp"
 
 #include "amara_events.cpp"
+#include "amara_touches.cpp"
 #include "amara_mouse.cpp"
 #include "amara_pointer.cpp"
 
@@ -158,9 +161,12 @@ namespace Amara {
 #include "amara_taskManager.cpp"
 #include "amara_stateManager.cpp"
 
+#include "amara_messages.cpp"
+
 #include "amara_gameProperties.cpp"
 
 #include "amara_fileWriter.cpp"
+#include "amara_fileReader.cpp"
 
 #include "amara_fdeclarations.cpp"
 

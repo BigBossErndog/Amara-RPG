@@ -9,13 +9,13 @@ namespace Amara {
     const unsigned long TILED_FLIPPEDANTIDIAGONALLY = 0x20000000;
 
     struct Tile {
-        int id = 0;
+        int id = -1;
         int x = 0;
         int y = 0;
 
-        bool fhorizontal;
-        bool fvertical;
-        bool fdiagonal;
+        bool fhorizontal = false;
+        bool fvertical = false;
+        bool fdiagonal = false;
 
         float tileWidth = 0;
         float tileHeight = 0;

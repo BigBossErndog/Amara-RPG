@@ -5,7 +5,7 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class Walker: public Amara::Prop {
+    class Walker: public Amara::Prop, public Amara::WallFinder {
         public:
             Amara::Direction direction = Down;
             Amara::Direction walkDirection = NoDir;

@@ -8,10 +8,15 @@ namespace Amara {
     class Interactable {
         private:
             bool recHovered = false;
+            bool recMouseHovered = false;
+            bool recTouchHovered = false;
         public:
             Amara::GameProperties* properties = nullptr;
             Amara::EventManager* events = nullptr;
             Amara::InputManager* input = nullptr;
+
+            bool isMouseDown = false;
+            bool isTouchDown = false;
 
             bool isInteractable = false;
             bool justClicked = false;
@@ -22,11 +27,27 @@ namespace Amara {
             bool justReleased = false;
             bool leftReleased = false;
 
+            bool justTouchDown = false;
+            bool justTouchUp = false;
+
             bool isHovered = false;
             bool justHovered = false;
 
+            bool isMouseHovered = false;
+            bool isTouchHovered = false;
+
+            bool justMouseHovered = false;
+            bool justTouchHovered = false;
+
+            bool justTouchTapped = false;
+
             bool isDraggable = false;
             bool dragged = false;
+
+            bool checkTouchDown = false;
+
+            int downTime = 0;
+            int tapTime = 12;
 
             virtual void init(Amara::GameProperties* gameProperties) {
                 properties = gameProperties;
@@ -49,13 +70,13 @@ namespace Amara {
             }
 
             void checkForHover(int bx, int by, int bw, int bh) {
-                int mx = properties->input->mouse->dx;
-                int my = properties->input->mouse->dy;
-
                 if (!isInteractable) {
                     return;
                 }
 
+                Amara::Mouse* mouse = properties->input->mouse;
+                int mx = mouse->dx;
+                int my = mouse->dy;
                 if (mx > bx && my > by) {
                     if (mx < bx + bw && my < by + bh) {
                         if (!recHovered) {
@@ -63,10 +84,54 @@ namespace Amara {
                             justHovered = true;
                             onHover();
                         }
+                        if (!recMouseHovered) {
+                            recMouseHovered = true;
+                            justMouseHovered = true;
+                        }
+                        if (isMouseDown) {
+                            downTime += 1;
+                        }
                         isHovered = true;
-                        return;
+                        isMouseHovered = true;
                     }
                 }
+                if (!isMouseHovered) {
+                    isMouseDown = false;
+                }
+                
+                std::vector<Amara::TouchPointer*> fingers = input->touches->pointers;
+                for (Amara::TouchPointer* finger: fingers) {
+                    if (!finger->inUse) continue;
+                    int fx = finger->dx;
+                    int fy = finger->dy;
+                    if (fx > bx && fy > by) {
+                        if (fx < bx + bw && fy < by + bh) {
+                            if (!recHovered) {
+                                recHovered = true;
+                                justHovered = true;
+                                onHover();
+                            }
+                            if (!recTouchHovered) {
+                                recTouchHovered = true;
+                                justTouchHovered = true;
+                            }
+                            isHovered = true;
+                            isTouchHovered = true;
+                            
+                            downTime += 1;
+                            if (checkTouchDown) {
+                                justTouchDown = true;
+                                downTime = 0;
+                                isTouchDown = true;
+                            }
+                        }
+                    }
+                }
+                if (!isTouchHovered) {
+                    isTouchDown = false;
+                }
+
+                checkTouchDown = false;
             }
 
             virtual void run() {
@@ -79,11 +144,16 @@ namespace Amara {
                     justReleased = false;
                     leftReleased = false;
 
+                    justTouchDown = false;
+                    justTouchUp = false;
+
+                    justTouchTapped = false;
+
                     for (Amara::Event* event : events->eventList) {
                         if (event->disabled) continue;
                         switch (event->type) {
                             case OBJECTLEFTCLICK:
-                                if (isHovered) {
+                                if (isMouseHovered) {
                                     onClick();
                                     onPointerDown();
                                     if (event->taken) {
@@ -94,10 +164,13 @@ namespace Amara {
 
                                     justClicked = true;
                                     leftClicked = true;
+
+                                    downTime = 0;
+                                    isMouseDown = true;
                                 }
                                 break;
                             case OBJECTRIGHTCLICK:
-                                if (isHovered) {
+                                if (isMouseHovered) {
                                     onRightClick();
                                     if (event->taken) {
                                         event->taken->justClicked = false;
@@ -107,10 +180,12 @@ namespace Amara {
 
                                     justClicked = true;
                                     rightClicked = true;
+
+                                    downTime = 0;
                                 }
                                 break;
                             case OBJECTMIDDLERELEASE:
-                                if (isHovered) {
+                                if (isMouseHovered) {
                                     onMiddleClick();
                                     if (event->taken) {
                                         event->taken->justClicked = false;
@@ -123,7 +198,7 @@ namespace Amara {
                                 }
                                 break;
                             case OBJECTLEFTRELEASE:
-                                if (isHovered) {
+                                if (isMouseHovered) {
                                     onRelease();
                                     if (event->taken) {
                                         event->taken->justReleased = false;
@@ -135,13 +210,35 @@ namespace Amara {
                                     leftReleased = true;
                                 }
                                 break;
+                            case OBJECTTOUCHDOWN:
+                                checkTouchDown = true;
+                                break;
+                            case OBJECTTOUCHUP:
+                                if (isTouchHovered) {
+                                    justTouchUp = true;
+                                    isTouchDown = false;
+                                    if (downTime < tapTime) {
+                                        justTouchTapped = true;
+                                    }
+                                    isTouchHovered = false;
+                                }
+                                break;
                         }
                     }
                 }
                 
                 recHovered = isHovered;
+                recMouseHovered = isMouseHovered;
+                recTouchHovered = isTouchHovered;
+                
                 isHovered = false;
                 justHovered = false;
+
+                isMouseHovered = false;
+                justMouseHovered = false;
+
+                isTouchHovered = false;
+                justTouchHovered = false;
             }
 
             virtual void onHover() {}

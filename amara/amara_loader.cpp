@@ -21,6 +21,8 @@ namespace Amara {
 			bool stillLoading = false;
 			int loadSpeed = 64;
 
+			nlohmann::json emptyJson = nullptr;
+
             Loader(Amara::GameProperties* gameProperties) {
 				properties = gameProperties;
 				game = properties->game;
@@ -47,8 +49,7 @@ namespace Amara {
 				if (jf != nullptr) {
 					return jf->getJSON();
 				}
-				nlohmann::json empty;
-				return empty;
+				return emptyJson;
 			}
 
 			virtual bool remove(std::string key) {
@@ -218,7 +219,7 @@ namespace Amara {
 						if (colorSize >= 4) color.a = jsonColor[3];
 					}
 
-					ttf(key, path, size, color, replace);
+					ttf(key, path, size, color, style, replace);
 				}
 			}
 			void loadSoundsFromJSON(nlohmann::json& config) {
