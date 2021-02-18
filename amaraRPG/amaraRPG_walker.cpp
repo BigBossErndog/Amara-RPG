@@ -280,12 +280,12 @@ namespace Amara {
             virtual void handleWalking() {
                 bumpDir = NoDir;
                 if (walkDirection != NoDir) {
-                    int sx = x;
-                    int sy = y;
+                    float sx = x;
+                    float sy = y;
                     int ox = Amara::getOffsetX(walkDirection);
                     int oy = Amara::getOffsetY(walkDirection);
-                    int tx = tileX * TILE_WIDTH + tileOffsetX;
-                    int ty = tileY * TILE_HEIGHT + tileOffsetY;
+                    float tx = tileX * TILE_WIDTH + tileOffsetX;
+                    float ty = tileY * TILE_HEIGHT + tileOffsetY;
 
                     if (isPlayer && rpgScene->sm.state("duration") && controls->isDown("run")) {
                         if (movementSpeed != runSpeed) {
@@ -301,7 +301,7 @@ namespace Amara {
                     x += ox * movementSpeed;
                     y += oy * movementSpeed;
 
-                    if (sx < tx) {
+                    if (ox > 0) {
                         if (x >= tx) {
                             x = tx;
                             if (walkDirection == UpRight) {
@@ -316,7 +316,7 @@ namespace Amara {
                             }
                         }
                     }
-                    else if (sx > tx) {
+                    else if (ox < 0) {
                         if (x <= tx) {
                             x = tx;
                             if (walkDirection == UpLeft) {
@@ -332,7 +332,7 @@ namespace Amara {
                         }
                     }
 
-                    if (sy < ty) {
+                    if (oy > 0) {
                         if (y >= ty) {
                             y = ty;
                             if (walkDirection == DownLeft) {
@@ -347,7 +347,7 @@ namespace Amara {
                             }
                         }
                     }
-                    else if (sy > ty) {
+                    else if (oy < 0) {
                         if (y <= ty) {
                             y = ty;
                             if (walkDirection == UpLeft) {
