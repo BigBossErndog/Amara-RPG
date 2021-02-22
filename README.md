@@ -6,4 +6,4 @@ Being used to develop the game The Black Flower Devours.
 This provides classes for easy RPG making, inspired by RPG Maker by Degica / Kadokawa Corporation. Like classes for tile based movement, cutscenes, event triggers and more.
 Still in development as I make my own game: The Black Flower Devours.
 
-This is a C++ library. As there is no UI for the Amara Framework, there is no UI for this either, knowledge and experience with C++ would be required.
+This is a C++ library. As there is no UI for the Amara Framework, there is no UI for this either. Knowledge and experience with C++ would be required.
