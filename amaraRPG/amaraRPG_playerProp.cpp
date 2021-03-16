@@ -89,12 +89,16 @@ namespace Amara {
 
                     bool shouldRun = allowRunning && controls->isDown("run");
 
-                    if (walkBuffer != NoDir && ((shouldRun && run(walkBuffer)) || walk(walkBuffer))) {
-                        lastWalkDir = walkBuffer;
-                        walkBuffer = NoDir;
+                    if (walkBuffer != NoDir) {
+                        if (!isBusy()) {
+                            if (!((shouldRun && run(walkBuffer)) || walk(walkBuffer))) {
+                                face(walkBuffer);
+                            }
+                            lastWalkDir = walkBuffer;
+                            walkBuffer = NoDir;
+                        }
                     }
                     else {
-                        if (!isBusy()) walkBuffer = NoDir;
                         if (lastPressDir != NoDir) {
                             if (verDir == lastPressDir) {
                                 if (((shouldRun && run(verDir)) || walk(verDir))) {
@@ -114,30 +118,22 @@ namespace Amara {
                             }
                         }
                         else {
-                            if (verDir == lastWalkDir && ((shouldRun && run(verDir)) || walk(verDir))) {
-
+                            if (verDir != NoDir && verDir == direction && ((shouldRun && run(verDir)) || walk(verDir))) {
+                                lastWalkDir = verDir;
                             }
-                            else if (horDir == lastWalkDir && ((shouldRun && run(horDir)) || walk(horDir))) {
-
+                            else if (horDir != NoDir && horDir == direction && ((shouldRun && run(horDir)) || walk(horDir))) {
+                                lastWalkDir = horDir;
                             }
                             else {
-                                if (verDir != NoDir && ((shouldRun && run(verDir)) || walk(verDir))) {
-                                    lastWalkDir = verDir;
+                                if (verDir != NoDir && verDir == direction) {
+                                    face(verDir);
                                 }
-                                else if (horDir != NoDir && ((shouldRun && run(horDir)) || walk(horDir))) {
-                                    lastWalkDir = horDir;
+                                else if (horDir != NoDir && horDir == direction) {
+                                    face(horDir);
                                 }
                                 else {
-                                    if (verDir != NoDir && verDir == direction) {
-                                        face(verDir);
-                                    }
-                                    else if (horDir != NoDir && horDir == direction) {
-                                        face(horDir);
-                                    }
-                                    else {
-                                        face(verDir);
-                                        face(horDir);
-                                    }
+                                    face(verDir);
+                                    face(horDir);
                                 }
                             }
                         }

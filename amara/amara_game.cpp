@@ -14,6 +14,7 @@ namespace Amara {
 
 			nlohmann::json globalData;
 			std::unordered_map<std::string, void*> globalObjects;
+			RNG rng;
 
 			Amara::MessageQueue messages = MessageQueue();
 
@@ -476,6 +477,7 @@ namespace Amara {
 			void update() {
 				if (quit) return;
 				handleEvents();
+				writeProperties();
 				if (quit) return;
 				messages.update();
 				events->manage();

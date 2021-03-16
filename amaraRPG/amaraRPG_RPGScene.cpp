@@ -148,7 +148,7 @@ namespace Amara {
                         }
                     }
 
-                    aboveDepth = tilemap->heightInPixels + 1;
+                    aboveDepth = tilemap->heightInPixels;
                     if (mapData.find("aboveLayersDepth") != mapData.end()) {
                         aboveDepth = mapData["aboveLayersDepth"];
                     }
