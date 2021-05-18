@@ -72,10 +72,10 @@ namespace Amara {
                     tilePaddingBottom = config["tilePaddingBottom"];
                 }
                 if (config.find("tilePaddingLeft") != config.end()) {
-                    tilePaddingTop = config["tilePaddingLeft"];
+                    tilePaddingLeft = config["tilePaddingLeft"];
                 }
                 if (config.find("tilePaddingRight") != config.end()) {
-                    tilePaddingTop = config["tilePaddingRight"];
+                    tilePaddingRight = config["tilePaddingRight"];
                 }
                 snapToTile();
 

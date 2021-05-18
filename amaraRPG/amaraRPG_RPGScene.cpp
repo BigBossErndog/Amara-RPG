@@ -269,9 +269,9 @@ namespace Amara {
                         continue;
                     }
                     prop = (Amara::Prop*)entity;
-                    if (tx != prop->tileX || ty != prop->tileY) continue;
                     if (prop == propExclusion) continue;
                     if (prop->isWall) {
+                        if (!prop->covers(tx, ty)) continue;
                         return true;
                     }
                 }
@@ -291,9 +291,9 @@ namespace Amara {
                         continue;
                     }
                     prop = (Amara::Prop*)entity;
-                    if (tx != prop->tileX || ty != prop->tileY) continue;
                     if (prop == propExclusion) continue;
                     if (prop->isWall) {
+                        if (!prop->covers(tx, ty)) continue;
                         return true;
                     }
                 }

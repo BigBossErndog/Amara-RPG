@@ -20,13 +20,12 @@ namespace Amara {
                 if (group != nullptr) {
                     delete group;
                 }
-                group = new ActorGroup(this);
+                rpgScene->recite(group = new ActorGroup());
 				cam = scene->mainCamera;
             }
 
             virtual Amara::Actor* add(Amara::Actor* actor) {
-                scene->add(actor);
-                group->add(actor);
+                group->add(true, actor);
                 return actor;
             }
 
@@ -43,8 +42,13 @@ namespace Amara {
             }
 
             Amara::Cutscene* chain(Amara::Cutscene* gCutscene) {
-                chainedCutscene = gCutscene;
-                return chainedCutscene;
+                if (chainedCutscene) {
+                    chainedCutscene->chain(gCutscene);
+                }
+                else {
+                    chainedCutscene = gCutscene;
+                }
+                return gCutscene;
             }
 
             Amara::Cutscene* unchain() {

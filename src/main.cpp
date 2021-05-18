@@ -155,7 +155,7 @@ class TestArea: public RPGScene {
 
             // mainCamera->startFollow(gnik);
             mainCamera->offsetY = -TILE_HEIGHT/2;
-            // startCutscene(new CameraStuff());
+            startCutscene(new CameraStuff());
         }
 
         void update() {

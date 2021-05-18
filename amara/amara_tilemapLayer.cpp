@@ -47,8 +47,8 @@ namespace Amara {
 
             SDL_Rect viewport;
             SDL_Rect srcRect;
-            SDL_Rect destRect;
-            SDL_Point origin;
+            SDL_FRect destRect;
+            SDL_FPoint origin;
             SDL_RendererFlip flip;
 
             SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
@@ -443,7 +443,7 @@ namespace Amara {
                                 srcRect.w = tileWidth;
                                 srcRect.h = tileHeight;
 
-                                SDL_RenderCopyEx(
+                                SDL_RenderCopyExF(
                                     gRenderer,
                                     tex,
                                     &srcRect,
@@ -457,10 +457,10 @@ namespace Amara {
                     }
                 }
 
-                destRect.x = floor((x+px - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * nzoomX);
-                destRect.y = floor((y-z+py - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * nzoomY);
-                destRect.w = ceil(widthInPixels*scaleX*nzoomX);
-                destRect.h = ceil(heightInPixels*scaleY*nzoomY);
+                destRect.x = ((x+px - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * nzoomX);
+                destRect.y = ((y-z+py - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * nzoomY);
+                destRect.w = (widthInPixels*scaleX*nzoomX);
+                destRect.h = (heightInPixels*scaleY*nzoomY);
 
                 SDL_SetRenderTarget(properties->gRenderer, recTarget);
 
@@ -476,7 +476,7 @@ namespace Amara {
                 SDL_SetTextureBlendMode(drawTexture, blendMode);
                 SDL_SetTextureAlphaMod(drawTexture, properties->alpha * alpha * 255);
 
-                SDL_RenderCopyEx(
+                SDL_RenderCopyExF(
                     properties->gRenderer,
                     drawTexture,
                     NULL,

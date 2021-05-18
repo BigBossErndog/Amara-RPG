@@ -49,11 +49,17 @@ namespace Amara {
             bool add(std::string key, SDL_Texture* tx, bool replace) {
                 return load->add(key, tx, replace);
             }
+            bool add(std::string key, SDL_Texture* tx) {
+                return load->add(key, tx, false);
+            }
             bool add(std::string key, SDL_Texture* tx, int frwidth, int frheight, bool replace) {
                 return load->add(key, tx, frwidth, frheight, replace);
             }
             bool add(std::string key, Amara::Asset* newAsset, bool replace) {
                 return load->add(key, newAsset, replace);
+            }
+            bool add(std::string key, Amara::Asset* newAsset) {
+                return load->add(key, newAsset, false);
             }
 
             void regenerateAssets() {
@@ -95,6 +101,9 @@ namespace Amara {
                             break;
                         case MUSIC:
                             success = load->music(task->key, task->path, task->replace);
+                            break;
+                        case LINEBYLINE:
+                            success = load->lineByLine(task->key, task->path, task->replace);
                             break;
                     }
 
@@ -180,6 +189,15 @@ namespace Amara {
                 t->size = size;
                 t->color = color;
                 t->style = style;
+                pushTask(key, t);
+                return true;
+            }
+
+            bool lineByLine(std::string key, std::string path, bool replace) {
+                Amara::LoadTask* t  = new Amara::LoadTask();
+                t->type = LINEBYLINE;
+                t->path = path;
+                t->replace = replace;
                 pushTask(key, t);
                 return true;
             }
