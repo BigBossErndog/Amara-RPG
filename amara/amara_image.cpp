@@ -17,6 +17,8 @@ namespace Amara {
             SDL_FRect destRect;
             SDL_FPoint origin;
 
+            bool pixelLocked = false;
+
             SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
             int width = 0;
@@ -57,7 +59,8 @@ namespace Amara {
                 x = gx;
                 y = gy;
             }
-
+            
+            using Amara::Actor::init;
             virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) override {
 				properties = gameProperties;
                 load = properties->loader;
@@ -69,7 +72,7 @@ namespace Amara {
 
                 Amara::Actor::init(gameProperties, givenScene, givenParent);
 
-                data["entityType"] = "image";
+                entityType = "image";
 			}
 
             virtual void configure(nlohmann::json config) {
@@ -90,11 +93,41 @@ namespace Amara {
                     originX = config["origin"];
                     originY = config["origin"];
                 }
+                if (config.find("originPositionX") != config.end()) {
+                    originX = config["originPositionX"];
+                    originX = originX/imageWidth;
+                }
+                if (config.find("originPositionY") != config.end()) {
+                    originY = config["originPositionY"];
+                    originY = originY/imageHeight;
+                }
+                if (config.find("originPosition") != config.end()) {
+                    originX = config["originPosition"];
+                    setOriginPosition(originX, originX);
+                }
                 if (config.find("flipHorizontal") != config.end()) {
                     flipHorizontal = config["flipHorizontal"];
                 }
                 if (config.find("flipVertical") != config.end()) {
                     flipVertical = config["flipVertical"];
+                }
+                if (config.find("renderOffsetX") != config.end()) {
+                    renderOffsetX = config["renderOffsetX"];
+                }
+                if (config.find("renderOffsetY") != config.end()) {
+                    renderOffsetY = config["renderOffsetY"];
+                }
+                if (config.find("cropLeft") != config.end()) {
+                    cropLeft = config["cropLeft"];
+                }
+                if (config.find("cropRight") != config.end()) {
+                    cropRight = config["cropRight"];
+                }
+                if (config.find("cropTop") != config.end()) {
+                    cropTop = config["cropTop"];
+                }
+                if (config.find("cropBottom") != config.end()) {
+                    cropBottom = config["cropBottom"];
                 }
             }
 
@@ -138,10 +171,20 @@ namespace Amara {
                     scaleY = abs(scaleY);
                 }
 
-                destRect.x = ((x+renderOffsetX+cropLeft - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * nzoomX);
-                destRect.y = ((y-z+renderOffsetY+cropTop - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * nzoomY);
+                float rotatedX = (x+renderOffsetX+cropLeft - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX));
+                float rotatedY = (y-z+renderOffsetY+cropTop - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY));
+
+                destRect.x = (rotatedX * nzoomX);
+                destRect.y = (rotatedY * nzoomY);
                 destRect.w = (((imageWidth-cropLeft-cropRight) * scaleX) * nzoomX);
                 destRect.h = (((imageHeight-cropTop-cropBottom) * scaleY) * nzoomY);
+
+                if (pixelLocked) {
+                    destRect.x = floor(destRect.x);
+                    destRect.y = floor(destRect.y);
+                    destRect.w = ceil(destRect.w);
+                    destRect.h = ceil(destRect.h);
+                }
 
                 scaleX = recScaleX;
                 scaleY = recScaleY;
@@ -234,6 +277,11 @@ namespace Amara {
 
             bool setTexture(std::string gTextureKey) {
                 if (texture) removeTexture();
+                if (load == nullptr || properties == nullptr) {
+                    textureKey = gTextureKey;
+                    return true;
+                }
+
                 texture = (Amara::ImageTexture*)(load->get(gTextureKey));
                 if (texture != nullptr) {
                    textureKey = texture->key;
@@ -317,6 +365,13 @@ namespace Amara {
             }
             void setOrigin(float g) {
                 setOrigin(g, g);
+            }
+            void setOriginPosition(float gx, float gy) {
+                originX = gx/imageWidth;
+                originY = gy/imageHeight;
+            }
+            void setOriginPosition(float g) {
+                setOriginPosition(g, g);
             }
 
             void setRenderOffset(float gx, float gy) {

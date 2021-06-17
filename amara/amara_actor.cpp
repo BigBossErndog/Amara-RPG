@@ -13,6 +13,12 @@ namespace Amara {
 
             Actor(): Amara::Entity() {}
 
+            using Amara::Entity::init;
+            void init() {
+                Amara::Entity::init();
+                entityType = "actor";
+            }
+
             virtual Amara::Script* recite(Amara::Script* script) {
                 scripts.push_back(script);
                 script->init(properties, this);
@@ -33,6 +39,7 @@ namespace Amara {
                 if (scripts.size() == 0 || actingPaused) return;
                 for (Amara::Script* script: scripts) {
                     if (!script->finished) {
+                        script->receiveMessages();
                         script->script();
                         script->script(this);
                     }

@@ -14,6 +14,12 @@ namespace Amara {
             y = gy;
         }
 
+        using Amara::Actor::init;
+        void init() {
+                Amara::Actor::init();
+                entityType = "layer";
+            }
+
         virtual void draw(int vx, int vy, int vw, int vh) {
             Amara::Actor::draw(vx, vy, vw, vh);
         }
@@ -36,6 +42,12 @@ namespace Amara {
             x = gx;
             y = gy;
         }
+
+        using Amara::Layer::init;
+        void init() {
+                Amara::Layer::init();
+                entityType = "container";
+            }
 
         virtual void draw(int vx, int vy, int vw, int vh) override {
             int dx = 0, dy = 0, dw = 0, dh = 0, ox = 0, oy = 0;
@@ -98,6 +110,13 @@ namespace Amara {
         void setOrigin(float g) {
             setOrigin(g, g);
         }
+        void setOriginPosition(float gx, float gy) {
+            originX = gx/width;
+            originY = gy/height;
+        }
+        void setOriginPosition(float g) {
+            setOriginPosition(g, g);
+        }
     };
 
     class TextureLayer: public Amara::Layer {
@@ -109,8 +128,8 @@ namespace Amara {
         SDL_Texture* recTarget;
         SDL_Rect viewport;
         SDL_Rect srcRect;
-        SDL_Rect destRect;
-        SDL_Point origin = { 0, 0 };
+        SDL_FRect destRect;
+        SDL_FPoint origin = { 0, 0 };
 
         SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
@@ -119,10 +138,12 @@ namespace Amara {
         TextureLayer(): Layer() {}
         TextureLayer(float gx, float gy): Layer(gx, gy) {}
 
+        using Amara::Layer::init;
         virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
             properties = gameProperties;
             createTexture();
             Amara::Layer::init(gameProperties, givenScene, givenParent);
+            entityType = "textureLayer";
         }
 
         void createTexture() {
@@ -131,7 +152,7 @@ namespace Amara {
             }
             tx = SDL_CreateTexture(
                 properties->gRenderer,
-                SDL_GetWindowPixelFormat(properties->gWindow),
+                SDL_PIXELFORMAT_RGBA8888,
                 SDL_TEXTUREACCESS_TARGET,
                 properties->resolution->width,
                 properties->resolution->height
@@ -189,7 +210,7 @@ namespace Amara {
                     SDL_SetTextureBlendMode(tx, blendMode);
                     SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
 
-                    SDL_RenderCopyEx(
+                    SDL_RenderCopyExF(
                         properties->gRenderer,
                         tx,
                         NULL,
@@ -257,7 +278,7 @@ namespace Amara {
         }
     };
 
-    class TextureLayerContainer: public Amara::Layer {
+    class TextureContainer: public Amara::Layer {
     public:
         SDL_Texture* tx = nullptr;
         int textureWidth;
@@ -273,29 +294,33 @@ namespace Amara {
         SDL_Texture* recTarget;
         SDL_Rect viewport;
         SDL_Rect srcRect;
-        SDL_Rect destRect;
-        SDL_Point origin = { 0, 0 };
+        SDL_FRect destRect;
+        SDL_FPoint origin = { 0, 0 };
+
+        bool pixelLocked = false;
 
         SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
         bool textureLocked = false;
 
-        TextureLayerContainer(): Layer() {}
-        TextureLayerContainer(float gw, float gh) {
+        TextureContainer(): Layer() {}
+        TextureContainer(float gw, float gh) {
             width = gw;
             height = gh;
         }
-        TextureLayerContainer(float gx, float gy, float gw, float gh) {
+        TextureContainer(float gx, float gy, float gw, float gh) {
             x = gx;
             y = gy;
             width = gw;
             height = gh;
         }
 
+        using Amara::Layer::init;
         virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
             properties = gameProperties;
             createTexture();
             Amara::Layer::init(gameProperties, givenScene, givenParent);
+            entityType = "textureContainer";
         }
 
         void createTexture() {
@@ -304,7 +329,7 @@ namespace Amara {
             }
             tx = SDL_CreateTexture(
                 properties->gRenderer,
-                SDL_GetWindowPixelFormat(properties->gWindow),
+                SDL_PIXELFORMAT_RGBA8888,
                 SDL_TEXTUREACCESS_TARGET,
                 width,
                 height
@@ -319,6 +344,13 @@ namespace Amara {
         }
         void setOrigin(float go) {
             setOrigin(go, go);
+        }
+        void setOriginPosition(float gx, float gy) {
+            originX = gx/width;
+            originY = gy/height;
+        }
+        void setOriginPosition(float g) {
+            setOriginPosition(g, g);
         }
 
         void draw(int vx, int vy, int vw, int vh) {
@@ -370,10 +402,17 @@ namespace Amara {
                 scaleY = abs(scaleY);
             }
 
-            destRect.x = floor((x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
-            destRect.y = floor((y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
-            destRect.w = ceil((width * scaleX) * nzoomX);
-            destRect.h = ceil((height * scaleY) * nzoomY);
+            destRect.x = ((x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
+            destRect.y = ((y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
+            destRect.w = ((width * scaleX) * nzoomX);
+            destRect.h = ((height * scaleY) * nzoomY);
+
+            if (pixelLocked) {
+                destRect.x = floor(destRect.x);
+                destRect.y = floor(destRect.y);
+                destRect.w = ceil(destRect.w);
+                destRect.h = ceil(destRect.h);
+            }
 
             scaleX = recScaleX;
             scaleY = recScaleY;
@@ -402,7 +441,7 @@ namespace Amara {
                         flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
                     }
 
-                    SDL_RenderCopyEx(
+                    SDL_RenderCopyExF(
                         properties->gRenderer,
                         tx,
                         NULL,
@@ -473,7 +512,7 @@ namespace Amara {
             properties->angle = recAngle;
         }
 
-        ~TextureLayerContainer() {
+        ~TextureContainer() {
             if (tx) {
                 SDL_DestroyTexture(tx);
             }

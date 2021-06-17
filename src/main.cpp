@@ -26,7 +26,7 @@ class WalkTo: public Script {
         }
 };
 
-class CameraStuff: public Cutscene {
+class CameraStuff: public RPGCutscene {
     public:
         Scene* scene;
         PlayerProp* gnik;

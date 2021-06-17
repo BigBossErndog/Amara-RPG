@@ -12,8 +12,10 @@ namespace Amara {
 
 			SDL_Rect viewport;
 			SDL_Rect srcRect;
-			SDL_Rect destRect;
+			SDL_FRect destRect;
 			SDL_Point origin;
+
+			bool pixelLocked = false;
 
 			SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
@@ -26,7 +28,7 @@ namespace Amara {
 			float renderOffsetX = 0;
 			float renderOffsetY = 0;
 
-			FillRect(float gx, float gy, float gw, int gh, Amara::Color gColor) {
+			FillRect(float gx, float gy, float gw, float gh, Amara::Color gColor) {
 				x = gx;
 				y = gy;
 				width = gw;
@@ -34,6 +36,11 @@ namespace Amara {
 				color = gColor;
 			}
 			FillRect(float gx, float gy, float gw, float gh): FillRect(gx, gy, gw, gh, {0, 0, 0, 255}) {}
+
+			void init() {
+                Amara::Actor::init();
+                entityType = "actor";
+            }
 
 			void configure(nlohmann::json config) {
 				Amara::Actor::configure(config);
@@ -101,10 +108,17 @@ namespace Amara {
 				float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
 				float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
 
-				destRect.x = floor((x+renderOffsetX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
-				destRect.y = floor((y-z+renderOffsetY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
-				destRect.w = ceil(ceil(width * scaleX) * nzoomX);
-				destRect.h = ceil(ceil(height * scaleY) * nzoomY);
+				destRect.x = ((x+renderOffsetX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
+				destRect.y = ((y-z+renderOffsetY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
+				destRect.w = ((width * scaleX) * nzoomX);
+				destRect.h = ((height * scaleY) * nzoomY);
+
+				if (pixelLocked) {
+                    destRect.x = floor(destRect.x);
+                    destRect.y = floor(destRect.y);
+                    destRect.w = ceil(destRect.w);
+                    destRect.h = ceil(destRect.h);
+                }
 
 				origin.x = destRect.w * originX;
 				origin.y = destRect.h * originY;
@@ -147,11 +161,11 @@ namespace Amara {
 					SDL_SetRenderDrawBlendMode(properties->gRenderer, blendMode);
 	                SDL_SetRenderDrawColor(properties->gRenderer, color.r, color.g, color.b, newAlpha);
 
-					SDL_RenderFillRect(properties->gRenderer, &destRect);
+					SDL_RenderFillRectF(properties->gRenderer, &destRect);
 
 					SDL_SetRenderDrawColor(properties->gRenderer, recColor.r, recColor.g, recColor.b, recColor.a);
 				}
-
+ 
 				Amara::Actor::draw(vx, vy, vw, vh);
 			}
 	};

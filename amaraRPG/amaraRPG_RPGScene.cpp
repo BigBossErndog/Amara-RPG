@@ -12,8 +12,8 @@ namespace Amara {
 
             Amara::LightLayer* lighting = nullptr;
 
-            std::deque<Amara::CutsceneBase*> cutscenes;
-            Amara::CutsceneBase* currentCutscene = nullptr;
+            std::deque<Amara::RPGCutsceneBase*> cutscenes;
+            Amara::RPGCutsceneBase* currentCutscene = nullptr;
 
             std::string area;
             int floor = 0;
@@ -110,7 +110,7 @@ namespace Amara {
             virtual void rpgCreate() {
                 sm.reset();
 
-                for (Amara::CutsceneBase* cutscene: cutscenes) {
+                for (Amara::RPGCutsceneBase* cutscene: cutscenes) {
                     delete cutscene;
                 }
                 cutscenes.clear();
@@ -305,7 +305,7 @@ namespace Amara {
                 return isWall(tx, ty, nullptr, dir);
             }
 
-            Amara::CutsceneBase* startCutscene(Amara::CutsceneBase* cutscene) {
+            Amara::RPGCutsceneBase* startCutscene(Amara::RPGCutsceneBase* cutscene) {
                 cutscene->init(properties);
                 cutscene->prepare();
                 cutscene->prepare(this);

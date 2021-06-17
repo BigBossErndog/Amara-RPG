@@ -160,6 +160,7 @@ namespace Amara {
 			Amara::AudioGroup* audio = nullptr;
 			Amara::AssetManager* assets = nullptr;
 			Amara::Loader* load = nullptr;
+			Amara::MessageQueue* messages = nullptr;
 
 			std::vector<Amara::Entity*> entities;
 
@@ -169,6 +170,7 @@ namespace Amara {
 			nlohmann::json data;
 
 			std::string id;
+			std::string entityType;
 
 			float x = 0;
 			float y = 0;
@@ -207,9 +209,10 @@ namespace Amara {
 				audio = properties->audio;
 				assets = properties->assets;
 				load = properties->loader;
+				messages = properties->messages;
 
 				isActive = true;
-				data["entityType"] = "entity";
+				entityType = "entity";
 
 				init();
 				create();
@@ -239,6 +242,14 @@ namespace Amara {
 				if (config.find("yFromBottom") != config.end()) {
 					int yFromBottom = config["yFromBottom"];
 					y = properties->resolution->height - yFromBottom;
+				}
+				if (config.find("xFromCenter") != config.end()) {
+					int xFromCenter = config["xFromCenter"];
+					x = properties->resolution->width/2.0 + xFromCenter;
+				}
+				if (config.find("yFromCenter") != config.end()) {
+					int yFromCenter = config["yFromCenter"];
+					y = properties->resolution->height/2.0 + yFromCenter;
 				}
 
 				if (config.find("relativeX") != config.end()) {
@@ -318,6 +329,7 @@ namespace Amara {
 			virtual nlohmann::json toData() {
 				nlohmann::json config;
 				config["id"] = id;
+				config["entityType"] = entityType;
 				config["x"] = x;
 				config["y"] = y;
 				config["scaleX"] = scaleX;
@@ -401,6 +413,7 @@ namespace Amara {
 			}
 
 			virtual void run() {
+				receiveMessages();
 				updateMessages();
 
 				Amara::Interactable::run();
@@ -645,23 +658,28 @@ namespace Amara {
 
 			void updateMessages() {
 				if (pushedMessages) {
+					pushedMessages = false;
 					Amara::MessageQueue& messages = *(properties->messages);
 					for (auto it = messages.begin(); it != messages.end(); ++it) {
 						Message msg = *it;
 						if (msg.parent == this) {
-							messages.queue.erase(it--);
+							if (msg.skip) {
+								msg.skip = false;
+								pushedMessages = true;
+							}
+							else messages.queue.erase(it--);
 						}
 					}
-					pushedMessages = false;
 				}
 			}
-			void broadcastMessage(std::string key, nlohmann::json gData) {
-				properties->messages->broadcast(this, key, gData);
+			Message& broadcastMessage(std::string key, nlohmann::json gData) {
 				pushedMessages = true;
+				return properties->messages->broadcast(this, key, gData);
 			}
 			Message& getMessage(std::string key) {
 				return properties->messages->get(key);
 			}
+			virtual void receiveMessages() {}
 
 			virtual void create() {}
 			virtual void update() {}

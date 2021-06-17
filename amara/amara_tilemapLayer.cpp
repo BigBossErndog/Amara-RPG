@@ -51,6 +51,8 @@ namespace Amara {
             SDL_FPoint origin;
             SDL_RendererFlip flip;
 
+            bool pixelLocked = false;
+
             SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
             
             int tileWidth = 0;
@@ -105,13 +107,14 @@ namespace Amara {
                 if (!tiledJsonKey.empty()) {
                     setTiledJson(tiledJsonKey);
                 }
+                else {
+                    createDrawTexture();
+                }
                 if (!tiledLayerKey.empty()) {
                     setupTiledLayer(tiledLayerKey);
                 }
 
-                createDrawTexture();
-
-                data["entityType"] = "tilemapLayer";
+                entityType = "tilemapLayer";
             }
 
             void configure(nlohmann::json config) {
@@ -293,7 +296,7 @@ namespace Amara {
                 if (drawTexture) SDL_DestroyTexture(drawTexture);
                 drawTexture = SDL_CreateTexture(
                     properties->gRenderer,
-                    SDL_GetWindowPixelFormat(properties->gWindow),
+                    SDL_PIXELFORMAT_RGBA8888,
                     SDL_TEXTUREACCESS_TARGET,
                     widthInPixels,
                     heightInPixels
@@ -315,12 +318,15 @@ namespace Amara {
                 if (alpha < 0) alpha = 0;
                 if (alpha > 1) alpha = 1;
 
-                int tx, ty, frame, maxFrame = 0;
+                int frame, maxFrame = 0;
                 float tileAngle = 0;
+                float tx, ty;
 
                 SDL_Texture* recTarget = SDL_GetRenderTarget(properties->gRenderer);
                 SDL_SetRenderTarget(properties->gRenderer, drawTexture);
-                 SDL_RenderSetViewport(gRenderer, NULL);
+                SDL_RenderSetViewport(gRenderer, NULL);
+                SDL_SetTextureBlendMode(texture->asset, SDL_BLENDMODE_BLEND);
+				SDL_SetTextureAlphaMod(texture->asset, 255);
                 SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
                 SDL_RenderClear(properties->gRenderer);
 
@@ -399,13 +405,11 @@ namespace Amara {
 
                         if (destRect.x + destRect.w <= 0) skipDrawing = true;
                         if (destRect.y + destRect.h <= 0) skipDrawing = true;
-                        if (destRect.x >= imageWidth) skipDrawing = true;
-                        if (destRect.y >= imageHeight) skipDrawing = true;
                         if (destRect.w <= 0) skipDrawing = true;
                         if (destRect.h <= 0) skipDrawing = true;
 
                         if (!skipDrawing) {
-                            int hx, hy, hw, hh = 0;
+                            int hx = 0, hy = 0, hw = 0, hh = 0;
                             hw = destRect.w;
                             hh = destRect.h;
 
@@ -443,6 +447,10 @@ namespace Amara {
                                 srcRect.w = tileWidth;
                                 srcRect.h = tileHeight;
 
+                                if (tile.x == 0 && tile.y == 0) {
+                                    
+                                }
+
                                 SDL_RenderCopyExF(
                                     gRenderer,
                                     tex,
@@ -457,18 +465,24 @@ namespace Amara {
                     }
                 }
 
-                destRect.x = ((x+px - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * nzoomX);
-                destRect.y = ((y-z+py - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * nzoomY);
-                destRect.w = (widthInPixels*scaleX*nzoomX);
-                destRect.h = (heightInPixels*scaleY*nzoomY);
-
                 SDL_SetRenderTarget(properties->gRenderer, recTarget);
-
                 viewport.x = vx;
                 viewport.y = vy;
                 viewport.w = vw;
                 viewport.h = vh;
                 SDL_RenderSetViewport(gRenderer, &viewport);
+
+                destRect.x = ((x+px - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * nzoomX);
+                destRect.y = ((y-z+py - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * nzoomY);
+                destRect.w = (widthInPixels*scaleX*nzoomX);
+                destRect.h = (heightInPixels*scaleY*nzoomY);
+
+                if (pixelLocked) {
+                    destRect.x = floor(destRect.x);
+                    destRect.y = floor(destRect.y);
+                    destRect.w = ceil(destRect.w);
+                    destRect.h = ceil(destRect.h);
+                }
 
                 origin.x = destRect.w * originX;
                 origin.y = destRect.h * originY;
@@ -485,7 +499,7 @@ namespace Amara {
                     &origin,
                     SDL_FLIP_NONE
                 );
-
+                
                 Amara::Actor::draw(vx, vy, vw, vh);
             }
 

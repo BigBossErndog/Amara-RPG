@@ -5,7 +5,7 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class CutsceneBase: public Amara::Script {
+    class RPGCutsceneBase: public Amara::Script {
         public:
             virtual void init(Amara::GameProperties* gProperties) {
                 Amara::Script::init(gProperties);

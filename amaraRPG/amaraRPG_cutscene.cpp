@@ -5,17 +5,17 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class Cutscene: public Amara::CutsceneBase {
+    class RPGCutscene: public Amara::RPGCutsceneBase {
         public:
             Amara::RPGScene* rpgScene = nullptr;
             Amara::ActorGroup* group = nullptr;
 
 			Camera* cam;
 
-            Amara::Cutscene* chainedCutscene = nullptr;
+            Amara::RPGCutscene* chainedCutscene = nullptr;
 
             virtual void init(Amara::GameProperties* gameProperties) {
-                Amara::CutsceneBase::init(gameProperties);
+                Amara::RPGCutsceneBase::init(gameProperties);
                 rpgScene = (Amara::RPGScene*)scene;
                 if (group != nullptr) {
                     delete group;
@@ -30,7 +30,7 @@ namespace Amara {
             }
 
             void finish() {
-                Amara::CutsceneBase::finish();
+                Amara::RPGCutsceneBase::finish();
                 if (chainedCutscene) {
                     rpgScene->startCutscene(chainedCutscene);
                 }
@@ -41,7 +41,7 @@ namespace Amara {
                 group = nullptr;
             }
 
-            Amara::Cutscene* chain(Amara::Cutscene* gCutscene) {
+            Amara::RPGCutscene* chain(Amara::RPGCutscene* gCutscene) {
                 if (chainedCutscene) {
                     chainedCutscene->chain(gCutscene);
                 }
@@ -51,8 +51,8 @@ namespace Amara {
                 return gCutscene;
             }
 
-            Amara::Cutscene* unchain() {
-                Amara::Cutscene* rec = chainedCutscene;
+            Amara::RPGCutscene* unchain() {
+                Amara::RPGCutscene* rec = chainedCutscene;
                 chainedCutscene = nullptr;
                 return rec;
             }

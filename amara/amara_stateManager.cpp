@@ -45,6 +45,14 @@ namespace Amara {
                 stateRecords.clear();
             }
 
+            bool resetEvt() {
+                if (evt()) {
+                    reset();
+                    return true;
+                }
+                return false;
+            }
+
             bool state(std::string key) {
                 if (currentState.empty()) {
                     currentState = key;
@@ -168,7 +176,7 @@ namespace Amara {
                     }
 
                     waitCounter += 1;
-                    if (waitCounter > t) {
+                    if (waitCounter >= t) {
                         nextEvt();
                     }
 

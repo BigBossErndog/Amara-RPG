@@ -56,6 +56,7 @@ namespace Amara {
             add(backBar = new Image(0, 0));
             add(frontBar = new Image(0, 0));
             setTexture(textureKey);
+            entityType = "uiBar";
         }
 
         bool setTexture(std::string gKey) {
@@ -80,6 +81,14 @@ namespace Amara {
         TrueTypeFont* addTextDisplay(TrueTypeFont* gTxt) {
             add(textDisplay = gTxt);
             return textDisplay;
+        }
+
+        void setSpeed(int gSpeed, int gDelay) {
+            changeSpeed = gSpeed;
+            pauseTime = gDelay;
+        }
+        void setSpeed(int gDelay) {
+            setSpeed(1, gDelay);
         }
 
         void run() {
