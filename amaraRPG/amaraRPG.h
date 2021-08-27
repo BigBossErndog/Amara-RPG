@@ -8,6 +8,7 @@ namespace Amara {
 }
 #endif
 
+#include "amaraRPG_eventTriggers.cpp"
 #include "amaraRPG_cutscene.cpp"
 
 #include "amaraRPG_playerProp.cpp"
