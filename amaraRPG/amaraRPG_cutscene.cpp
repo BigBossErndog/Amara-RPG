@@ -8,7 +8,6 @@ namespace Amara {
     class RPGCutscene: public Amara::RPGCutsceneBase {
         public:
             Amara::RPGScene* rpgScene = nullptr;
-            Amara::ActorGroup* group = nullptr;
 
 			Camera* cam;
 
@@ -17,16 +16,7 @@ namespace Amara {
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::RPGCutsceneBase::init(gameProperties);
                 rpgScene = (Amara::RPGScene*)scene;
-                if (group != nullptr) {
-                    delete group;
-                }
-                rpgScene->recite(group = new ActorGroup());
 				cam = scene->mainCamera;
-            }
-
-            virtual Amara::Actor* add(Amara::Actor* actor) {
-                group->add(true, actor);
-                return actor;
             }
 
             void finish() {
@@ -35,10 +25,6 @@ namespace Amara {
                     rpgScene->startCutscene(chainedCutscene);
                 }
                 onEnd();
-
-                group->destroyActors();
-                delete group;
-                group = nullptr;
             }
 
             Amara::RPGCutscene* chain(Amara::RPGCutscene* gCutscene) {

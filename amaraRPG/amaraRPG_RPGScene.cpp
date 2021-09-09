@@ -42,6 +42,8 @@ namespace Amara {
 
             virtual void run() {
                 properties->currentScene = this;
+				receiveMessages();
+                updateMessages();
 
                 if (!initialLoaded) {
                     if (transition != nullptr) {
