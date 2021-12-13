@@ -19,10 +19,29 @@ namespace Amara {
                 entityType = "actor";
             }
 
+			void destroyScript(Amara::Script* script) {
+				if (script != nullptr) {
+					Script* check;
+					for (auto it = scripts.begin(); it != scripts.end(); ++it) {
+						check = *it;
+						if (check == script) {
+							scripts.erase(it--);
+							continue;
+						}
+					}
+					if (script->deleteOnFinish) properties->taskManager->queueDeletion(script);
+					if (script->chainedScript) destroyScript(script->chainedScript);
+				} 
+			}
+
             virtual Amara::Script* recite(Amara::Script* script) {
 				if (script == nullptr) {
 					SDL_Log("Null script was given.");
 					return nullptr;
+				}
+				if (isDestroyed) {
+					destroyScript(script);
+					return script;
 				}
                 scripts.push_back(script);
                 script->init(properties, this);
@@ -47,6 +66,10 @@ namespace Amara {
                         script->script();
                         script->script(this);
                     }
+					if (isDestroyed) {
+						clearScripts();
+						return;
+					}
                 }
 
                 std::vector<Script*> chained;
@@ -77,7 +100,7 @@ namespace Amara {
 
             void run() {
                 reciteScripts();
-                Amara::Entity::run();
+                if (!isDestroyed) Amara::Entity::run();
             }
 
             Amara::Entity* add(Amara::Entity* entity) {

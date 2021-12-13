@@ -2,9 +2,10 @@
 #include "amaraRPG.h"
 
 namespace Amara {
-    class EventTrigger: public Script {
+    class RPGEventTrigger: public Script {
         public:
             RPGScene* rpgScene;
+			RPGCutscene* cutscene;
 
             bool finishOnTrigger = true;
 
@@ -16,17 +17,24 @@ namespace Amara {
             void finish() {
                 Script::finish();
             }
+
+			~RPGEventTrigger() {
+                if (!finished) {
+                    if (cutscene) {
+                        delete cutscene;
+                    }
+                }
+            }
     };
 
-    class EventTriggerXY: public EventTrigger {
+    class RPGEventTriggerTileXY: public RPGEventTrigger {
         public:
             Walker* walker;
-            RPGCutscene* cutscene;
 
             int x;
             int y;
 
-            EventTriggerXY(Walker* gWalker, int gx, int gy, RPGCutscene* gScene) {
+            RPGEventTriggerTileXY(Walker* gWalker, RPGCutscene* gScene, int gx, int gy) {
                 walker = gWalker;
                 x = gx;
                 y = gy;
@@ -42,23 +50,16 @@ namespace Amara {
                 }
             }
 
-            ~EventTriggerXY() {
-                if (!finished) {
-                    if (cutscene) {
-                        delete cutscene;
-                    }
-                }
-            }
+            
     };
 
-    class EventTriggerTileX: public EventTrigger {
+    class RPGEventTriggerTileX: public RPGEventTrigger {
         public:
             Walker* walker;
-            RPGCutscene* cutscene;
 
             int x;
 
-            EventTriggerTileX(Walker* gWalker, int gx, RPGCutscene* gScene) {
+            RPGEventTriggerTileX(Walker* gWalker, RPGCutscene* gScene, int gx) {
                 walker = gWalker;
                 x = gx;
                 cutscene = gScene;
@@ -72,24 +73,15 @@ namespace Amara {
                     else cutscene->deleteOnFinish = false;
                 }
             }
-
-            ~EventTriggerTileX() {
-                if (!finished) {
-                    if (cutscene) {
-                        delete cutscene;
-                    }
-                }
-            }
     };
 
-    class EventTriggerTileY: public EventTrigger {
+    class RPGEventTriggerTileY: public RPGEventTrigger {
         public:
             Walker* walker;
-            RPGCutscene* cutscene;
 
             int y;
 
-            EventTriggerTileY(Walker* gWalker, int gy, RPGCutscene* gScene) {
+            RPGEventTriggerTileY(Walker* gWalker, RPGCutscene* gScene, int gy) {
                 walker = gWalker;
                 y = gy;
                 cutscene = gScene;
@@ -103,13 +95,73 @@ namespace Amara {
                     else cutscene->deleteOnFinish = false;
                 }
             }
-
-            ~EventTriggerTileY() {
-                if (!finished) {
-                    if (cutscene) {
-                        delete cutscene;
-                    }
-                }
-            }
     };
+
+	class RPGEventTriggerXY: public RPGEventTrigger {
+	public:
+		Entity* watched = nullptr;
+
+		FloatRect checkBox;
+
+		int x;
+		int y;
+
+		RPGEventTriggerXY(RPGCutscene* gCutscene, int gx, int gy) {
+			cutscene = gCutscene;
+			x = gx;
+			y = gy;
+		}
+		RPGEventTriggerXY(Entity* gWatched, RPGCutscene* gCutscene, int gx, int gy): RPGEventTriggerXY(gCutscene, gx, gy) {
+			watched = gWatched;
+		}
+
+		void prepare() {
+			if (watched == nullptr) watched = parent;
+			checkBox = {
+				x*TILE_WIDTH, y*TILE_HEIGHT,
+				TILE_WIDTH, TILE_HEIGHT
+			};
+		}
+
+		void script() {
+			if (rpgScene->inState("duration")) {
+				FloatVector2 point = { watched->x, watched->y };
+				if (overlapping(&point, &checkBox)) {
+					rpgScene->startCutscene(cutscene);
+					if (finishOnTrigger) finish();
+                    else cutscene->deleteOnFinish = false;
+				}
+			}
+		}
+	};
+
+	class RPGEventTriggerBoundary: public RPGEventTrigger {
+	public:
+		Entity* watched = nullptr;
+
+		float point;
+		Direction dir = NoDir;
+
+		RPGEventTriggerBoundary(RPGCutscene* gCutscene, float gp, Direction gDir) {
+			cutscene = gCutscene;
+			point = gp;
+			dir = gDir;
+		}
+		RPGEventTriggerBoundary(Entity* gWatched, RPGCutscene* gCutscene, float gp, Direction gDir): RPGEventTriggerBoundary(gCutscene, gp, gDir) {
+			watched = gWatched;
+		}
+
+		void prepare() {
+			if (watched == nullptr) watched = parent;
+		}
+
+		void script() {
+			if (rpgScene->inState("duration")) {
+				if ((dir == Left && watched->x <= point) || (dir == Right && watched->x >= point) || (dir == Up && watched->y <= point) || (dir == Down && watched->y >= point)) {
+					rpgScene->startCutscene(cutscene);
+					if (finishOnTrigger) finish();
+				}
+			}
+		}
+	};
 }

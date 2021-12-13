@@ -11,7 +11,7 @@ namespace Amara {
                 Amara::Script::init(gProperties);
             }
 
-            bool fadeIn(Amara::Actor* actor, float speed, float targetAlpha) {
+            bool fadeIn(Amara::Entity* actor, float speed, float targetAlpha) {
                 if (evt()) {
                     actor->alpha += speed;
                     if (actor->alpha >= targetAlpha) {
@@ -21,11 +21,11 @@ namespace Amara {
                 }
                 return false;
             }
-            bool fadeIn(Amara::Actor* actor, float speed) {
+            bool fadeIn(Amara::Entity* actor, float speed) {
                 return fadeIn(actor, speed, 1);
             }
 
-            bool fadeOut(Amara::Actor* actor, float speed, float targetAlpha) {
+            bool fadeOut(Amara::Entity* actor, float speed, float targetAlpha) {
                 if (evt()) {
                     actor->alpha -= speed;
                     if (actor->alpha <= targetAlpha) {
@@ -35,7 +35,7 @@ namespace Amara {
                 }
                 return false;
             }
-            bool fadeOut(Amara::Actor* actor, float speed) {
+            bool fadeOut(Amara::Entity* actor, float speed) {
                 return fadeOut(actor, speed, 0);
             }
     };

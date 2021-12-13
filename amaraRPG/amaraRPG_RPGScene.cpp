@@ -105,8 +105,6 @@ namespace Amara {
                     if (cam->isDestroyed || cam->parent != this) continue;
                     cam->run();
                 }
-
-                afterUpdate();
             }
 
             virtual void rpgCreate() {
@@ -200,6 +198,7 @@ namespace Amara {
                 }
                 else if (sm.state("cutscenes")) {
                     if (currentCutscene != nullptr && !currentCutscene->finished) {
+						currentCutscene->receiveMessages();
                         currentCutscene->script();
                         currentCutscene->script(this);
                     }
@@ -333,6 +332,10 @@ namespace Amara {
             virtual void duration() {}
             virtual void handleInteracts() {}
             virtual void handleEvents() {}
+
+			bool inState(std::string key) {
+				return sm.inState(key);
+			}
     };
 }
 

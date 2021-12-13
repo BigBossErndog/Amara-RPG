@@ -19,6 +19,8 @@ namespace Amara {
 
 	struct sortEntities {
 		inline bool operator() (Amara::SortedEntity* entity1, Amara::SortedEntity* entity2) {
+			if (entity1 == nullptr) return false;
+			if (entity2 == nullptr) return false;
 			return (entity1->depth < entity2->depth);
 		}
 	};
@@ -94,7 +96,7 @@ namespace Amara {
 				entityType = "entity";
 
 				init();
-				create();
+				if (!isDestroyed) create();
 			}
 
 			virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene) {
@@ -271,7 +273,7 @@ namespace Amara {
 				for (auto it = entities.begin(); it != entities.end(); ++it) {
                     entity = *it;
 
-                    if (entity->isDestroyed || entity->parent != this) {
+                    if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
                         entities.erase(it--);
                         continue;
                     }
@@ -289,6 +291,25 @@ namespace Amara {
 					properties->alpha = recAlpha;
 					entity->draw(vx, vy, vw, vh);
                 }
+			}
+
+			virtual void drawToTexture(SDL_Texture* tx, int gx, int gy) {
+				SDL_Texture* recTarget = SDL_GetRenderTarget(properties->gRenderer);
+				SDL_SetRenderTarget(properties->gRenderer, tx);
+				float recX = x, recY = y;
+				int vw, vh;
+				x = gx;
+				y = gy;
+
+				SDL_QueryTexture(tx, NULL, NULL, &vw, &vh);
+				draw(0, 0, vw, vh);
+
+				SDL_SetRenderTarget(properties->gRenderer, recTarget);
+				x = recX;
+				y = recY;
+			}
+			void drawToTexture(SDL_Texture* tx) {
+				drawToTexture(tx, x, y);
 			}
 
 			virtual void run() {
@@ -315,8 +336,13 @@ namespace Amara {
                     }
 				}
 
-				for (Amara::Entity* entity : entities) {
-					if (entity->isDestroyed || entity->parent != this) continue;
+				Amara::Entity* entity;
+				for (auto it = entities.begin(); it != entities.end(); ++it) {
+					entity = *it;
+					if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
+						entities.erase(it--);
+						continue;
+					}
 					entity->run();
 				}
 			}
@@ -331,6 +357,9 @@ namespace Amara {
 			}
 
 			virtual Amara::Entity* add(Amara::Entity* entity) {
+				if (entity && entity->parent != nullptr) {
+					entity->parent->remove(entity);
+				}
 				entities.push_back(entity);
 				entity->init(properties, scene, this);
 				return entity;
@@ -348,6 +377,7 @@ namespace Amara {
 				for (auto it = entities.begin(); it != entities.end(); ++it) {
 					child = *it;
 					if (child == entity) {
+						if (entity->parent == this) entity->parent = nullptr;
 						entities.erase(it--);
 					}
 				}
@@ -485,7 +515,7 @@ namespace Amara {
 			virtual void bringToFront() {
 				std::vector<Amara::Entity*>& rSceneEntities = parent->entities;
 				for (Amara::Entity* entity: rSceneEntities) {
-					if (entity != this && depth <= entity->depth) {
+					if (entity != this && !entity->isDestroyed && depth <= entity->depth) {
 						depth = entity->depth + 1;
 					}
 				}

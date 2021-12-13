@@ -18,8 +18,8 @@ namespace Amara {
             int tilePaddingLeft = 0;
             int tilePaddingRight = 0;
 
-            int tileOffsetX = Amara::TILE_WIDTH/2;
-            int tileOffsetY = Amara::TILE_HEIGHT/2;
+            float tileOffsetX = Amara::TILE_WIDTH/2;
+            float tileOffsetY = Amara::TILE_HEIGHT/2;
 
             bool isWall = true;
             bool isWalker = false;
@@ -121,6 +121,15 @@ namespace Amara {
 				snapTileY();
 			}
 
+			void setTileOffset(float gx, float gy) {
+				tileOffsetX = gx;
+				tileOffsetY = gy;
+				snapToTile();
+			}
+			void setTileOffset(float go) {
+				setTileOffset(go, go);
+			}
+
             void snapToTile() {
                 x = tileX * Amara::TILE_WIDTH + tileOffsetX;
                 y = tileY * Amara::TILE_HEIGHT + tileOffsetY;
@@ -156,7 +165,7 @@ namespace Amara {
 				return false;
 			}
 
-            Amara::Direction getDirectionTo(Amara::Prop* other) {
+            Amara::Direction getDirectionTo(Amara::Prop* other, std::vector<Amara::Direction> list) {
                 int objx = other->tileX;
                 int objy = other->tileY;
 
@@ -164,15 +173,11 @@ namespace Amara {
                     return Down;
                 }
 
-                float angle = atan2(objy - tileY, objx - tileX);
-                float dirNum = (int)round(angle/(M_PI/4)) % DirectionsInOrder.size();
-                if (dirNum < 0) {
-                    dirNum += 8;
-                }
-                Amara::Direction direction = Amara::DirectionsInOrder[dirNum];
-
-                return direction;
+                return getDirectionBetween(tileX, tileY, objx, objy, list);
             }
+			Amara::Direction getDirectionTo(Amara::Prop* other) {
+				return getDirectionTo(other, DirectionsInOrder);
+			}
 
             void setTilePadding(int pt, int pb, int pl, int pr) {
                 tilePaddingTop = pt;

@@ -194,8 +194,6 @@ namespace Amara {
                 dh = (y + height > vh) ? ceil(vh - y) : height;
                 dh -= oh;
 
-                SDL_SetRenderTarget(properties->gRenderer, NULL);
-
                 std::vector<Amara::Entity*>& rSceneEntities = parent->entities;
                 Amara::Entity* entity;
                 for (std::vector<Amara::Entity*>::iterator it = rSceneEntities.begin(); it != rSceneEntities.end(); it++) {
@@ -213,21 +211,6 @@ namespace Amara {
                     transition->draw(dx, dy, dw, dh);
                 }
             }
-			void drawToTexture(SDL_Texture* tx) {
-				SDL_Texture* recTarget = SDL_GetRenderTarget(properties->gRenderer);
-				SDL_SetRenderTarget(properties->gRenderer, tx);
-
-				float recX = x;
-				float recY = y;
-				x = 0;
-				y = 0;
-				draw(0, 0, width, height);
-
-				x = recX;
-				y = recY;
-
-				SDL_SetRenderTarget(properties->gRenderer, recTarget);
-			}
 
             void assignAttributes() {
                 resetPassOnProperties();

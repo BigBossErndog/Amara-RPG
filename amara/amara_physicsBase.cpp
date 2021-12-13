@@ -39,6 +39,8 @@ namespace Amara {
 			float velocityY = 0;
 			float frictionX = 0;
 			float frictionY = 0;
+			float bounceX = 0;
+			float bounceY = 0;
 
 			bool lockedToBounds = false;
 			int boundX = 0;
@@ -76,7 +78,17 @@ namespace Amara {
 
 			virtual void addCollisionTarget(Amara::Entity* other) {}
 			virtual void addCollisionTarget(Amara::PhysicsBase* gBody) {
-				if (gBody != nullptr) collisionTargets.push_back(gBody);
+				if (gBody != nullptr && gBody != this) collisionTargets.push_back(gBody);
+			}
+			virtual void addCollisionTargets(std::vector<Amara::Entity*> others) {
+				for (Amara::Entity* other: others) {
+					addCollisionTarget(other);
+				}
+			}
+			virtual void addCollisionTargets(std::vector<Amara::PhysicsBase*> others) {
+				for (Amara::PhysicsBase* other: others) {
+					addCollisionTarget(other);
+				}
 			}
 
 			void makePushable() {

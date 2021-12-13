@@ -482,6 +482,15 @@ namespace Amara {
                 setOpenSize(openWidth + gx, openHeight + gy);
             }
 
+			void snapClosed(bool hor, bool ver) {
+				if (hor) openWidth = minWidth;
+				if (ver) openHeight = minHeight;
+			}
+			void snapOpen(bool hor, bool ver) {
+				if (hor) openWidth = width;
+				if (ver) openHeight = height;
+			} 
+
             void setOrigin(float gx, float gy) {
                 originX = gx;
                 originY = gy;
@@ -695,16 +704,22 @@ namespace Amara {
 
 	class UIBox_Open: public Script {
 	public:
-		UIBox* box;
+		UIBox* box = nullptr;
 
-		UIBoxOpen() {}
+		UIBox_Open() {}
+		UIBox_Open(UIBox* gBox) { box = gBox; }
 
 		void prepare() {
-			box = (UIBox*)parent;
+			if (box == nullptr) box = (UIBox*)parent;
 			box->copyStateManager(this);
 		}
 
 		void script() {
+			if (box->isDestroyed) {
+				finish();
+				return;
+			}
+			box->copyStateManager(this);
 			start();
 			box->open();
 			finishEvt();
@@ -713,19 +728,82 @@ namespace Amara {
 
 	class UIBox_Close: public Script {
 	public:
-		UIBox* box;
+		UIBox* box = nullptr;
 
-		UIBoxOpen() {}
+		UIBox_Close() {}
+		UIBox_Close(UIBox* gBox) { box = gBox; }
 
 		void prepare() {
-			box = (UIBox*)parent;
-			box->copyStateManager(this);
+			if (box == nullptr) box = (UIBox*)parent;
 		}
 
 		void script() {
+			if (box->isDestroyed) {
+				finish();
+				return;
+			}
+			box->copyStateManager(this);
 			start();
 			box->close();
 			finishEvt();
+		}
+	};
+
+	class UIBox_Timed: public Amara::Tween {
+	public:
+		UIBox* box = nullptr;
+		
+		int targetWidth = 0;
+		int targetHeight = 0;
+		int startWidth = 0;
+		int startHeight = 0;
+
+		UIBox_Timed(float tw, float th, float tt, Easing gEasing) {
+			targetWidth = tw;
+			targetHeight = th;
+			time = tt;
+			easing = gEasing;
+		}
+		UIBox_Timed(float tw, float th, float tt): UIBox_Timed(tw, th, tt, LINEAR) {}
+		UIBox_Timed(UIBox* gBox, float tw, float th, float tt, Easing gEasing): UIBox_Timed(tw, th, tt, gEasing) {
+			box = gBox;
+		}
+		UIBox_Timed(UIBox* gBox, float tw, float th, float tt): UIBox_Timed(gBox, tw, th, tt, LINEAR) {}
+
+		void prepare() {
+			if (box == nullptr) box = (UIBox*)parent;
+			startWidth = box->openWidth;
+			startHeight = box->openHeight;
+			if (targetWidth == -1) targetWidth = (box->openWidth > box->minWidth) ? box->minWidth : box->width;
+			if (targetHeight == -1) targetHeight = (box->openHeight > box->minHeight) ? box->minHeight : box->height;
+		}
+
+		void script() {
+			progressFurther();
+			switch (easing) {
+				case LINEAR:
+					box->openWidth = linearEase(startWidth, targetWidth, progress);
+					box->openHeight = linearEase(startHeight, targetHeight, progress);
+					break;
+				case SINE_INOUT:
+					box->openWidth = sineInOutEase(startWidth, targetWidth, progress);
+					box->openHeight = sineInOutEase(startHeight, targetHeight, progress);
+					break;
+				case SINE_IN:
+					box->openWidth = sineInEase(startWidth, targetWidth, progress);
+					box->openHeight = sineInEase(startHeight, targetHeight, progress);
+					break;
+				case SINE_OUT:
+					box->openWidth = sineOutEase(startWidth, targetWidth, progress);
+					box->openHeight = sineOutEase(startHeight, targetHeight, progress);
+					break;
+			}
+		}
+
+		void finish() {
+			Amara::Tween::finish();
+			box->openWidth = targetWidth;
+			box->openHeight = targetHeight;
 		}
 	};
 }

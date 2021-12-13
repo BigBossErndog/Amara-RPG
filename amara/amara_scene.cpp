@@ -71,7 +71,7 @@ namespace Amara {
 
                 add(mainCamera = new Amara::Camera());
                 preload();
-                std::cout << "START LOADING TASKS: " << load->numTasks() << " loading tasks." << std::endl;
+                SDL_Log("START LOADING TASKS: %d loading tasks.", load->numTasks());
 
                 entityType = "scene";
             }
@@ -110,6 +110,7 @@ namespace Amara {
 
             virtual void run() {
                 properties->currentScene = this;
+				properties->currentCamera = mainCamera;
                 receiveMessages();
                 updateMessages();
 
@@ -189,12 +190,11 @@ namespace Amara {
                         cam->run();
                     }
                 }
-
-                afterUpdate();
             }
 
             virtual void draw() {
                 properties->currentScene = this;
+				properties->currentCamera = mainCamera;
 				properties->scrollX = 0;
 				properties->scrollY = 0;
 
@@ -224,10 +224,9 @@ namespace Amara {
                         cameras.erase(it--);
                     }
                     cam->transition = transition;
+					SDL_SetRenderTarget(properties->gRenderer, NULL);
                     cam->draw(vx, vy, properties->resolution->width, properties->resolution->height);
                 }
-
-                afterDraw();
             }
 
             virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
@@ -266,9 +265,6 @@ namespace Amara {
             virtual void onResume() {}
             virtual void onSleep() {}
             virtual void onWake() {}
-
-            virtual void afterUpdate() {}
-            virtual void afterDraw() {}
 
             ~Scene() {
                 delete load;
