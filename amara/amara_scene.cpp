@@ -202,7 +202,7 @@ namespace Amara {
                 stable_sort(entities.begin(), entities.end(), sortEntities());
 
                 float offset, upScale;
-                int vx, vy = 0;
+                int vx = 0, vy = 0;
                 float ratioRes = ((float)properties->resolution->width / (float)properties->resolution->height);
                 float ratioWin = ((float)properties->window->width / (float)properties->window->height);
 
@@ -225,6 +225,10 @@ namespace Amara {
                     }
                     cam->transition = transition;
 					SDL_SetRenderTarget(properties->gRenderer, NULL);
+
+					properties->interactOffsetX = 0;
+					properties->interactOffsetY = 0;
+
                     cam->draw(vx, vy, properties->resolution->width, properties->resolution->height);
                 }
             }

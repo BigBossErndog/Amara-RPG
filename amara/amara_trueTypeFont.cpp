@@ -41,6 +41,10 @@ namespace Amara {
             bool outlineCorners = true;
             Amara::Color outlineColor = FC_MakeColor(255, 255, 255, 255);
 			float outlineAlpha = 1;
+			bool outlineAlphaLocked = 1;
+			float outlineAlphaPow = 1;
+
+			IntRect viewbox;
 
             TrueTypeFont(): Amara::Actor() {}
 
@@ -218,7 +222,17 @@ namespace Amara {
             }
 
             void drawText(float dx, float dy) {
-                effect.alignment = (FC_AlignEnum)alignment;
+				switch (alignment) {
+					case ALIGN_LEFT:
+						effect.alignment = FC_ALIGN_LEFT;
+						break;
+					case ALIGN_CENTER:
+						effect.alignment = FC_ALIGN_CENTER;
+						break;
+					case ALIGN_RIGHT:
+						effect.alignment = FC_ALIGN_RIGHT;
+						break;
+				}
 
                 float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
                 float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
@@ -226,7 +240,18 @@ namespace Amara {
                 effect.scale.x = scaleX * nzoomX;
                 effect.scale.y = scaleY * nzoomY;
 
-                const char* txt = text.c_str();
+				const char* txt = text.c_str();
+
+				int txtWidth, txtHeight;
+				if (wordWrap) {
+                    txtWidth = wordWrapWidth;
+                    txtHeight = FC_GetColumnHeight(fontAsset->font, wordWrapWidth, txt);
+                }
+                else {
+                    txtWidth = FC_GetWidth(fontAsset->font, txt);
+                    txtHeight = FC_GetHeight(fontAsset->font, txt);
+                }
+
                 if (fontAsset != nullptr) {
                     if (wordWrap) {
                         int offsetX = 0;
@@ -237,15 +262,19 @@ namespace Amara {
                             offsetX = width;
                         }
 
+						int rx = floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
+						int ry = floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY);
+
                         FC_DrawColumnEffect(
                             fontAsset->font,
                             gRenderer,
-                            floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX),
-                            floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY),
+                            rx, ry,
                             wordWrapWidth,
                             effect,
                             txt
                         );
+
+						checkHover(viewbox.x, viewbox.y, viewbox.width, viewbox.height, rx, ry, width * effect.scale.x, height * effect.scale.y);
                     }
                     else {
                         int offsetX = 0;
@@ -256,14 +285,18 @@ namespace Amara {
                             offsetX = width;
                         }
 
+						int rx = floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
+						int ry = floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY);
+
                         FC_DrawEffect(
                             fontAsset->font,
                             gRenderer,
-                            floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX),
-                            floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY),
+                            rx, ry,
                             effect,
                             txt
                         );
+
+						checkHover(viewbox.x, viewbox.y, viewbox.width, viewbox.height, rx, ry, txtWidth * effect.scale.x, txtHeight * effect.scale.y);
                     }
                 }
             }
@@ -275,10 +308,13 @@ namespace Amara {
                 viewport.h = vh;
                 SDL_RenderSetViewport(gRenderer, &viewport);
 
+				viewbox = { vx, vy, vw, vh };
+
                 color.a = alpha * properties->alpha * 255;
 
                 if (outline) {
                     effect.color = outlineColor;
+					effect.color.a = outlineColor.a * pow(alpha, 1) * outlineAlpha;
                     for (int i = 0; i < outline+1; i++) {
                         drawText(x+i,y);
                         drawText(x-i,y);

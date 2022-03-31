@@ -3,6 +3,8 @@
 #include "amara.h"
 
 namespace Amara {
+	class InteractionManager;
+
     class TouchPointer: public Amara::Key {
     public:
         Amara::GameProperties* properties = nullptr;
@@ -12,11 +14,15 @@ namespace Amara {
         int y = 0;
         int dx = 0;
         int dy = 0;
+		int recX = 0;
+		int recY = 0;
         int movementX = 0;
         int movementY = 0;
         float pressure = 0;
 
         bool inUse = false;
+
+		Amara::InteractionManager* interact = nullptr;
 
         TouchPointer(Amara::GameProperties* gProperties): Amara::Key() {
             properties = gProperties;
@@ -29,10 +35,22 @@ namespace Amara {
         void virtualizeXY(SDL_Event& e) {
             float upScale, offset;
 
+			recX = dx;
+			recY = dy;
+
             x = e.tfinger.x * (float)properties->resolution->width;
             y = e.tfinger.y * (float)properties->resolution->height;
             dx = x;
             dy = y;
+
+			if (!justDown) {
+				movementX = dx - recX;
+				movementY = dy - recY;
+			}
+			else {
+				movementX = 0;
+				movementY = 0;
+			}
 
             float ratioRes = ((float)properties->resolution->width / (float)properties->resolution->height);
             float ratioWin = ((float)properties->window->width / (float)properties->window->height);

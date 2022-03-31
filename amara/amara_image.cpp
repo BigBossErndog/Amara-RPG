@@ -139,6 +139,12 @@ namespace Amara {
                 config["originY"] = originY;
                 config["flipHorizontal"] = flipHorizontal;
                 config["flipVertical"] = flipVertical;
+				config["cropLeft"] = cropLeft;
+				config["cropRight"] = cropRight;
+				config["cropTop"] = cropTop;
+				config["cropBottom"] = cropBottom;
+				config["renderOffsetX"] = renderOffsetX;
+				config["renderOffsetY"] = renderOffsetY;
                 return config;
             }
 
@@ -221,8 +227,6 @@ namespace Amara {
                     if (hx + hw > vx + vw) hw = ((vx + vw) - hx);
                     if (hy + hh > vy + vh) hh = ((vy + vh) - hy);
 
-                    checkForHover(hx, hy, hw, hh);
-
                     if (texture != nullptr) {
                         SDL_Texture* tx = (SDL_Texture*)texture->asset;
                         switch (texture->type) {
@@ -265,6 +269,8 @@ namespace Amara {
                             &origin,
                             flipVal
                         );
+
+						checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
                     }
                 }
             }

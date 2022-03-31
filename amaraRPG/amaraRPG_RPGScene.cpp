@@ -8,7 +8,7 @@ namespace Amara {
     class RPGScene : public Amara::Scene, public Amara::WallFinder {
         public:
             Amara::Tilemap* tilemap = nullptr;
-            nlohmann::json mapData;
+            nlohmann::json mapData = nullptr;
 
             Amara::LightLayer* lighting = nullptr;
 
@@ -119,23 +119,17 @@ namespace Amara {
                 lighting = nullptr;
 
                 prepare();
-                add(tilemap = new Amara::Tilemap());
+				mapData = createMap();
 
                 int i = 0;
                 int aboveDepth = 0;
 
                 if (!mapData.empty()) {
+					add(tilemap = new Amara::Tilemap());
+					tilemap->id = "tilemap";
+
                     i = 0;
-                    if (mapData.find("texture") != mapData.end()) {
-                        tilemap->setTexture(mapData["texture"]);
-                    }
-                    if (mapData.find("json") != mapData.end()) {
-                        tilemap->setTiledJson(mapData["json"]);
-                        tilemap->createAllLayers();
-                    }
-                    if (mapData.find("config") != mapData.end()) {
-                        tilemap->configure(mapData["config"]);
-                    }
+                    tilemap->configure(mapData);
 
                     Amara::TilemapLayer* layer;
 
@@ -161,10 +155,6 @@ namespace Amara {
                                 i += 1;
                             }
                         }
-                    }
-
-                    if (mapData.find("wallLayers") != mapData.end()) {
-                        tilemap->setWalls(mapData["wallLayers"]);
                     }
 
                     Amara::TILE_WIDTH = tilemap->tileWidth;
@@ -328,6 +318,7 @@ namespace Amara {
                 return tilemap->getMapHeight();
             }
 
+			virtual nlohmann::json createMap() { return nullptr; }
             virtual void prepare() {}
             virtual void duration() {}
             virtual void handleInteracts() {}

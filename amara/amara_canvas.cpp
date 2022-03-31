@@ -206,6 +206,10 @@ namespace Amara {
             virtual void draw(int vx, int vy, int vw, int vh) override {
                 bool skipDrawing = false;
 
+				if (properties->renderTargetsReset || properties->renderDeviceReset) {
+					createNewCanvasTexture();
+				}
+
                 if (alpha < 0) alpha = 0;
                 if (alpha > 1) alpha = 1;
 
@@ -252,15 +256,15 @@ namespace Amara {
                 }
                 if (hx + hw > vx + vw) hw = ((vx + vw) - hx);
                 if (hy + hh > vy + vh) hh = ((vy + vh) - hy);
-
-                checkForHover(hx, hy, hw, hh);
-
+				
                 if (destRect.x + destRect.w <= 0) skipDrawing = true;
                 if (destRect.y + destRect.h <= 0) skipDrawing = true;
                 if (destRect.x >= vw) skipDrawing = true;
                 if (destRect.y >= vh) skipDrawing = true;
                 if (destRect.w <= 0) skipDrawing = true;
                 if (destRect.h <= 0) skipDrawing = true;
+
+				checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
 
                 if (!skipDrawing) {
                     if (canvas != nullptr) {
@@ -280,6 +284,8 @@ namespace Amara {
                 }
 
                 Amara::Entity::draw(vx, vy, vw, vh);
+
+				checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
 
                 if (clearEveryFrame) clear();
             }

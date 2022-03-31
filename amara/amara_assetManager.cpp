@@ -29,6 +29,18 @@ namespace Amara {
                 return loader->getJSON(key);
             }
 
+			std::string getString(std::string key) {
+				return loader->getString(key);
+			}
+
+			SDL_Texture* getTexture(std::string key) {
+				return loader->getTexture(key);
+			}
+
+			SDL_Surface* getSurface(std::string key) {
+				return loader->getSurface(key);
+			}
+
 			bool remove(std::string key) {
 				return loader->remove(key);
 			}

@@ -65,7 +65,7 @@ namespace Amara {
 			int realFPS = fps;
 			LTimer fpsTimer;
 			LTimer capTimer;
-
+			
 			int frameCounter = 0;
 			int logicDelay = 0;
 
@@ -453,6 +453,13 @@ namespace Amara {
 				isFullscreen = false;
 			}
 
+			void setWindowIcon(SDL_Surface* sf) {
+				SDL_SetWindowIcon(gWindow, sf);
+			}
+			void setWindowIcon(std::string key) {
+				setWindowIcon(assets->getSurface(key));
+			}
+
 			void writeProperties() {
 				properties->gWindow = gWindow;
 				properties->gSurface = gSurface;
@@ -502,6 +509,7 @@ namespace Amara {
 				frameCounter += 1;
 
 				scenes->draw();
+				events->manageInteracts();
 
 				/// Draw to renderer
 				SDL_RenderPresent(gRenderer);

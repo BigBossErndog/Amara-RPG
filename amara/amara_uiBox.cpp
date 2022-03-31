@@ -312,6 +312,9 @@ namespace Amara {
                     if (openHeight > height) openHeight = height;
                     createNewCanvasTexture();
                 }
+				else if (properties->renderTargetsReset || properties->renderDeviceReset) {
+					createNewCanvasTexture();
+				}
 
                 if (lockOpen) {
                     openWidth = width;
@@ -388,8 +391,6 @@ namespace Amara {
                     if (hx + hw > vx + vw) hw = ((vx + vw) - hx);
                     if (hy + hh > vy + vh) hh = ((vy + vh) - hy);
 
-                    checkForHover(hx, hy, hw, hh);
-
                     if (canvas != nullptr) {
                         SDL_SetTextureBlendMode(canvas, blendMode);
 				        SDL_SetTextureAlphaMod(canvas, alpha * properties->alpha * 255);
@@ -403,6 +404,8 @@ namespace Amara {
                             &origin,
                             SDL_FLIP_NONE
                         );
+
+						checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
                     }
                 }
 

@@ -27,6 +27,8 @@ namespace Amara {
 
 			bool isActive = false;
 			bool isDestroyed = false;
+			bool isWall = true;
+			bool isColliding = true;
 
 			int shape = -1;
 			PhysicsProperties properties;
@@ -89,6 +91,38 @@ namespace Amara {
 				for (Amara::PhysicsBase* other: others) {
 					addCollisionTarget(other);
 				}
+			}
+
+			void setVelocity(float gx, float gy) {
+				velocityX = gx;
+				velocityY = gy;
+			}
+			void setVelocity(float gv) {
+				setVelocity(gv, gv);
+			}
+
+			void setAcceleration(float gx, float gy) {
+				accelerationX = gx;
+				accelerationY = gy;
+			}
+			void setAcceleration(float ga) {
+				setAcceleration(ga, ga);
+			} 
+
+			void setFriction(float gx, float gy) {
+				frictionX = gx;
+				frictionY = gy;
+			}
+			void setFriction(float gf) {
+				setFriction(gf, gf);
+			}
+
+			void setBounce(float gx, float gy) {
+				bounceX = gx;
+				bounceY = gy;
+			}
+			void setBounce(float gb) {
+				setBounce(gb, gb);
 			}
 
 			void makePushable() {

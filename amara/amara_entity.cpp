@@ -192,7 +192,7 @@ namespace Amara {
 				if (config.find("cameraOffsetY") != config.end()) {
 					cameraOffsetY = config["cameraOffsetY"];
 				}
-				if (config.find("data") != config.end()) {
+				if (config.find("data") != config.end() && !config["data"].is_null()) {
 					data.update(config["data"]);
 				}
 				if (config.find("bringToFront") != config.end()) {
@@ -204,6 +204,12 @@ namespace Amara {
 					if (config["sendToBack"]) {
 						sendToBack();
 					}
+				}
+				if (config.find("isInteractable") != config.end()) {
+					setInteractable(config["isInteractable"]);
+				}
+				if (config.find("isDraggable") != config.end()) {
+					setDraggable(config["isDraggable"]);
 				}
 			}
 
@@ -317,6 +323,17 @@ namespace Amara {
 				updateMessages();
 
 				Amara::Interactable::run();
+				if (isInteractable && isDraggable && interact.isDown) {
+					if (physics) {
+						physics->velocityX = interact.movementX;
+						physics->velocityY = interact.movementY;
+					}
+					else {
+						x += interact.movementX;
+						y += interact.movementY;
+					}
+				}
+
 				update();
 				if (physics != nullptr) {
 					if (physics->isActive) physics->run();

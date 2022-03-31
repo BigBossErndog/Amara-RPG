@@ -161,6 +161,7 @@ namespace Amara {
         SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
         bool textureLocked = false;
+		bool pleaseUpdate = false;
 
         TextureLayer(): Layer() {}
         TextureLayer(float gx, float gy): Layer(gx, gy) {}
@@ -190,18 +191,37 @@ namespace Amara {
 
         void draw(int vx, int vy, int vw, int vh) {
             float recAlpha = properties->alpha;
-            if (!textureLocked) {
+
+			if (properties->renderTargetsReset || properties->renderDeviceReset) {
+				createTexture();
+				pleaseUpdate = true;
+			}
+
+            if (!textureLocked || pleaseUpdate) {
                 if (textureWidth != properties->currentCamera->width || textureHeight != properties->currentCamera->height) {
                     createTexture();
                 }
                 if (!tx) return;
+				pleaseUpdate = false;
 
                 recTarget = SDL_GetRenderTarget(properties->gRenderer);
                 SDL_SetRenderTarget(properties->gRenderer, tx);
                 SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
                 SDL_RenderClear(properties->gRenderer);
+
+				properties->interactOffsetX += vx;
+				properties->interactOffsetY += vy;
+
+				properties->interactScaleX *= scaleX;
+				properties->interactScaleY *= scaleY;
                 
                 drawEntities(vx, vy, vw, vh);
+
+				properties->interactOffsetX -= vx;
+				properties->interactOffsetY -= vy;
+
+				properties->interactScaleX /= scaleX;
+				properties->interactScaleY /= scaleY;
 
                 SDL_SetRenderTarget(properties->gRenderer, recTarget);
             }
@@ -246,6 +266,8 @@ namespace Amara {
                         &origin,
                         SDL_FLIP_NONE
                     );
+
+					checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
                 }
             }
         }
@@ -329,6 +351,7 @@ namespace Amara {
         SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
         bool textureLocked = false;
+		bool pleaseUpdate = false;
 
         TextureContainer(): Layer() {}
         TextureContainer(float gw, float gh) {
@@ -409,35 +432,15 @@ namespace Amara {
 
         void draw(int vx, int vy, int vw, int vh) {
             float recAlpha = properties->alpha;
-            if (!textureLocked) {
-                if (textureWidth != width || textureHeight != height) {
-                    createTexture();
-                }
-                if (!tx) return;
-
-                recTarget = SDL_GetRenderTarget(properties->gRenderer);
-                SDL_SetRenderTarget(properties->gRenderer, tx);
-                SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
-                SDL_RenderClear(properties->gRenderer);
-                
-                drawEntities(0, 0, width, height);
-
-                SDL_SetRenderTarget(properties->gRenderer, recTarget);
-            }
-            else {
-                if (!tx) return;
-            }
-
             bool skipDrawing = false;
+
+			if (properties->renderTargetsReset || properties->renderDeviceReset) {
+				createTexture();
+				pleaseUpdate = true;
+			}
 
             if (alpha < 0) alpha = 0;
             if (alpha > 1) alpha = 1;
-
-            viewport.x = vx;
-            viewport.y = vy;
-            viewport.w = vw;
-            viewport.h = vh;
-            SDL_RenderSetViewport(properties->gRenderer, &viewport);
 
             float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
             float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
@@ -480,10 +483,29 @@ namespace Amara {
             if (destRect.y >= vh) skipDrawing = true;
             if (destRect.w <= 0) skipDrawing = true;
             if (destRect.h <= 0) skipDrawing = true;
-            
+
+			properties->interactOffsetX += vx + destRect.x;
+			properties->interactOffsetY += vy + destRect.y;
+
+			properties->interactScaleX *= scaleX;
+			properties->interactScaleY *= scaleY;
+
+			drawChildren();
+
+			properties->interactOffsetX -= vx + destRect.x;
+			properties->interactOffsetY -= vy + destRect.y;
+
+			properties->interactScaleX /= scaleX;
+			properties->interactScaleY /= scaleY;
 
             if (!skipDrawing) {
                 if (tx != nullptr) {
+					viewport.x = vx;
+					viewport.y = vy;
+					viewport.w = vw;
+					viewport.h = vh;
+					SDL_RenderSetViewport(properties->gRenderer, &viewport);
+
                     SDL_SetTextureBlendMode(tx, blendMode);
                     SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
 
@@ -504,9 +526,33 @@ namespace Amara {
                         &origin,
                         flipVal
                     );
+
+					checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
                 }
             }
         }
+
+		void drawChildren() {
+			if (!textureLocked || pleaseUpdate) {
+                if (textureWidth != width || textureHeight != height) {
+                    createTexture();
+                }
+                if (!tx) return;
+				pleaseUpdate = false;
+
+                recTarget = SDL_GetRenderTarget(properties->gRenderer);
+                SDL_SetRenderTarget(properties->gRenderer, tx);
+                SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
+                SDL_RenderClear(properties->gRenderer);
+
+                drawEntities(0, 0, width, height);
+
+                SDL_SetRenderTarget(properties->gRenderer, recTarget);
+            }
+            else {
+                if (!tx) return;
+            }
+		}
 
         void drawEntities(int vx, int vy, int vw, int vh) {
             if (properties->quit) return;

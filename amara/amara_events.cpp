@@ -5,37 +5,10 @@
 #include "amara.h"
 
 namespace Amara {
-    class Interactable;
-
-    enum EventType {
-        SCENELEFTCLICK,
-        SCENERIGHTCLICK,
-        SCENEMIDDLECLICK,
-        SCENELEFTRELEASE,
-        SCENERIGHTRELEASE,
-        SCENEMIDDLERELEASE,
-
-        SCENETOUCHDOWN,
-        SCENETOUCHUP,
-
-        OBJECTLEFTCLICK,
-        OBJECTRIGHTCLICK,
-        OBJECTMIDDLECLICK,
-
-        OBJECTLEFTRELEASE,
-        OBJECTRIGHTRELEASE,
-        OBJECTMIDDLERELEASE,
-
-        OBJECTTOUCHDOWN,
-        OBJECTTOUCHUP
-    };
-
     class Event {
         public:
             Amara::EventType type;
             bool disabled = false;
-            Amara::Interactable* taken;
-            std::vector<Amara::Interactable*> ignore;
     };
     
     class EventManager {
@@ -44,6 +17,7 @@ namespace Amara {
             Amara::InputManager* input = nullptr;
 
             std::vector<Amara::Event*> eventList;
+			std::vector<Amara::Event*> delayedEvents;
 
             EventManager(Amara::GameProperties* gameProperties) {
                 properties = gameProperties;
@@ -55,33 +29,59 @@ namespace Amara {
                 evt->type = type;
                 eventList.push_back(evt);
             }
+			void addDelayedEvent(Amara::EventType type) {
+				Amara::Event* evt = new Amara::Event();
+                evt->type = type;
+                delayedEvents.push_back(evt);
+			}
 
             void manage() {
                 for (Amara::Event* evt : eventList) {
                     delete evt;
                 }
-                eventList.clear();
+                eventList = delayedEvents;
+				delayedEvents.clear();
 
                 Amara::Mouse* mouse = input->mouse;
                 if (mouse->left->justDown) {
-                    addEvent(SCENELEFTCLICK);
                     addEvent(OBJECTLEFTCLICK);
                 }
                 if (mouse->right->justDown) {
-                    addEvent(SCENERIGHTCLICK);
                     addEvent(OBJECTRIGHTCLICK);
                 }
                 if (mouse->middle->justDown) {
-                    addEvent(SCENEMIDDLECLICK);
+                    addEvent(OBJECTMIDDLECLICK);
+                }
+				if (mouse->left->justUp) {
+                    addEvent(OBJECTLEFTRELEASE);
+                }
+                if (mouse->right->justUp) {
+                    addEvent(OBJECTRIGHTRELEASE);
+                }
+                if (mouse->middle->justUp) {
                     addEvent(OBJECTMIDDLECLICK);
                 }
 
                 std::vector<TouchPointer*>& fingers = input->touches->pointers;
                 for (TouchPointer* finger: fingers) {
-                    if (finger->justDown) addEvent(OBJECTTOUCHDOWN);
-                    if (finger->justUp) addEvent(OBJECTTOUCHUP);
+                    if (finger->justDown) addDelayedEvent(OBJECTTOUCHDOWN);
+                    if (finger->justUp) addDelayedEvent(OBJECTTOUCHUP);
                 }
             }
+
+			void manageInteracts() {
+				if (input->mouse->interact) {
+					input->mouse->interact->mouseHover.press();
+					input->mouse->interact = nullptr;
+				}
+				std::vector<TouchPointer*>& fingers = input->touches->pointers;
+                for (TouchPointer* finger: fingers) {
+                    if (finger->interact) {
+						finger->interact->touchHover.press();
+						finger->interact = nullptr;
+					}
+                }
+			}
     };
 }
 
