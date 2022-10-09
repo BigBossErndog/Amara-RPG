@@ -37,14 +37,12 @@ cpamara:
 
 cplibs:
 	cp -T -r ../amara/ext_lib ./ext_lib
-	cp -T -r ../amaraRPG/ext_lib ./ext_lib
-	cp -T -r ../amaraRPG/dlls ./dlls
+	cp -T -r ../amara/dlls ./dlls
 
 clean:
 	rm -rf $(BUILD_PATH)/*
 
 win64: $(SRC_FILES)
-	cls
 	rm -rf build/*.dll
 	rm -rf build/assets/*
 	cp -R assets/ build/
@@ -52,7 +50,6 @@ win64: $(SRC_FILES)
 	cp dlls/win64/* $(BUILD_PATH)/
 
 win32: $(SRC_FILES)
-	cls
 	rm -rf build/*.dll
 	rm -rf build/assets/*
 	cp -R assets/ build/

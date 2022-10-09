@@ -2,10 +2,10 @@
 #ifndef AMARA_STICK
 #define AMARA_STICK
 
-#include "amara.h"
+
 
 namespace Amara {
-    const int JOYSTICK_DEADZONE = 20000;
+    const int JOYSTICK_DEADZONE = 12000;
 
     class Stick: public Amara::Button {
         public:

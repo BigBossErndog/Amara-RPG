@@ -2,7 +2,7 @@
 #ifndef AMARA_GEOMETRY
 #define AMARA_GEOMETRY
 
-#include "amara.h"
+
 
 namespace Amara {
     typedef struct IntVector2 {
@@ -145,12 +145,15 @@ namespace Amara {
         return overlapping(p->x, p->y, circle);
     }
     
-    bool overlapping(float px, float py, FloatRect* rect) {
-        if (px < rect->x) return false;
-        if (px > rect->x+rect->width) return false;
-        if (py < rect->y) return false;
-        if (py > rect->y+rect->height) return false;
+    bool overlapping(float px, float py, float rx, float ry, float rw, float rh) {
+        if (px < rx) return false;
+        if (px >= rx+rw) return false;
+        if (py < ry) return false;
+        if (py >= ry+rh) return false;
         return true;
+    }
+    bool overlapping(float px, float py, FloatRect* rect) {
+        return overlapping(px, py, rect->x, rect->y, rect->width, rect->height);
     }
     bool overlapping(FloatVector2* p, FloatRect* rect) {
         return overlapping(p->x, p->y, rect);
@@ -171,13 +174,13 @@ namespace Amara {
     }
 
     bool overlapping(IntRect* rect1, IntRect* rect2) {
-        bool overlapX = abs((rect1->x + rect1->width/2.0) - (rect2->x + rect2->width/2.0)) < (rect1->width/2.0 + rect2->width/2.0);
-        bool overlapY = abs((rect1->y + rect1->height/2.0) - (rect2->y + rect2->height/2.0)) < (rect1->height/2.0 + rect2->height/2.0);
+        bool overlapX = abs((rect1->x + rect1->width/2.0) - (rect2->x + rect2->width/2.0)) <= (rect1->width/2.0 + rect2->width/2.0);
+        bool overlapY = abs((rect1->y + rect1->height/2.0) - (rect2->y + rect2->height/2.0)) <= (rect1->height/2.0 + rect2->height/2.0);
         return overlapX && overlapY;
     }
     bool overlapping(FloatRect* rect1, FloatRect* rect2) {
-        bool overlapX = abs((rect1->x + rect1->width/2.0) - (rect2->x + rect2->width/2.0)) < (rect1->width/2.0 + rect2->width/2.0);
-        bool overlapY = abs((rect1->y + rect1->height/2.0) - (rect2->y + rect2->height/2.0)) < (rect1->height/2.0 + rect2->height/2.0);
+        bool overlapX = abs((rect1->x + rect1->width/2.0) - (rect2->x + rect2->width/2.0)) <= (rect1->width/2.0 + rect2->width/2.0);
+        bool overlapY = abs((rect1->y + rect1->height/2.0) - (rect2->y + rect2->height/2.0)) <= (rect1->height/2.0 + rect2->height/2.0);
         return overlapX && overlapY;
     }
     bool overlapping(FloatRect* rect, FloatCircle* circle) {
@@ -188,7 +191,7 @@ namespace Amara {
         if (cx > rect->x + rect->width) cx = rect->x + rect->width;
         if (cy < rect->y) cy = rect->y;
         if (cy > rect->y + rect->height) cy = rect->y + rect->height;
-        if (Amara::distanceBetween(cx, cy, circle->x, circle->y) < circle->radius) {
+        if (Amara::distanceBetween(cx, cy, circle->x, circle->y) <= circle->radius) {
             return true;
         }
         return false;
@@ -417,6 +420,13 @@ namespace Amara {
 		}
 		return "noDir";
 	}
+
+    Amara::IntVector2 getDirectionVector(Amara::Direction dir) {
+        return { getOffsetX(dir), getOffsetY(dir) };
+    }
+    Amara::IntVector2 flipVector(Amara::IntVector2 v) {
+        return { -v.x, -v.y };
+    }
 }
 
 #endif

@@ -2,7 +2,7 @@
 #ifndef AMARA_GAME
 #define AMARA_GAME
 
-#include "amara.h"
+
 
 namespace Amara {
 	class Game {
@@ -299,6 +299,10 @@ namespace Amara {
 				deleteObjects();
 				deleteTransitions();
 				taskManager->run();
+
+				if (renderTargetsReset || renderDeviceReset) {
+					load->regenerateAssets();
+				}
 			}
 
 			void deleteEntities() {
@@ -647,11 +651,9 @@ namespace Amara {
 					}
 					else if (e.type == SDL_RENDER_TARGETS_RESET) {
 						renderTargetsReset = true;
-						load->regenerateAssets();
 					}
 					else if (e.type == SDL_RENDER_DEVICE_RESET) {
 						renderDeviceReset = true;
-						load->regenerateAssets();
 					}
 					else if (e.type == SDL_CONTROLLERDEVICEADDED) {
 						SDL_GameController* controller = SDL_GameControllerOpen(e.cdevice.which);
@@ -707,6 +709,11 @@ namespace Amara {
 
 						input->touches->isActivated = true;
 					}
+					else if( e.type == SDL_TEXTINPUT ) {
+                        if( !( SDL_GetModState() & KMOD_CTRL && ( e.text.text[ 0 ] == 'c' || e.text.text[ 0 ] == 'C' || e.text.text[ 0 ] == 'v' || e.text.text[ 0 ] == 'V' ) ) ) {
+                            input->inputText += e.text.text;
+                        }
+                    }
 				}
 
 				controls->run();

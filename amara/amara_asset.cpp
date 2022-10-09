@@ -2,11 +2,12 @@
 #ifndef AMARA_ASSET
 #define AMARA_ASSET
 
-#include "amara.h"
+
 
 namespace Amara {
     enum AssetType {
         JSONCONFIG,
+        ASSETPATH,
         SURFACE,
         IMAGE,
 		CIRCLETEXTURE,
@@ -18,7 +19,8 @@ namespace Amara {
         MUSIC,
         JSONFILE,
         STRINGFILE,
-        LINEBYLINE
+        LINEBYLINE,
+        CSVFILE
     };
 
     class Asset {
@@ -255,6 +257,137 @@ namespace Amara {
 
         bool eof() {
             return index >= contents.size();
+        }
+    };
+
+    class CSVLine {
+    public:
+        std::vector<nlohmann::json> items;
+        bool invalid = false;
+
+        CSVLine() {}
+        CSVLine(std::string line) {
+            setLine(line);
+        }
+        CSVLine(bool gInvalid) {
+            invalid = gInvalid;
+        }
+
+        char getChar(std::string line, int index) {
+            if (index < 0 || index >= line.size()) return 0;
+            return line.at(index);
+        }
+
+        void setLine(std::string line) {
+            char c;
+            std::string stringItem = "";
+            bool inString = false;
+            bool escapeChar = false;
+
+            items.clear();
+
+            for (int i = 0; i < line.size(); i++) {
+                c = line.at(i);
+
+                if (c == '\r' || c == '\0') break;
+
+                if (c == '"') {
+                    if (!inString) {
+                        inString = true;
+                    }
+                    else if (escapeChar) {
+                        stringItem += c;
+                        escapeChar = false;
+                    }
+                    else if (getChar(line, i+1) == ',') {
+                        inString = false;
+                    }
+                    else {
+                        escapeChar = true;
+                    }
+                }
+                else if (!inString && c == ',') {
+                    if (stringItem.size() > 0) {
+                        if (nlohmann::json::accept(stringItem)) {
+                            nlohmann::json obj = nlohmann::json::parse(stringItem);
+                            if (obj.is_string()) items.push_back(stringItem);
+                            else items.push_back(obj);
+                        }
+                        else {
+                            items.push_back(stringItem);
+                        }
+                    }
+                    else {
+                        items.push_back(stringItem);
+                    }
+                    stringItem = "";
+                }
+                else {
+                    stringItem += c;
+                }
+            }
+            if (stringItem.size() > 0) {
+                if (nlohmann::json::accept(stringItem)) {
+                    nlohmann::json obj = nlohmann::json::parse(stringItem);
+                    if (obj.is_string()) items.push_back(stringItem);
+                    else items.push_back(obj);
+                }
+                else {
+                    items.push_back(stringItem);
+                }
+            }
+        }
+
+        nlohmann::json get(int index) {
+            if (index < 0 || index >= items.size()) return "INVALID";
+            return items[index];
+        }
+        
+        int size() {
+            return items.size();
+        }
+    };
+
+    class CSVFile: public Amara::Asset {
+    public:
+        int index = 0;
+        std::vector<CSVLine> lines;
+
+        Amara::CSVLine invalidLine = Amara::CSVLine(true);
+
+        CSVFile(std::string givenKey, AssetType givenType, std::vector<std::string> givenContents): Amara::Asset(givenKey, LINEBYLINE, nullptr){
+            lines.clear();
+            lines.resize(givenContents.size());
+            for (int i = 0; i < givenContents.size(); i++) {
+                lines[i].setLine(givenContents[i]);
+            }
+        }
+
+        void reset() {
+            index = 0;
+        }
+
+        Amara::CSVLine& getLine() {
+            index += 1;
+            if (index > lines.size()) {
+                index -= 1;
+                return invalidLine;
+            }
+            else {
+                return lines[index - 1];
+            }
+        }
+
+        Amara::CSVLine& getLine(int i) {
+            return lines[i];
+        }
+
+        bool eof() {
+            return index >= lines.size();
+        }
+
+        int size() {
+            return lines.size();
         }
     };
 }

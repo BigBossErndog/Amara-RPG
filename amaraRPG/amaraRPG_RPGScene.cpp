@@ -110,11 +110,7 @@ namespace Amara {
             virtual void rpgCreate() {
                 sm.reset();
 
-                for (Amara::RPGCutsceneBase* cutscene: cutscenes) {
-                    delete cutscene;
-                }
-                cutscenes.clear();
-                currentCutscene = nullptr;
+                clearCutscenes();
 
                 lighting = nullptr;
 
@@ -124,10 +120,10 @@ namespace Amara {
                 int i = 0;
                 int aboveDepth = 0;
 
-                if (!mapData.empty()) {
+                if (!mapData.empty() && !mapData.is_null()) {
 					add(tilemap = new Amara::Tilemap());
 					tilemap->id = "tilemap";
-
+                    
                     i = 0;
                     tilemap->configure(mapData);
 
@@ -187,28 +183,7 @@ namespace Amara {
                     duration();
                 }
                 else if (sm.state("cutscenes")) {
-                    if (currentCutscene != nullptr && !currentCutscene->finished) {
-						currentCutscene->receiveMessages();
-                        currentCutscene->script();
-                        currentCutscene->script(this);
-                    }
-
-                    if (currentCutscene == nullptr || currentCutscene->finished) {
-                        if (currentCutscene != nullptr) {
-                            if (currentCutscene->deleteOnFinish) {
-                                delete currentCutscene;
-                            }
-                        }
-
-                        cutscenes.pop_back();
-                        if (cutscenes.size() > 0) {
-                            currentCutscene = cutscenes.back();
-                        }
-                        else {
-                            currentCutscene = nullptr;
-                            sm.switchState("duration");
-                        }
-                    }
+                    runCutscenes();
                 }
 				else if (sm.state("transition")) {
 					if (!transition) {
@@ -218,9 +193,53 @@ namespace Amara {
 				update();
             }
 
+            virtual void runCutscenes() {
+                if (currentCutscene != nullptr && !currentCutscene->finished) {
+                    currentCutscene->receiveMessages();
+                    currentCutscene->script();
+                    currentCutscene->script(this);
+                }
+
+                if (currentCutscene == nullptr || currentCutscene->finished) {
+                    bool startNextCutscene = true;
+                    if (currentCutscene != nullptr) {
+                        RPGCutsceneBase* chained = currentCutscene->chainedCutscene;
+                        RPGCutsceneBase* orig = currentCutscene;
+                        if (chained) {
+                            currentCutscene = chained;
+                            startNextCutscene = false;
+                            if (!currentCutscene->initiated) {
+                                currentCutscene->init(properties, this);
+                                currentCutscene->prepare();
+                                currentCutscene->prepare(this);
+                            }
+                        }
+                        if (orig->deleteOnFinish) {
+                            delete orig;
+                        }
+                    }
+                    
+                    if (startNextCutscene) {
+                        cutscenes.pop_back();
+                        if (cutscenes.size() > 0) {
+                            currentCutscene = cutscenes.back();
+                            if (!currentCutscene->initiated) {
+                                currentCutscene->init(properties, this);
+                                currentCutscene->prepare();
+                                currentCutscene->prepare(this);
+                            }
+                        }
+                        else {
+                            currentCutscene = nullptr;
+                            sm.returnState();
+                        }
+                    }
+                }
+            }
+
 			virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
                 Amara::Scene::startTransition(gTransition);
-				if (transition) {
+				if (transition && !inState("transition")) {
 					sm.switchState("transition");
 				}
                 return transition;
@@ -253,6 +272,8 @@ namespace Amara {
             }
 
             bool isWall(int tx, int ty, Amara::Prop* propExclusion) {
+                if (tilemap != nullptr && tilemap->isWall(tx, ty)) return true;
+
                 Amara::Prop* prop;
                 for (Amara::Entity* entity: entities) {
                     if (!entity->isActive || entity->isDestroyed) continue;
@@ -267,7 +288,7 @@ namespace Amara {
                     }
                 }
 
-                return tilemap->isWall(tx, ty);
+                return false;
             }
 
             bool isWall(int tx, int ty) {
@@ -275,6 +296,8 @@ namespace Amara {
             }
 
             bool isWall(int tx, int ty, Amara::Prop* propExclusion, Amara::Direction dir) {
+                if (tilemap != nullptr && tilemap->isWall(tx, ty, dir)) return true;
+                
                 Amara::Prop* prop;
                 for (Amara::Entity* entity: entities) {
                     if (!entity->isActive || entity->isDestroyed) continue;
@@ -289,7 +312,7 @@ namespace Amara {
                     }
                 }
 
-                return tilemap->isWall(tx, ty, dir);
+                return false;
             }
 
             bool isWall(int tx, int ty, Amara::Direction dir) {
@@ -297,14 +320,35 @@ namespace Amara {
             }
 
             Amara::RPGCutsceneBase* startCutscene(Amara::RPGCutsceneBase* cutscene) {
-                cutscene->init(properties);
+                cutscene->init(properties, this);
                 cutscene->prepare();
                 cutscene->prepare(this);
 
                 cutscenes.push_back(cutscene);
                 currentCutscene = cutscene;
 
-                sm.switchState("cutscenes");
+                if (!inState("cutscenes")) sm.switchState("cutscenes");
+
+                return cutscene;
+            }
+            Amara::RPGCutsceneBase* addCutscene(Amara::RPGCutsceneBase* cutscene) {
+                if (cutscenes.size() == 0 && currentCutscene == nullptr) return startCutscene(cutscene);
+                cutscenes.push_front(cutscene);
+                if (!inState("cutscenes")) {
+                    sm.switchState("cutscenes");
+                }
+                return cutscene;
+            }
+
+            void clearCutscenes() {
+                for (Amara::RPGCutsceneBase* cutscene: cutscenes) {
+                    delete cutscene;
+                }
+                cutscenes.clear();
+                currentCutscene = nullptr;
+                if (inState("cutscenes")) {
+                    sm.returnState();
+                }
             }
 
             bool inCutscene() {
@@ -328,6 +372,13 @@ namespace Amara {
 				return sm.inState(key);
 			}
     };
+
+    Amara::Prop* Amara::Prop::getPropAt(int gx, int gy) {
+        return rpgScene->getPropAt(gx, gy);
+    }
+    bool Amara::Prop::tilemapIsWall(int gx, int gy) {
+        return rpgScene->tilemap->isWall(gx, gy);
+    }
 }
 
 #endif

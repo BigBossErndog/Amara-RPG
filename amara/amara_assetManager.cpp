@@ -2,7 +2,7 @@
 #ifndef AMARA_ASSETMANAGER
 #define AMARA_ASSETMANAGER
 
-#include "amara.h"
+
 
 namespace Amara {
     class AssetManager {
@@ -27,6 +27,10 @@ namespace Amara {
 
             nlohmann::json& getJSON(std::string key) {
                 return loader->getJSON(key);
+            }
+
+            CSVFile* getCSV(std::string key) {
+                return loader->getCSV(key);
             }
 
 			std::string getString(std::string key) {

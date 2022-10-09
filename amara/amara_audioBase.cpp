@@ -2,7 +2,7 @@
 #ifndef AMARA_AUDIOBASE
 #define AMARA_AUDIOBASE
 
-#include "amara.h"
+
 
 namespace Amara {
     class AudioGroup;
@@ -22,6 +22,7 @@ namespace Amara {
             float fadeSpeed = 0;
             float fadeEnd = 0;
 			bool fadeStopOnEnd = false;
+            bool fadePauseOnEnd = false;
 
             bool isPlaying = false;
             bool isPaused = false;
@@ -44,26 +45,31 @@ namespace Amara {
                 volume += c;
             }
 
-            void fade(Amara::AudioFade fadeDir, float speed, float end, bool stopOnEnd) {
+            AudioBase* fade(Amara::AudioFade fadeDir, float speed, float end, bool stopOnEnd) {
                 fadeDirection = fadeDir;
                 fadeSpeed = speed;
                 fadeEnd = end;
 				fadeStopOnEnd = stopOnEnd;
+                return this;
             }
 
-			void fadeIn(float speed, float end, bool stopOnEnd) { fade(FADEIN, speed, end, stopOnEnd); }
-            void fadeIn(float speed, float end) { fadeIn(speed, end, false); }
-            void fadeIn(float speed) { fadeIn(speed, 1); }
-            void fadeIn() { fadeIn(0.01); }
+			AudioBase* fadeIn(float speed, float end, bool stopOnEnd) { return fade(FADEIN, speed, end, stopOnEnd); }
+            AudioBase* fadeIn(float speed, float end) { return fadeIn(speed, end, false); }
+            AudioBase* fadeIn(float speed) { return fadeIn(speed, 1); }
+            AudioBase* fadeIn() { return fadeIn(0.01); }
 
-			void fadeOut(float speed, float end, bool stopOnEnd) { fade(FADEOUT, speed, end, stopOnEnd); }
-            void fadeOut(float speed, float end) { fadeOut(speed, end, false); }
-            void fadeOut(float speed) { fadeOut(speed, 0, true); }
-            void fadeOut() { fadeOut(0.01); }
+			AudioBase* fadeOut(float speed, float end, bool stopOnEnd) { return fade(FADEOUT, speed, end, stopOnEnd); }
+            AudioBase* fadeOut(float speed, float end) { return fadeOut(speed, end, false); }
+            AudioBase* fadeOut(float speed) { return fadeOut(speed, 0, true); }
+            AudioBase* fadeOut() { return fadeOut(0.01); }
 
             void stopFade() {
                 fadeDirection = NOFADE;
 				fadeStopOnEnd = false;
+            }
+            void pauseOnEnd() {
+                fadeStopOnEnd = false;
+                fadePauseOnEnd = true;
             }
 
             virtual void play() {}
@@ -95,6 +101,11 @@ namespace Amara {
 								masterVolume = 1;
 								stop();
 							}
+                            else if (fadePauseOnEnd) {
+                                fadePauseOnEnd = false;
+								masterVolume = 1;
+                                pause();
+                            }
                         }
                         break;
                 }

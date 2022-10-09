@@ -7,9 +7,7 @@
 namespace Amara {
     class RPGCutsceneBase: public Amara::Script {
         public:
-            virtual void init(Amara::GameProperties* gProperties) {
-                Amara::Script::init(gProperties);
-            }
+            RPGCutsceneBase* chainedCutscene = nullptr;
 
             bool fadeIn(Amara::Entity* actor, float speed, float targetAlpha) {
                 if (evt()) {
@@ -37,6 +35,18 @@ namespace Amara {
             }
             bool fadeOut(Amara::Entity* actor, float speed) {
                 return fadeOut(actor, speed, 0);
+            }
+
+            Amara::RPGCutsceneBase* chain(Amara::RPGCutsceneBase* cutscene) {
+                chainedCutscene = cutscene;
+                return cutscene;
+            }
+
+            ~RPGCutsceneBase() {
+                if (chainedCutscene != nullptr && !chainedCutscene->initiated) {
+                    delete chainedCutscene;
+                    chainedCutscene = nullptr;
+                }
             }
     };
 }

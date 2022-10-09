@@ -2,7 +2,7 @@
 #ifndef AMARA_INPUTMANAGER
 #define AMARA_INPUTMANAGER
 
-#include "amara.h"
+
 
 namespace Amara {
     class Keyboard;
@@ -15,7 +15,7 @@ namespace Amara {
         InputMode_Mouse = 1,
         InputMode_Keyboard = 2,
         InputMode_Gamepad = 4,
-        InputMode_Touch = 5
+        InputMode_Touch = 8
     };
     
     class InputManager {
@@ -28,7 +28,30 @@ namespace Amara {
             int mode = InputMode_None;
             InputMode lastMode = InputMode_None;
 
+            std::string inputText;
+            bool textInputOn = false;
+
             InputManager() {}
+
+            void startTextInput() {
+                inputText.clear();
+                textInputOn = true;
+                SDL_StartTextInput();
+            }
+
+            std::string stopTextInput() {
+                textInputOn = false;
+                SDL_StopTextInput();
+                return inputText;
+            }
+
+            std::string getClipboardText() {
+                inputText = SDL_GetClipboardText();
+            }
+
+            void setClipboardText(std::string txt) {
+                SDL_SetClipboardText(txt.c_str());
+            }
     };
 }
 

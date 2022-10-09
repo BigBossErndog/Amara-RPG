@@ -2,7 +2,7 @@
 #ifndef AMARA_RANDOM
 #define AMARA_RANDOM
 
-#include "amara.h"
+
 
 namespace Amara {
     class RNG {
@@ -60,6 +60,13 @@ namespace Amara {
 				}
 				return list;
 			}
+
+            nlohmann::json shuffle(nlohmann::json list) {
+                if (list.is_array()) {
+                    std::shuffle(std::begin(list), std::end(list), e);
+                }
+                return list;
+            }
     };
 }
 

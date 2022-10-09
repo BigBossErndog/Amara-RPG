@@ -2,7 +2,7 @@
 #ifndef AMARA_TILEMAPLAYER
 #define AMARA_TILEMAPLAYER
 
-#include "amara.h"
+
 
 namespace Amara {
     class Tilemap;
@@ -67,6 +67,8 @@ namespace Amara {
             int heightInPixels = 0;
 
             bool extruded = false;
+
+            Amara::Tile nullTile = Amara::Tile();
 
             std::unordered_map<int, Amara::TileAnimation> animations;
 
@@ -260,6 +262,8 @@ namespace Amara {
             }
 
             Amara::Tile& setTileAt(int gx, int gy, int nid) {
+                if (gx < 0 || gx >= width) return nullTile;
+                if (gy < 0 || gy >= height) return nullTile;
                 Amara::Tile& tile = getTileAt(gx, gy);
                 tile.id = nid;
                 return tile;
@@ -288,10 +292,56 @@ namespace Amara {
                 return tile;
             }
 
+            void setTiles(std::vector<int> given, int gx, int gy, int gw, int gh) {
+                for (int i = gx; i < gx+gw; i++) {
+                    for (int j = gy; j < gy+gh; j++) {
+                        setTileAt(i, j, given[j*gw + i]);
+                    }
+                }
+            }
+            void setTiles(std::vector<int> given, int gw, int gh) {
+                setTiles(given, 0, 0, gw, gh);
+            }
+            void setTiles(std::vector<int> given) {
+                setTiles(given, width, height);
+            }
+
+            void fillTiles(int nid) {
+                for (Amara::Tile& tile: tiles) {
+                    tile.id = nid;
+                    tile.fhorizontal = false;
+                    tile.fvertical = false;
+                    tile.fdiagonal = false;
+                }
+            }
+
+            void clearTiles() {
+                for (Amara::Tile& tile: tiles) {
+                    tile.id = -1;
+                    tile.fhorizontal = false;
+                    tile.fvertical = false;
+                    tile.fdiagonal = false;
+                }
+            }
+
             void clear() {
                 for (Amara::Tile& tile: tiles) {
                     tile.id = -1;
                 }
+            }
+
+            std::vector<int> toVector(int* setW, int* setH) {
+                std::vector<int> list;
+                list.resize(width * height);
+                for (int i = 0; i < tiles.size(); i++) {
+                    list[i] = tiles[i].id;
+                }
+                if (setW != nullptr) *setW = width;
+                if (setH != nullptr) *setH = height;
+                return list;
+            }
+            std::vector<int> toVector() {
+                return toVector(nullptr, nullptr);
             }
 
             void createDrawTexture() {
@@ -450,6 +500,8 @@ namespace Amara {
                                 srcRect.y = floor(frame / (texture->width / tileWidth)) * tileHeight;
                                 srcRect.w = tileWidth;
                                 srcRect.h = tileHeight;
+
+                                SDL_SetTextureAlphaMod(tex, properties->alpha * tile.alpha * 255);
 								
                                 SDL_RenderCopyEx(
                                     gRenderer,
@@ -533,6 +585,8 @@ namespace Amara {
             bool isBlockingPath(int gx, int gy) {
                 return isBlockingPath(gx, gy, false);
             }
+
+            void destroy();
 
             ~TilemapLayer() {
                 if (drawTexture) SDL_DestroyTexture(drawTexture);

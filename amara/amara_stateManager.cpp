@@ -2,7 +2,7 @@
 #ifndef AMARA_STATEMANAGER
 #define AMARA_STATEMANAGER
 
-#include "amara.h"
+
 
 namespace Amara {
     struct StateRecord {
@@ -156,6 +156,14 @@ namespace Amara {
             void nextEvt() {
                 currentEvent += 1;
                 skipEvent = true;
+            }
+
+            bool nextEvtOn(bool cond) {
+                if (cond) {
+                    nextEvt();
+                    return true;
+                }
+                return false;
             }
 
             bool wait(float time, bool skip) {

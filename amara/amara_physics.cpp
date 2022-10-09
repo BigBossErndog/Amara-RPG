@@ -1,6 +1,4 @@
-#pragma once 
-
-#include "amara.h"
+#pragma once
 
 namespace Amara {
     class PhysicsBody: public Amara::PhysicsBase {
@@ -107,6 +105,11 @@ namespace Amara {
             bumped = nullptr;
             bumpDirections = 0;
             isPushing = false;
+
+            if (isPaused) {
+                updateProperties();
+                return;
+            }
 
             velocityX += accelerationX;
             velocityY += accelerationY;

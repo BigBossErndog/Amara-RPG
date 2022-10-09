@@ -2,7 +2,7 @@
 #ifndef AMARA_SPRITE
 #define AMARA_SPRITE
 
-#include "amara.h"
+
 
 namespace Amara {
     class Sprite: public Amara::Image, public Amara::Animated {
@@ -52,7 +52,7 @@ namespace Amara {
             }
 
             ~Sprite() {
-                delete anims;
+                if (anims != nullptr) delete anims;
             }
     };
 }

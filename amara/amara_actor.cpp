@@ -2,7 +2,7 @@
 #ifndef AMARA_ACTOR
 #define AMARA_ACTOR
 
-#include "amara.h"
+
 
 namespace Amara {
     class Tween;
@@ -17,6 +17,10 @@ namespace Amara {
             void init() {
                 Amara::Entity::init();
                 entityType = "actor";
+            }
+
+            Amara::Actor* getActor(std::string key) {
+                return (Amara::Actor*)get(key);
             }
 
 			void destroyScript(Amara::Script* script) {
@@ -74,7 +78,7 @@ namespace Amara {
 
                 std::vector<Script*> chained;
                 chained.clear();
-
+                
                 Amara::Script* script;
                 for (auto it = scripts.begin(); it != scripts.end(); ++it) {
                     script = *it;
@@ -101,6 +105,13 @@ namespace Amara {
 			bool notActing() {
 				return (scripts.size() == 0);
 			}
+
+            bool isReciting(Amara::Script* script) {
+                for (Amara::Script* check: scripts) {
+                    if (check == script) return true;
+                }
+                return false;
+            }
 
             void run() {
                 reciteScripts();
@@ -164,8 +175,9 @@ namespace Amara {
                 actingPaused = false;
             }
 
-            virtual ~Actor() {
+            void destroy() {
                 clearScripts();
+                Amara::Entity::destroy();
             }
     };
 }

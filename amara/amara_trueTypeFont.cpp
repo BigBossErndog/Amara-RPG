@@ -2,7 +2,7 @@
 #ifndef AMARA_TRUETYPEFONT
 #define AMARA_TRUETYPEFONT
 
-#include "amara.h"
+
 
 namespace Amara {
     enum Alignment {
@@ -130,6 +130,19 @@ namespace Amara {
                 text = newTxt;
                 const char* txt = text.c_str();
                 findDimensions();
+            }
+
+            std::string getWrappedText(std::string gText, float wrapWidth) {
+                int testSize = gText.size() * 2;
+                char wrapping[testSize];
+
+                FC_GetWrappedText(fontAsset->font, wrapping, testSize, wrapWidth,gText.c_str());
+
+                return wrapping;
+            }
+
+            void setWrappedText(std::string gText, float wrapWidth) {
+                setText(getWrappedText(gText, wrapWidth));
             }
 
             void setColor(int r, int g, int b, int a) {

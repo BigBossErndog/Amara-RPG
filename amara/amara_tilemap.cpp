@@ -2,7 +2,7 @@
 #ifndef AMARA_TILEMAP
 #define AMARA_TILEMAP
 
-#include "amara.h"
+
 
 namespace Amara {
     class Tilemap: public Amara::Actor, public Amara::WallFinder {
@@ -176,7 +176,7 @@ namespace Amara {
             Amara::TilemapLayer* createLayer(std::string layerKey, float gx, float gy) {
                 if (tiledJsonKey.empty()) return nullptr;
                 Amara::TilemapLayer* newLayer;
-                ((Amara::Entity*)scene)->add(newLayer = new Amara::TilemapLayer(textureKey, tiledJsonKey, layerKey));
+                parent->add(newLayer = new Amara::TilemapLayer(textureKey, tiledJsonKey, layerKey));
                 layers[layerKey] = newLayer;
                 if (newLayer->width > width) width = newLayer->width;
                 if (newLayer->height > height) height = newLayer->height;
@@ -200,7 +200,7 @@ namespace Amara {
 
             Amara::TilemapLayer* createEmptyLayer(std::string layerKey) {
                 Amara::TilemapLayer* newLayer;
-                ((Amara::Entity*)scene)->add(newLayer = new Amara::TilemapLayer(width, height, tileWidth, tileHeight));
+                parent->add(newLayer = new Amara::TilemapLayer(width, height, tileWidth, tileHeight));
                 layers[layerKey] = newLayer;
 
                 if (!textureKey.empty()) {
@@ -281,6 +281,14 @@ namespace Amara {
                     return layers[layerKey];
                 }
                 return nullptr;
+            }
+
+            void destroyLayer(std::string layerKey) {
+                TilemapLayer* layer = getLayer(layerKey);
+                if (layer) {
+                    layers.erase(layerKey);
+                    layer->destroy();
+                }
             }
 
             std::vector<Amara::TilemapLayer*> setWalls(std::vector<std::string> wallKeys) {
@@ -386,7 +394,36 @@ namespace Amara {
             float getMidTileY(int ty) {
                 return (ty + 0.5) * tileHeight; 
             }
+
+            void destroy() {
+                Amara::TilemapLayer* layer;
+                for (auto it = layers.begin(); it != layers.end(); it++) {
+                    layer = it->second;
+                    layer->tilemap = nullptr;
+                }
+                layers.clear();
+                walls.clear();
+                Amara::Actor::destroy();
+            }
     };
+
+    void Amara::TilemapLayer::destroy() {
+        if (tilemap != nullptr) {
+            if (tilemap->layers.find(id) != tilemap->layers.end()) {
+                tilemap->layers.erase(id);
+            }
+            Amara::TilemapLayer* layer;
+            for (auto it = tilemap->walls.begin(); it != tilemap->walls.begin(); ++it) {
+                layer = *it;
+                if (layer == this) {
+                    tilemap->walls.erase(it--);
+                    continue;
+                }
+            }
+        }
+        
+        Amara::Actor::destroy();
+    }
 }
 
 #endif

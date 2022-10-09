@@ -26,6 +26,7 @@ namespace Amara {
             bool isPlayer = false;
 
             bool depthLocked = false;
+            float depthOffsetY = 0;
 
             Prop(int gx, int gy, std::string tKey): Amara::Sprite(0, 0, tKey) {
                 tileX = gx;
@@ -34,9 +35,6 @@ namespace Amara {
             }
             Prop(std::string tKey): Amara::Sprite(tKey) {}
             Prop(): Amara::Sprite() {}
-            Prop(nlohmann::json config): Prop() {
-                configure(config);
-            }
 			Prop(int gx, int gy): Amara::Sprite(0, 0) {
 				tileX = gx;
 				tileY = gy;
@@ -51,8 +49,6 @@ namespace Amara {
             }
 
             virtual void configure(nlohmann::json config) {
-                Amara::Sprite::configure(config);
-
                 if (config.find("tileX") != config.end()) {
                     tileX = config["tileX"];
                 }
@@ -82,6 +78,8 @@ namespace Amara {
                 if (config.find("isWall") != config.end()) {
                     isWall = config["isWall"];
                 }
+
+                Amara::Sprite::configure(config);
             }
 
             virtual nlohmann::json toData() {
@@ -101,7 +99,7 @@ namespace Amara {
             void run() {
 				Amara::Sprite::run();
                 if (!depthLocked) {
-                    depth = y;
+                    depth = y + depthOffsetY;
                 }
             }
 
@@ -203,10 +201,9 @@ namespace Amara {
                 return false;
             }
 
-            bool isNextTo(int gx, int gy, bool diagonal) {
+            bool isNextTo(int gx, int gy) {
                 for (int i = tileX-tilePaddingLeft-1; i <= tileX+tilePaddingRight+1; i++) {
                     for (int j = tileY-tilePaddingTop-1; j <= tileY+tilePaddingBottom+1; j++) {
-                        if (!diagonal && i == j) continue;
                         if (i == gx && j == gy) {
                             return true;
                         }
@@ -214,16 +211,46 @@ namespace Amara {
                 }
                 return false;
             }
-            bool isNextTo(int gx, int gy) {
-                return isNextTo(gx, gy, false);
+            bool isNextTo(Amara::Prop* other) {
+                return isNextTo(other->tileX, other->tileY);
             }
 
-            bool isNextTo(Amara::Prop* other, bool diagonal) {
-                return isNextTo(other->tileX, other->tileY, diagonal);
+            bool canSee(int gx, int gy) {
+                if (gx == tileX && gy == tileY) return true;
+                if (hasDataProperty("visionDistance")) {
+                    float visionDistance = data["visionDistance"];
+                    if (distanceBetween(tileX, tileY, gx, gy) > visionDistance) {
+                        return false;
+                    }
+                }
+
+                FloatVector2 p1 = {
+                    tileX * TILE_WIDTH + TILE_WIDTH/2.0,
+                    tileY * TILE_HEIGHT + TILE_HEIGHT/2.0
+                };
+                FloatVector2 p2 = {
+                    gx * TILE_WIDTH + TILE_WIDTH/2.0,
+                    gy * TILE_HEIGHT + TILE_HEIGHT/2.0
+                };
+
+                Amara::Prop* prop;
+
+                std::vector<Amara::FloatVector2> points = travelAlongLine({p1, p2}, TILE_WIDTH/2.0);
+                for (Amara::FloatVector2& point: points) {
+                    int fx = floor(point.x / (float)TILE_WIDTH);
+                    int fy = floor(point.y / (float)TILE_HEIGHT);
+                    prop = getPropAt(fx, fy);
+                    if (tilemapIsWall(fx, fy) || (prop != nullptr && prop->isDataProperty("visionBlocking"))) {
+                        if (fx == gx && fy == gy) return true;
+                        return false;
+                    }
+                }
+                return true;
             }
-            bool isNextTo(Amara::Prop* other) {
-                return isNextTo(other, false);
-            }
+
+            Amara::Prop* getPropAt(int gx, int gy);
+            bool tilemapIsWall(int gx, int gy);
+
     };
 }
 

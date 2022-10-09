@@ -2,7 +2,7 @@
 #ifndef AMARA_CAMERA
 #define AMARA_CAMERA
 
-#include "amara.h"
+
 
 namespace Amara {
     class Scene;
@@ -32,6 +32,9 @@ namespace Amara {
             float oldCenterY = 0;
             float centerX = 0;
             float centerY = 0;
+
+            float scrollOffsetX = 0;
+            float scrollOffsetY = 0;
 
             float offsetX = 0;
             float offsetY = 0;
@@ -194,11 +197,13 @@ namespace Amara {
                 dh = (y + height > vh) ? ceil(vh - y) : height;
                 dh -= oh;
 
+                checkHover(dx, dy, dw, dh, 0, 0, dw, dh);
+
                 std::vector<Amara::Entity*>& rSceneEntities = parent->entities;
                 Amara::Entity* entity;
                 for (std::vector<Amara::Entity*>::iterator it = rSceneEntities.begin(); it != rSceneEntities.end(); it++) {
                     entity = *it;
-                    if (entity->isDestroyed || entity->scene != scene) {
+                    if (entity == nullptr || entity->isDestroyed || entity->scene != scene) {
                         rSceneEntities.erase(it--);
                         continue;
                     }
@@ -215,10 +220,12 @@ namespace Amara {
             void assignAttributes() {
                 resetPassOnProperties();
                 properties->currentCamera = this;
-                properties->scrollX = scrollX + offsetX;
-                properties->scrollY = scrollY + offsetY;
+                properties->scrollX = scrollX + scrollOffsetX;
+                properties->scrollY = scrollY + scrollOffsetY;
                 properties->zoomX = zoomX * zoomScale;
                 properties->zoomY = zoomY * zoomScale;
+                properties->offsetX = offsetX;
+                properties->offsetY = offsetY;
             }
 
             void startFollow(Amara::Entity* entity, float lx, float ly) {
@@ -403,6 +410,71 @@ namespace Amara {
             }
             float getYAfterScrolling(Amara::Entity* entity) {
                 return getYAfterScrolling(entity->y);
+            }
+
+            bool onCamera(FloatRect rect) {
+                FloatRect viewRect = { scrollX, scrollY, width/zoomX, height/zoomY };
+                return overlapping(&rect, &viewRect);
+            }
+
+            bool onCamera(float gx, float gy, float gw, float gh) {
+                return onCamera({ gx, gy, gw, gh });
+            }
+
+            bool cutOffCamera(FloatRect rect) {
+                if (width/zoomX < rect.width) {
+                    if (scrollX < rect.x) return true;
+                    if (scrollX + width/zoomX > rect.x + rect.width) return true;
+                }
+                else {
+                    if (scrollX > rect.x) return true;
+                    if (scrollX + width/zoomX < rect.x + rect.width) return true;
+                }
+
+                if (height/zoomY < rect.height) {
+                    if (scrollY < rect.y) return true;
+                    if (scrollY + height/zoomY > rect.y + rect.height) return true;
+                }
+                else {
+                    if (scrollY > rect.y) return true;
+                    if (scrollY + height/zoomY < rect.y + rect.height) return true;
+                }
+
+                return false;
+            }
+
+            bool fixCameraOn(FloatRect rect) {
+                float recX = scrollX;
+                float recY = scrollY;
+
+                if (width/zoomX < rect.width) {
+                    if (scrollX < rect.x) scrollX = rect.x;
+                    if (scrollX + width/zoomX > rect.x + rect.width) {
+                        scrollX = rect.x + rect.width - width/zoomX;
+                    }
+                }
+                else {
+                    if (scrollX > rect.x) scrollX = rect.x;
+                    if (scrollX + width/zoomX < rect.x + rect.width) {
+                        scrollX = rect.x + rect.width - width/zoomX;
+                    }
+                }
+
+                if (height/zoomY < rect.height) {
+                    if (scrollY < rect.y) scrollY = rect.y;
+                    if (scrollY + height/zoomY > rect.y + rect.height) {
+                        scrollY = rect.y + rect.height - height/zoomY;
+                    } 
+                }
+                else {
+                    if (scrollY > rect.y) scrollY = rect.y;
+                    if (scrollY + height/zoomY < rect.y + rect.height) {
+                        scrollY = rect.y + rect.height - height/zoomY;
+                    }
+                }
+
+                if (recX != scrollX || recY != scrollY) return true;
+                return false;
             }
 
             ~Camera() {

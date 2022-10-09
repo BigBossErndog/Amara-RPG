@@ -1,6 +1,6 @@
 #pragma once
 
-#include "amara.h"
+
 
 namespace Amara {
     class Entity;
@@ -76,5 +76,5 @@ namespace Amara {
             return queue.back();
         }
     };
-    Message MessageQueue::nullMessage = { nullptr, "null", {}, false, true };
+    Message MessageQueue::nullMessage = { nullptr, "null", {}, false, true, true };
 }

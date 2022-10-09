@@ -2,7 +2,7 @@
 #ifndef AMARA_LAYER
 #define AMARA_LAYER
 
-#include "amara.h"
+
 
 namespace Amara {
     class Layer: public Amara::Actor {
@@ -105,6 +105,8 @@ namespace Amara {
 
             if (alpha < 0) alpha = 0;
             if (alpha > 1) alpha = 1;
+
+            checkHover(vx + dx, vy + dy, dw, dh);
             
             stable_sort(entities.begin(), entities.end(), sortEntities());
 
