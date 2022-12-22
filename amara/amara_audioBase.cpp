@@ -38,11 +38,17 @@ namespace Amara {
             AudioBase(): Amara::Asset() {}
             AudioBase(std::string gKey, Amara::AssetType gType, void* gAsset): Amara::Asset(gKey, gType, gAsset) {}
 
-            void setVolume(float vol) {
+            AudioBase* setVolume(float vol) {
                 volume = vol;
+                return this;
             }
-            void changeVolume(float c) {
+            AudioBase* setMasterVolume(float vol) {
+                masterVolume = vol;
+                return this;
+            }
+            AudioBase* changeVolume(float c) {
                 volume += c;
+                return this;
             }
 
             AudioBase* fade(Amara::AudioFade fadeDir, float speed, float end, bool stopOnEnd) {

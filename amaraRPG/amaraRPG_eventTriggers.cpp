@@ -164,4 +164,32 @@ namespace Amara {
 			}
 		}
 	};
+
+    class RPGEventTriggerRectangle: public RPGEventTrigger {
+    public:
+        Entity* watched = nullptr;
+
+        FloatRect rect;
+
+        RPGEventTriggerRectangle(RPGCutscene* gCutscene, FloatRect gRect) {
+			cutscene = gCutscene;
+            rect = gRect;
+		}
+		RPGEventTriggerRectangle(Entity* gWatched, RPGCutscene* gCutscene, FloatRect gRect): RPGEventTriggerRectangle(gCutscene, gRect) {
+			watched = gWatched;
+		}
+
+        void prepare() {
+            if (watched == nullptr) watched = parent;
+        }
+
+        void script() {
+            if (rpgScene->inState("duration")) {
+                if (overlapping(watched->x, watched->y, &rect)) {
+                    rpgScene->startCutscene(cutscene);
+					if (finishOnTrigger) finish();
+                }
+            }
+        }
+    };
 }

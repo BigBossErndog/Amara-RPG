@@ -15,6 +15,7 @@ namespace Amara {
 
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::RPGCutsceneBase::init(gameProperties);
+                
                 rpgScene = (Amara::RPGScene*)scene;
 				cam = scene->mainCamera;
             }

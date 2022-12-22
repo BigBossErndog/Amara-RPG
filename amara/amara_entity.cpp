@@ -96,6 +96,7 @@ namespace Amara {
 				entityType = "entity";
 
 				init();
+				preload();
 				if (!isDestroyed) create();
 			}
 
@@ -631,11 +632,15 @@ namespace Amara {
 				pushedMessages = true;
 				return properties->messages->broadcast(this, key, gData);
 			}
+			Message& broadcastMessage(std::string key) {
+				return broadcastMessage(key, nullptr);
+			}
 			Message& getMessage(std::string key) {
 				return properties->messages->get(key);
 			}
 			virtual void receiveMessages() {}
 
+			virtual void preload() {}
 			virtual void create() {}
 			virtual void update() {}
 
