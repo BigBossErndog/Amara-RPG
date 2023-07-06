@@ -25,6 +25,8 @@ namespace Amara {
 			std::string currentBasePath = "";
 			std::string fixedPath = "";
 
+			bool replacementDefault = true;
+
 			nlohmann::json emptyJson = nullptr;
 
             Loader(Amara::GameProperties* gameProperties) {
@@ -126,9 +128,9 @@ namespace Amara {
 			}
 
 			SDL_Surface* getSurface(std::string key) {
-				Amara::Asset* sf = (Amara::Asset*)(get(key));
+				Amara::SurfaceAsset* sf = (Amara::SurfaceAsset*)(get(key));
 				if (sf != nullptr) {
-					return (SDL_Surface*)sf->asset;
+					return sf->asset;
 				}
 				std::cout << "Surface asset \"" << key << "\" not found." << std::endl;
 				return nullptr;
@@ -145,12 +147,16 @@ namespace Amara {
 			}
 
 			virtual bool add(std::string key, SDL_Texture* tx, bool replace) {
-				Amara::Asset* got = get(key);
-				if (got != nullptr && !replace) {
-					std::cout << "Loader: Key \"" << key << "\" has already been used." << std::endl;
-					return false;
+				Amara::ImageTexture* got = (Amara::ImageTexture*)get(key);
+				if (got != nullptr) {
+					if (!replace) {
+						std::cout << "Loader: Key \"" << key << "\" has already been used." << std::endl;
+						return false;
+					}
+					got->setTexture(tx);
+					std::cout << "Replaced texture: " << key << std::endl;
+					return true;
 				}
-				remove(key);
 				if (tx == nullptr) {
 					std::cout << "No texture was given for key: \"" << key << "\"" <<  std::endl;
 					return false;
@@ -161,16 +167,20 @@ namespace Amara {
 				return true;
 			}
 			virtual bool add(std::string key, SDL_Texture* tx) {
-				return add(key, tx, true);
+				return add(key, tx, replacementDefault);
 			}
 
 			virtual bool add(std::string key, SDL_Texture* tx, int frwidth, int frheight, bool replace) {
-				Amara::Asset* got = get(key);
-				if (got != nullptr && !replace) {
-					std::cout << "Loader: Key \"" << key << "\" has already been used." << std::endl;
-					return false;
+				Amara::Spritesheet* got = (Amara::Spritesheet*)get(key);
+				if (got != nullptr) {
+					if (!replace) {
+						std::cout << "Loader: Key \"" << key << "\" has already been used." << std::endl;
+						return false;
+					}
+					got->setTexture(tx, frwidth, frheight);
+					std::cout << "Replaced texture: " << key << std::endl;
+					return true;
 				}
-				remove(key);
 				if (tx == nullptr) {
 					std::cout << "No texture was given for key: \"" << key << "\"" <<  std::endl;
 					return false;
@@ -181,7 +191,7 @@ namespace Amara {
 				return true;
 			}
 			virtual bool add(std::string key, SDL_Texture* tx, int frwidth, int frheight) {
-				return add(key, tx, frwidth, frheight, true);
+				return add(key, tx, frwidth, frheight, replacementDefault);
 			}
 
 			virtual bool add(std::string key, Amara::Asset* newAsset, bool replace) {
@@ -196,17 +206,17 @@ namespace Amara {
 				newAsset->key = key;
 			}
 			virtual bool add(std::string key, Amara::Asset* newAsset) {
-				return add(key, newAsset, true);
+				return add(key, newAsset, replacementDefault);
 			}
 
 			void loadSurfacesFromJSON(nlohmann::json& config) {
 				std::string key;
 				std::string path;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -216,11 +226,11 @@ namespace Amara {
 			void loadImagesFromJSON(nlohmann::json& config) {
 				std::string key;
 				std::string path;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -231,11 +241,11 @@ namespace Amara {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -252,11 +262,11 @@ namespace Amara {
 				std::string strStyle;
 				Amara::Color color;
 				nlohmann::json jsonColor;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -302,11 +312,11 @@ namespace Amara {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -317,11 +327,11 @@ namespace Amara {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -332,11 +342,11 @@ namespace Amara {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -347,27 +357,26 @@ namespace Amara {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
 					json(key, path, replace);
 				}
 			}
-
 			void loadLineByLineFromJSON(nlohmann::json& config) {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -379,11 +388,11 @@ namespace Amara {
 				std::string key;
 				std::string path;
 				int frameWidth, frameHeight;
-				bool replace = false;
+				bool replace = replacementDefault;
 				for (nlohmann::json& asset: config) {
 					key = asset["key"];
 					path = asset["path"];
-					replace = false;
+					replace = replacementDefault;
 					if (asset.find("replace") != asset.end()) {
 						replace = asset["replace"];
 					}
@@ -494,7 +503,7 @@ namespace Amara {
 
 				if (success) {
 					std::cout << "Loaded: " << key << std::endl;
-					Amara::Asset* newAsset = new Amara::Asset(key, SURFACE, optimizedSurface);
+					Amara::SurfaceAsset* newAsset = new Amara::SurfaceAsset(key, SURFACE, optimizedSurface);
 					assets[key] = newAsset;
 				}
 
@@ -502,7 +511,7 @@ namespace Amara {
 			}
 
 			virtual bool surface(std::string key, std::string path) {
-				return surface(key, path, false);
+				return surface(key, path, replacementDefault);
 			}
 
             /*
@@ -550,7 +559,7 @@ namespace Amara {
 			}
 
 			virtual bool image(std::string key, std::string path) {
-				return image(key, path, false);
+				return image(key, path, replacementDefault);
 			}
 
             /*
@@ -595,7 +604,7 @@ namespace Amara {
 			}
 
 			virtual bool spritesheet(std::string key, std::string path, int frwidth, int frheight) {
-				return spritesheet(key, path, frwidth, frheight, false);
+				return spritesheet(key, path, frwidth, frheight, replacementDefault);
 			}
 
             /*
@@ -634,7 +643,7 @@ namespace Amara {
 			}
 
 			virtual bool ttf(std::string key, std::string path, int size, Amara::Color color, int style) {
-				return ttf(key, path, size, color, style, false);
+				return ttf(key, path, size, color, style, replacementDefault);
 			}
 
 			virtual bool ttf(std::string key, std::string path, int size, Amara::Color color) {
@@ -670,7 +679,7 @@ namespace Amara {
 			}
 
 			virtual bool sound(std::string key, std::string path) {
-				return sound(key, path, false);
+				return sound(key, path, replacementDefault);
 			}
 
 
@@ -699,7 +708,7 @@ namespace Amara {
 			}
 
             virtual bool music(std::string key, std::string path) {
-				return music(key, path, false);
+				return music(key, path, replacementDefault);
 			}
 
 			virtual bool string(std::string key, std::string path, bool replace) {
@@ -732,6 +741,9 @@ namespace Amara {
 				}
 				return success;
 			}
+			virtual bool string(std::string key, std::string path) {
+				return string(key, path, replacementDefault);
+			}
 
 			virtual bool json(std::string key, std::string path, bool replace) {
 				path = fixPath(path);
@@ -744,8 +756,7 @@ namespace Amara {
 				bool success = true;
 
 				std::ifstream in(path, std::ios::in | std::ios::binary);
-				if (in)
-				{
+				if (in) {
 					std::string contents;
 					in.seekg(0, std::ios::end);
 					contents.resize(in.tellg());
@@ -765,7 +776,7 @@ namespace Amara {
 			}
 
 			virtual bool json(std::string key, std::string path) {
-				json(key, path, false);
+				return json(key, path, replacementDefault);
 			}
 
 			virtual bool lineByLine(std::string key, std::string path, bool replace) {
@@ -798,9 +809,8 @@ namespace Amara {
 
 				return success;
 			}
-
 			virtual bool lineByLine(std::string key, std::string path) {
-				return lineByLine(key, path, false);
+				return lineByLine(key, path, replacementDefault);
 			}
 
 			virtual bool csv(std::string key, std::string path, bool replace) {
@@ -834,7 +844,7 @@ namespace Amara {
 				return success;
 			}
 			virtual bool csv(std::string key, std::string path) {
-				return csv(key, path, false);
+				return csv(key, path, replacementDefault);
 			}
 
 			virtual void regenerateAssets() {

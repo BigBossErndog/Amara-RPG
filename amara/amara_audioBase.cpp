@@ -27,6 +27,8 @@ namespace Amara {
             bool isPlaying = false;
             bool isPaused = false;
 
+            int defaultLoops = -1;
+
 			Amara::AudioGroup* group = nullptr;
 			Amara::AudioBase* parent = nullptr;
 
@@ -36,7 +38,7 @@ namespace Amara {
             std::string nextInChain = "";
 
             AudioBase(): Amara::Asset() {}
-            AudioBase(std::string gKey, Amara::AssetType gType, void* gAsset): Amara::Asset(gKey, gType, gAsset) {}
+            AudioBase(std::string gKey, Amara::AssetType gType): Amara::Asset(gKey, gType) {}
 
             AudioBase* setVolume(float vol) {
                 volume = vol;
@@ -69,20 +71,33 @@ namespace Amara {
             AudioBase* fadeOut(float speed) { return fadeOut(speed, 0, true); }
             AudioBase* fadeOut() { return fadeOut(0.01); }
 
-            void stopFade() {
+            AudioBase* stopFade() {
                 fadeDirection = NOFADE;
 				fadeStopOnEnd = false;
+                return this;
             }
-            void pauseOnEnd() {
+            AudioBase* pauseOnEnd() {
                 fadeStopOnEnd = false;
                 fadePauseOnEnd = true;
+                return this;
             }
 
-            virtual void play() {}
-			virtual void play(int loops) {}
-            virtual void pause() {}
-            virtual void resume() {}
-            virtual void stop() {}
+            virtual AudioBase* play() { play(defaultLoops); }
+			virtual AudioBase* play(int loops) { }
+            virtual AudioBase* play(std::string) {}
+            virtual AudioBase* pause() {}
+            virtual AudioBase* resume() {}
+            virtual AudioBase* stop() {}
+
+            virtual void chain(std::string nextKey) {
+                nextInChain = nextKey;
+            }
+
+            virtual AudioBase* getRootAudio() {
+                if (parent) return parent->getRootAudio();
+                return this;
+            }
+
             virtual void run(float parentVolume) {
                 switch (fadeDirection) {
                     case FADEIN:

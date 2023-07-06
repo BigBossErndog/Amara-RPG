@@ -1,0 +1,33 @@
+Date : 2023-04-20 18:00:00
+Directory : c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG
+Total : 9 files,  1494 codes, 1 comments, 257 blanks, all 1752 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |          9 |      1,494 |          1 |        257 |      1,752 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                              | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                 |          9 |      1,494 |          1 |        257 |      1,752 |
++-----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                          | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG.h                   | C++      |         16 |          0 |          5 |         21 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_RPGScene.cpp        | C++      |        323 |          0 |         60 |        383 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_assistFunctions.cpp | C++      |         58 |          0 |          8 |         66 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_cutscene.cpp        | C++      |         73 |          0 |         17 |         90 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_cutsceneBase.cpp    | C++      |         47 |          0 |          7 |         54 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_eventTriggers.cpp   | C++      |        160 |          0 |         35 |        195 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_playerProp.cpp      | C++      |        174 |          0 |         22 |        196 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_prop.cpp            | C++      |        221 |          0 |         37 |        258 |
+| c:\Users\ernes\Documents\Creations\amaraRPG\amaraRPG\amaraRPG_walker.cpp          | C++      |        422 |          1 |         66 |        489 |
+| Total                                                                             |          |      1,494 |          1 |        257 |      1,752 |
++-----------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

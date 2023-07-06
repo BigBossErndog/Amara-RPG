@@ -282,11 +282,10 @@ namespace Amara {
 
             virtual void draw(int vx, int vy, int vw, int vh) override {
                 drawTexture(vx, vy, vw, vh);
-
                 Amara::Entity::draw(vx, vy, vw, vh);
             }
 
-            bool setTexture(std::string gTextureKey) {
+            virtual bool setTexture(std::string gTextureKey) {
                 if (texture) removeTexture();
                 if (load == nullptr || properties == nullptr) {
                     textureKey = gTextureKey;
@@ -401,6 +400,15 @@ namespace Amara {
             void scaleTo(float gw, float gh) {
                 scaleX = gw/imageWidth;
                 scaleY = gh/imageHeight;
+            }
+
+            void scaleToWidth(float gw) { 
+                scaleX = gw/imageWidth;
+                scaleY = scaleX;
+            }
+            void scaleToHeight(float gh) {
+                scaleY = gh/imageHeight;
+                scaleX = scaleY;
             }
 
 			~Image() {

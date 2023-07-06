@@ -15,12 +15,12 @@ namespace Amara {
 
 			double position = 0;
 
-            Music(std::string givenKey, AssetType givenType, Mix_Music* givenAsset, Amara::GameProperties* gameProperties): Amara::AudioBase(givenKey, givenType, givenAsset) {
+            Music(std::string givenKey, AssetType givenType, Mix_Music* givenAsset, Amara::GameProperties* gameProperties): Amara::AudioBase(givenKey, givenType) {
                 properties = gameProperties;
 				music = givenAsset;
             }
 
-			void play(int gLoops) {
+			Amara::AudioBase* play(int gLoops) {
 				loops = gLoops;
 				if (Mix_PlayingMusic()) {
 					if (properties->music != nullptr && !properties->music->isPaused) {
@@ -37,13 +37,15 @@ namespace Amara {
 					parent->lastPlayed = this;
 					parent->currentlyPlaying == this;
 				}
+
+				return this;
 			}
 
-			void play() {
-				play(-1);
+			Amara::AudioBase* play() {
+				return play(defaultLoops);
 			}
 
-			void pause() {
+			Amara::AudioBase* pause() {
 				if (Mix_PlayingMusic() && !Mix_PausedMusic()) {
 					if (properties->music == this) {
 						Mix_PauseMusic();
@@ -52,9 +54,11 @@ namespace Amara {
 						position = Mix_GetMusicPosition(music);
 					}
 				}
+				
+				return this;
 			}
 
-			void resume() {
+			Amara::AudioBase* resume() {
 				if (properties->music == this) {
 					Mix_ResumeMusic();
 				}
@@ -65,13 +69,20 @@ namespace Amara {
 				}
 				isPaused = false;
 				isPlaying = true;
+
+				return this;
 			}
+
+			virtual void chain(std::string nextKey) {
+                Amara::AudioBase::chain(nextKey);
+				defaultLoops = 0;
+            }
 
 			bool finished() {
 				return !isPlaying;
 			}
 
-			void stop() {
+			Amara::AudioBase* stop() {
 				if (Mix_PlayingMusic()) {
 					if (properties->music == this) {
 						Mix_HaltMusic();
@@ -82,14 +93,27 @@ namespace Amara {
 						}
 					}
 				}
+				return this;
 			}
 
             void run(float parentVolume) {
                 Amara::AudioBase::run(parentVolume);
 
-                if (Mix_PlayingMusic() && properties->music == this) {
-					Mix_VolumeMusic(floor(volume * masterVolume * parentVolume * MIX_MAX_VOLUME));
-					position = Mix_GetMusicPosition(music);
+                if (properties->music == this) {
+					if (Mix_PlayingMusic()) {
+						Mix_VolumeMusic(floor(volume * masterVolume * parentVolume * MIX_MAX_VOLUME));
+						position = Mix_GetMusicPosition(music);
+					}
+					else {
+						isPlaying = false;
+						isPaused = false;
+						if (parent && parent->currentlyPlaying == this) {
+							parent->currentlyPlaying = nullptr;
+						}
+						if (!nextInChain.empty()) {
+							getRootAudio()->play(nextInChain);
+						}
+					}
 				}
 				else {
 					isPlaying = false;

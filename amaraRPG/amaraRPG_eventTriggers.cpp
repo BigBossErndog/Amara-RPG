@@ -19,7 +19,7 @@ namespace Amara {
             }
 
 			~RPGEventTrigger() {
-                if (!finished) {
+                if (!isFinished) {
                     if (cutscene) {
                         delete cutscene;
                     }

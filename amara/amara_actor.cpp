@@ -9,9 +9,9 @@ namespace Amara {
     class Actor: public Amara::Entity {
         private:
             bool inRecital = false;
-            std::vector<Amara::Script*> scriptBuffer;
+            std::list<Amara::Script*> scriptBuffer;
         public:
-            std::vector<Amara::Script*> scripts;
+            std::list<Amara::Script*> scripts;
             bool actingPaused = false;
 
             Actor(): Amara::Entity() {}
@@ -29,12 +29,13 @@ namespace Amara {
 			void destroyScript(Amara::Script* script) {
 				if (script != nullptr) {
 					Script* check;
-					for (auto it = scripts.begin(); it != scripts.end(); ++it) {
+					for (auto it = scripts.begin(); it != scripts.end();) {
 						check = *it;
 						if (check == script) {
-							scripts.erase(it--);
+							it = scripts.erase(it);
 							continue;
 						}
+                        ++it;
 					}
 					if (script->deleteOnFinish) properties->taskManager->queueDeletion(script);
 					if (script->chainedScript) destroyScript(script->chainedScript);
@@ -80,7 +81,7 @@ namespace Amara {
                 inRecital = true;
 
                 for (Amara::Script* script: scripts) {
-                    if (!script->finished) {
+                    if (!script->isFinished) {
                         script->receiveMessages();
                         script->script();
                         script->script(this);
@@ -96,18 +97,20 @@ namespace Amara {
                 chained.clear();
                 
                 Amara::Script* script;
-                for (auto it = scripts.begin(); it != scripts.end(); ++it) {
+                for (auto it = scripts.begin(); it != scripts.end();) {
                     script = *it;
-                    if (script->finished) {
+                    if (script->isFinished) {
                         if (script->chainedScript != nullptr) {
                             chained.push_back(script->chainedScript);
                             script->chainedScript = nullptr;
                         }
-                        scripts.erase(it--);
+                        it = scripts.erase(it);
                         if (script->deleteOnFinish) {
                             delete script;
                         }
+                        continue;
                     }
+                    ++it;
                 }
                 for (Amara::Script* chain: chained) {
                     recite(chain);
@@ -144,11 +147,11 @@ namespace Amara {
             }
 
             void run() {
-                reciteScripts();
-                if (!isDestroyed) Amara::Entity::run();
+                Amara::Entity::run();
+                if (!isDestroyed) reciteScripts();
             }
 
-            void clearScripts() {
+            Amara::Actor* clearScripts() {
                 for (Amara::Script* script: scripts) {
                     if (script->deleteOnFinish) {
                         delete script;
@@ -161,36 +164,40 @@ namespace Amara {
                     }
                 }
                 scriptBuffer.clear();
+                return this;
             }
 
-			void clearScript(std::string gid) {
+			Amara::Actor* clearScript(std::string gid) {
 				Amara::Script* script;
-                for (auto it = scripts.begin(); it != scripts.end(); ++it) {
+                for (auto it = scripts.begin(); it != scripts.end();) {
                     script = *it;
                     if (script->id.compare(gid) == 0) {
                         if (script->chainedScript != nullptr) {
                             recite(script->chainedScript);
                         }
-                        scripts.erase(it--);
+                        it = scripts.erase(it);
                         if (script->deleteOnFinish) {
                             delete script;
                         }
-						return;
+						break;
                     }
+                    ++it;
                 }
-                for (auto it = scriptBuffer.begin(); it != scriptBuffer.end(); ++it) {
+                for (auto it = scriptBuffer.begin(); it != scriptBuffer.end();) {
                     script = *it;
                     if (script->id.compare(gid) == 0) {
                         if (script->chainedScript != nullptr) {
                             recite(script->chainedScript);
                         }
-                        scripts.erase(it--);
+                        it = scripts.erase(it);
                         if (script->deleteOnFinish) {
                             delete script;
                         }
-						return;
+						break;
                     }
+                    ++it;
                 }
+                return this;
 			}
 
 			Amara::Script* getScript(std::string gid) {
@@ -202,7 +209,7 @@ namespace Amara {
 				return nullptr;
 			}
 
-			void cancelScripts() {
+			Amara::Actor* cancelScripts() {
 				for (Amara::Script* script: scripts) {
 					script->cancel();
 					script->cancel(this);
@@ -219,13 +226,17 @@ namespace Amara {
                     }
                 }
                 scriptBuffer.clear();
+
+                return this;
 			}
 
-            void pauseActing() {
+            Amara::Actor* pauseActing() {
                 actingPaused = true;
+                return this;
             }
-            void resumeActing() {
+            Amara::Actor* resumeActing() {
                 actingPaused = false;
+                return this;
             }
 
             void destroy() {

@@ -349,7 +349,7 @@ namespace Amara {
 
     class Tween_Alpha: public Tween {
         public:
-            float startAlpha = 0;
+            float startAlpha = -1;
             float targetAlpha = 0;
 
             Tween_Alpha(float gTarget, float gTime, Amara::Easing gEasing) {
@@ -360,8 +360,14 @@ namespace Amara {
             Tween_Alpha(float gTarget, float gTime): Tween_Alpha(gTarget, gTime, LINEAR) {}
             Tween_Alpha(float gTime): Tween_Alpha(0, gTime) {}
 
+
+            Tween_Alpha(float gStart, float gTarget, float gTime, Amara::Easing gEasing): Tween_Alpha(gTarget, gTime, gEasing) {
+                startAlpha = gStart;
+            }
+            Tween_Alpha(float gStart, float gTarget, float gTime): Tween_Alpha(gStart, gTarget, gTime, LINEAR) {}
+
             void prepare(Amara::Actor* actor) {
-                startAlpha = actor->alpha;
+                if (startAlpha == -1) startAlpha = actor->alpha;
             }
 
             void script(Amara::Actor* actor) {
@@ -437,6 +443,265 @@ namespace Amara {
 
         void script() {
             parent->setVisible(toSet);
+            finish();
+        }
+    };
+
+    class Tween_Depth: public Tween {
+    public:
+        float startDepth = 0;
+        float targetDepth = 0;
+
+        Tween_Depth(float gTarget, float gTime, Amara::Easing gEasing) {
+            targetDepth = gTarget;
+            time = gTime;
+            easing = gEasing;
+        }
+        Tween_Depth(float gTarget, float gTime): Tween_Depth(gTarget, gTime, LINEAR) {}
+        Tween_Depth(float gTime): Tween_Depth(-1, gTime) {}
+        Tween_Depth(): Tween_Depth(0) {}
+
+        void prepare(Amara::Actor* actor) {
+            startDepth = actor->depth;
+            if (targetDepth = -1) {
+                Amara::Entity* entity;
+                for (auto it = actor->children.begin(); it != actor->children.end();) {
+                    entity = *it;
+                    if (entity->depth > targetDepth) {
+                        targetDepth = entity->depth + 0.1;
+                    }
+                }
+            }
+        }
+
+        void script(Amara::Actor* actor) {
+            Amara::Tween::progressFurther();
+            switch (easing) {
+                case LINEAR:
+                    actor->depth = linearEase(startDepth, targetDepth, progress);
+                    break;
+                case SINE_INOUT:
+                    actor->depth = sineInOutEase(startDepth, targetDepth, progress);
+                    break;
+                case SINE_IN:
+                    actor->depth = sineInEase(startDepth, targetDepth, progress);
+                    break;
+                case SINE_OUT:
+                    actor->depth = sineOutEase(startDepth, targetDepth, progress);
+                    break;
+            }
+        }
+
+        void finish() {
+            Tween::finish();
+            parent->depth = targetDepth;
+        }
+    };
+
+    class Tween_FillRectWH: public Tween {
+    public:
+        FillRect* rect = nullptr;
+
+        float targetW = 0;
+        float targetH = 0;
+        float startW = 0;
+        float startH = 0;
+
+        Tween_FillRectWH(float tw, float th, float tt, Amara::Easing gEasing) {
+            targetW = tw;
+            targetH = th;
+            time = tt;
+            easing = gEasing;
+        }
+        Tween_FillRectWH(float tw, float th, float tt): Tween_FillRectWH(tw, th, tt, LINEAR) {}
+
+        void prepare() {
+            if (rect == nullptr) rect = (FillRect*)parent;
+            startW = rect->width;
+            startH = rect->height;
+        }
+
+        void script(Amara::Actor* actor) {
+            Amara::Tween::progressFurther();
+            switch (easing) {
+                case LINEAR:
+                    rect->width = linearEase(startW, targetW, progress);
+                    rect->height = linearEase(startH, targetH, progress);
+                    break;
+                case SINE_INOUT:
+                    rect->width = sineInOutEase(startW, targetW, progress);
+                    rect->height = sineInOutEase(startH, targetH, progress);
+                    break;
+                case SINE_IN:
+                    rect->width = sineInEase(startW, targetW, progress);
+                    rect->height = sineInEase(startH, targetH, progress);
+                    break;
+                case SINE_OUT:
+                    rect->width = sineOutEase(startW, targetW, progress);
+                    rect->height = sineOutEase(startH, targetH, progress);
+                    break;
+            }
+        }
+
+        void finish() {
+            Tween::finish();
+            rect->width = targetW;
+            rect->height = targetH;
+        }
+    };
+
+    class Tween_Color: public Tween {
+    public:
+        SDL_Color startColor;
+        SDL_Color endColor;
+
+        SDL_Color* affectColor;
+
+        Tween_Color(SDL_Color* gAffect, SDL_Color gEnd, float tt, Amara::Easing gEasing) {
+            startColor = *gAffect;
+            affectColor = gAffect;
+            endColor = gEnd;
+            time = tt;
+            easing = gEasing;
+        }
+        Tween_Color(SDL_Color& gAffect, SDL_Color gEnd, float tt, Amara::Easing gEasing): Tween_Color(&gAffect, gEnd, tt, gEasing) {}
+        Tween_Color(SDL_Color& gAffect, SDL_Color gEnd, float tt): Tween_Color(gAffect, gEnd, tt, LINEAR) {}
+        Tween_Color(FillRect* rect, SDL_Color gEnd, float tt, Amara::Easing gEasing): Tween_Color(rect->color,gEnd, tt, gEasing) {}
+        Tween_Color(FillRect* rect, SDL_Color gEnd, float tt): Tween_Color(rect, gEnd, tt, LINEAR) {}
+
+        void script(Amara::Actor* actor) {
+            Amara::Tween::progressFurther();
+            switch (easing) {
+                case LINEAR:
+                    affectColor->r = linearEase(startColor.r, endColor.r, progress);
+                    affectColor->g = linearEase(startColor.g, endColor.g, progress);
+                    affectColor->b = linearEase(startColor.b, endColor.b, progress);
+                    affectColor->a = linearEase(startColor.a, endColor.a, progress);
+                    break;
+                case SINE_INOUT:
+                    affectColor->r = sineInOutEase(startColor.r, endColor.r, progress);
+                    affectColor->g = sineInOutEase(startColor.g, endColor.g, progress);
+                    affectColor->b = sineInOutEase(startColor.b, endColor.b, progress);
+                    affectColor->a = sineInOutEase(startColor.a, endColor.a, progress);
+                    break;
+                case SINE_IN:
+                    affectColor->r = sineInEase(startColor.r, endColor.r, progress);
+                    affectColor->g = sineInEase(startColor.g, endColor.g, progress);
+                    affectColor->b = sineInEase(startColor.b, endColor.b, progress);
+                    affectColor->a = sineInEase(startColor.a, endColor.a, progress);
+                    break;
+                case SINE_OUT:
+                    affectColor->r = sineOutEase(startColor.r, endColor.r, progress);
+                    affectColor->g = sineOutEase(startColor.g, endColor.g, progress);
+                    affectColor->b = sineOutEase(startColor.b, endColor.b, progress);
+                    affectColor->a = sineOutEase(startColor.a, endColor.a, progress);
+                    break;
+            }
+        }
+
+        void finish() {
+            Tween::finish();
+            affectColor->r = endColor.r;
+            affectColor->g = endColor.g;
+            affectColor->b = endColor.b;
+            affectColor->a = endColor.a;
+        }
+    };
+
+    class Tween_Wait: public Tween {
+    public:
+        Tween_Wait(double gt) {
+            time = gt;
+        }
+        
+        void script() {
+            progressFurther();
+        }
+    };
+
+    class Script_TimedBroadcast: public Amara::Script {
+    public:
+        std::string messageKey;
+        nlohmann::json messageData = nullptr;
+
+        float time = 0;
+
+        Script_TimedBroadcast(float gTime, std::string gKey) {
+            time = gTime;
+            messageKey = gKey;
+        }
+        Script_TimedBroadcast(float gTime, std::string gKey, nlohmann::json gData): Script_TimedBroadcast(gTime, gKey) {
+            messageData = gData;
+        }
+
+        void script() {
+            start();
+
+            wait(time);
+
+            if (evt()) {
+                parent->broadcastMessage(messageKey, messageData);
+                finish();
+            }
+        }
+    };
+
+    class Script_Broadcast: public Amara::Script {
+    public:
+        std::string messageKey;
+        nlohmann::json messageData = nullptr;
+
+        Script_Broadcast(std::string gKey) {
+            messageKey = gKey;
+        }
+        Script_Broadcast(std::string gKey, nlohmann::json gData): Script_Broadcast(gKey) {
+            messageData = gData;
+        }
+
+        void script() {
+            start();
+            if (once()) broadcastMessage(messageKey, messageData);
+            finishEvt();
+        }
+    };
+
+    class Script_Destroy: public Script {
+    public:
+        Entity* toDestroy = nullptr;
+
+        Script_Destroy() {}
+        Script_Destroy(Entity* gEntity) {
+            toDestroy = gEntity;
+        }
+
+        void prepare() {
+            if (!toDestroy) toDestroy = parent;
+        }
+
+        void script() {
+            toDestroy->destroy();
+            finish();
+        }
+    };
+
+    class Script_Configure: public Script {
+    public:
+        Entity* target = nullptr;
+        nlohmann::json config = nullptr;
+
+        Script_Configure(nlohmann::json gConfig) {
+            config = gConfig;
+        }
+        Script_Configure(Entity* gTarget, nlohmann::json gConfig): Script_Configure(gConfig) {
+            target = gTarget;
+        }
+
+        void prepare() {
+            if (!target) target = parent;
+        }
+
+        void script() {
+            target->configure(config);
             finish();
         }
     };

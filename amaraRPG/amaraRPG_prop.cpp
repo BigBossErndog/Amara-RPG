@@ -163,7 +163,7 @@ namespace Amara {
 				return false;
 			}
 
-            Amara::Direction getDirectionTo(Amara::Prop* other, std::vector<Amara::Direction> list) {
+            Amara::Direction directionTo(Amara::Prop* other, std::vector<Amara::Direction> list) {
                 int objx = other->tileX;
                 int objy = other->tileY;
 
@@ -171,10 +171,10 @@ namespace Amara {
                     return Down;
                 }
 
-                return getDirectionBetween(tileX, tileY, objx, objy, list);
+                return directionBetween(tileX, tileY, objx, objy, list);
             }
-			Amara::Direction getDirectionTo(Amara::Prop* other) {
-				return getDirectionTo(other, DirectionsInOrder);
+			Amara::Direction directionTo(Amara::Prop* other) {
+				return directionTo(other, DirectionsInOrder);
 			}
 
             void setTilePadding(int pt, int pb, int pl, int pr) {

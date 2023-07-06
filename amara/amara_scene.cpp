@@ -18,7 +18,7 @@ namespace Amara {
             Amara::SceneTransitionBase* transition = nullptr;
 
             Amara::Camera* mainCamera = nullptr;
-            std::vector<Amara::Camera*> cameras;
+            std::list<Amara::Camera*> cameras;
 
             bool initialLoaded = false;
 
@@ -67,7 +67,7 @@ namespace Amara {
             }
 
             virtual Amara::Entity* add(Amara::Entity* entity) {
-                entities.push_back(entity);
+                children.push_back(entity);
                 entity->init(properties, this, this);
                 return entity;
             }
@@ -79,22 +79,16 @@ namespace Amara {
                 return cam;
             }
 
-            virtual Amara::Entity* removeCamera(size_t index) {
-				Amara::Entity* child = entities.at(index);
-				child->parent = nullptr;
-				cameras.erase(cameras.begin() + index);
-				return child;
-			}
-
-			virtual Amara::Entity* removeCamera(Amara::Camera* entity) {
-				Amara::Camera* child;
-				int numChildren = cameras.size();
-				for (size_t i = 0; i < numChildren; i++) {
-					child = cameras.at(i);
-					if (child == entity) {
-						return removeCamera(i);
-					}
-				}
+			virtual Amara::Entity* removeCamera(Amara::Camera* rem) {
+				Amara::Camera* cam;
+				for (auto it = cameras.begin(); it != cameras.end();) {
+                    cam = *it;
+                    if (cam == rem) {
+                        it = cameras.erase(it);
+                        return cam;
+                    }
+                    ++it;
+                }
 				return nullptr;
 			}
 
@@ -113,7 +107,7 @@ namespace Amara {
 					
                     if (!load->stillLoading) {
                         if (transition != nullptr) {
-                            if (transition->finished) {
+                            if (transition->isFinished) {
                                 initialLoaded = true;
                                 transition->complete();
                                 transition = nullptr;
@@ -140,7 +134,7 @@ namespace Amara {
                     if (transition != nullptr) {
                         transition->run();
                         if (transition && transition->fromWake) {
-                            if (transition->finished) {
+                            if (transition->isFinished) {
                                 transition->complete();
                                 transition = nullptr;
                             }
@@ -154,16 +148,8 @@ namespace Amara {
 
             virtual void updateScene() {
                 update();
-                reciteScripts();
-
-                Amara::Entity* entity;
-                for (auto it = entities.begin(); it != entities.end(); ++it) {
-                    entity = *it;
-                    if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
-                        continue;
-                    }
-                    entity->run();
-                }  
+                runChildren();
+                checkChildren();
 
                 Amara::Camera* cam;
                 for (auto it = cameras.begin(); it != cameras.end(); ++it) {
@@ -175,15 +161,16 @@ namespace Amara {
                         cam->run();
                     }
                 }
-
-                checkEntities();
-                for (auto it = cameras.begin(); it != cameras.end(); ++it) {
+                for (auto it = cameras.begin(); it != cameras.end();) {
                     cam = *it;
                     if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
-                        cameras.erase(it--);
+                        it = cameras.erase(it);
                         continue;
                     }
+                    ++it;
                 }
+
+                reciteScripts();
             }
 
             virtual void draw() {
@@ -192,8 +179,11 @@ namespace Amara {
 				properties->scrollX = 0;
 				properties->scrollY = 0;
 
-                stable_sort(cameras.begin(), cameras.end(), sortEntities());
-                stable_sort(entities.begin(), entities.end(), sortEntities());
+                cameras.sort(sortEntities());
+                if (shouldSortChildren || sortChildrenOnce) {
+                    sortChildrenOnce = false;
+                    delayedSorting();
+                }
 
                 float offset, upScale;
                 int vx = 0, vy = 0;
@@ -212,10 +202,9 @@ namespace Amara {
                 }
 
                 Amara::Camera* cam;
-                for (std::vector<Amara::Camera*>::iterator it = cameras.begin(); it != cameras.end(); it++) {
+                for (std::list<Amara::Camera*>::iterator it = cameras.begin(); it != cameras.end(); it++) {
                     cam = *it;
                     if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
-                        cameras.erase(it--);
                         continue;
                     }
                     cam->transition = transition;

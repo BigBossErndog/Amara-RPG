@@ -42,8 +42,6 @@ namespace Amara {
 
             virtual void run() {
                 properties->currentScene = this;
-				receiveMessages();
-                updateMessages();
 
                 if (!initialLoaded) {
                     if (transition != nullptr) {
@@ -54,7 +52,7 @@ namespace Amara {
 
                     if (!load->stillLoading) {
                         if (transition != nullptr) {
-                            if (transition->finished) {
+                            if (transition->isFinished) {
                                 initialLoaded = true;
                                 transition->complete();
                                 transition = nullptr;
@@ -81,7 +79,7 @@ namespace Amara {
                     if (transition != nullptr) {
                         transition->update();
                         if (transition && transition->fromWake) {
-                            if (transition->finished) {
+                            if (transition->isFinished) {
                                 transition->complete();
                                 transition = nullptr;
                             }
@@ -93,13 +91,15 @@ namespace Amara {
                 }
             }
             void updateScene() {
-				reciteScripts();
+                receiveMessages();
+                updateMessages();
+                
                 rpgUpdate();
 
-                for (Amara::Entity* entity : entities) {
-                    if (entity->isDestroyed || entity->parent != this) continue;
-                    entity->run();
-                }
+                reciteScripts();
+
+                runChildren();
+                checkChildren();
 
                 for (Amara::Camera* cam : cameras) {
                     if (cam->isDestroyed || cam->parent != this) continue;
@@ -194,13 +194,13 @@ namespace Amara {
             }
 
             virtual void runCutscenes() {
-                if (currentCutscene != nullptr && !currentCutscene->finished) {
+                if (currentCutscene != nullptr && !currentCutscene->isFinished) {
                     currentCutscene->receiveMessages();
                     currentCutscene->script();
                     currentCutscene->script(this);
                 }
 
-                if (currentCutscene == nullptr || currentCutscene->finished) {
+                if (currentCutscene == nullptr || currentCutscene->isFinished) {
                     bool startNextCutscene = true;
                     if (currentCutscene != nullptr) {
                         RPGCutsceneBase* chained = currentCutscene->chainedCutscene;
@@ -247,7 +247,7 @@ namespace Amara {
             
             Amara::Prop* getPropAt(int tx, int ty, Amara::Prop* exclusion) {
                 Amara::Prop* prop;
-                for (Amara::Entity* entity: entities) {
+                for (Amara::Entity* entity: children) {
                     if (entity->data.find("isProp") == entity->data.end() || !entity->data["isProp"]) {
                         continue;
                     }
@@ -275,7 +275,7 @@ namespace Amara {
                 if (tilemap != nullptr && tilemap->isWall(tx, ty)) return true;
 
                 Amara::Prop* prop;
-                for (Amara::Entity* entity: entities) {
+                for (Amara::Entity* entity: children) {
                     if (!entity->isActive || entity->isDestroyed) continue;
                     if (entity->data.find("isProp") == entity->data.end() || !entity->data["isProp"]) {
                         continue;
@@ -299,7 +299,7 @@ namespace Amara {
                 if (tilemap != nullptr && tilemap->isWall(tx, ty, dir)) return true;
                 
                 Amara::Prop* prop;
-                for (Amara::Entity* entity: entities) {
+                for (Amara::Entity* entity: children) {
                     if (!entity->isActive || entity->isDestroyed) continue;
                     if (entity->data.find("isProp") == entity->data.end() || !entity->data["isProp"]) {
                         continue;

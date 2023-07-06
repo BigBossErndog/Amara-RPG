@@ -121,7 +121,7 @@ namespace Amara {
                     return true;
                 }
                 else {
-                    std::cout << "Font with key: \"" << gFontKey << "\" was not found." << std::endl;
+                    SDL_Log("Font with key: \"$s\" was not found.", gFontKey.c_str());
                 }
                 return false;
             }
@@ -167,6 +167,9 @@ namespace Amara {
             void setOutlineColor(int r, int g, int b) {
                 setOutlineColor(r, g, b, 255);
             }
+            void setOutlineColor(SDL_Color gColor) {
+                outlineColor = gColor;
+            }
 
             void setOutline(int size, int r, int g, int b, int a) {
                 outline = size;
@@ -174,6 +177,10 @@ namespace Amara {
             }
             void setOutline(int size, int r, int g, int b) {
                 setOutline(size, r, g, b, 255);
+            }
+            void setOutline(int size, SDL_Color gColor) {
+                outline = size;
+                setOutlineColor(gColor);
             }
 
             void setOrigin(float gx, float gy) {
@@ -211,6 +218,7 @@ namespace Amara {
                 wordWrapWidth = w;
                 wordWrap = true;
                 if (w == 0 || w == false) {
+                    wordWrapWidth = 0;
                     wordWrap = false;
                 }
                 findDimensions();
@@ -277,7 +285,7 @@ namespace Amara {
 
 						int rx = floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
 						int ry = floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY);
-
+                        
                         FC_DrawColumnEffect(
                             fontAsset->font,
                             gRenderer,
