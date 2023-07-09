@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_CANVAS
-#define AMARA_CANVAS
-
-
-
 namespace Amara {
     class Canvas: public Actor {
         public:
@@ -287,7 +281,7 @@ namespace Amara {
                     }
                 }
 
-                Amara::Entity::draw(vx, vy, vw, vh);
+                Amara::Actor::draw(vx, vy, vw, vh);
 
 				checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
 
@@ -299,5 +293,3 @@ namespace Amara {
             }
     };
 }
-
-#endif

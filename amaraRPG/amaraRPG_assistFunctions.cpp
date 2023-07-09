@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_TILEHANDLING
-#define AMARA_TILEHANDLING
-
-#include "amaraRPG.h"
-
 namespace Amara {
     std::string walkAnim(Amara::Direction dir) {
         switch (dir) {
@@ -62,5 +56,3 @@ namespace Amara {
         return "";
     }
 }
-
-#endif

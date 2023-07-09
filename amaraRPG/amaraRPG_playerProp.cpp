@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_PLAYER
-#define AMARA_PLAYER
-
-#include "amaraRPG.h"
-
 namespace Amara {
     class PlayerProp: public Amara::Walker {
         public:
@@ -191,5 +185,3 @@ namespace Amara {
             }
     };
 }
-
-#endif

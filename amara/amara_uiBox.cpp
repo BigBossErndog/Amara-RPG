@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_UIBOX
-#define AMARA_UIBOX
-
-
-
 namespace Amara {
     class UIBox: public Amara::Actor {
         public:
@@ -408,7 +402,7 @@ namespace Amara {
                 }
 
                 if (openWidth == width && openHeight == height) {
-                    Amara::Entity::draw(vx, vy, vw, vh);
+                    Amara::Actor::draw(vx, vy, vw, vh);
                 }
             }
 
@@ -460,6 +454,10 @@ namespace Amara {
                     std::cout << "Texture with key: \"" << gTextureKey << "\" was not found." << std::endl;
                 }
                 return false;
+            }
+
+            void reloadAssets() {
+                setTexture(textureKey);
             }
 
             bool removeTexture() {
@@ -843,5 +841,3 @@ namespace Amara {
 		}
 	};
 }
-
-#endif

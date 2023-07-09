@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_IMAGE
-#define AMARA_IMAGE
-
-
-
 namespace Amara {
     class Image: public Amara::Actor {
         public:
@@ -316,6 +310,10 @@ namespace Amara {
                 return false;
             }
 
+            void reloadAssets() {
+                setTexture(textureKey);
+            }
+
             bool setTexture(SDL_Texture* tx) {
                 if (texture) removeTexture();
                 texture = new ImageTexture("temp", IMAGE, tx);
@@ -416,5 +414,3 @@ namespace Amara {
 			}
     };
 }
-
-#endif

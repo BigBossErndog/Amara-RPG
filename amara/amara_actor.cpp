@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_ACTOR
-#define AMARA_ACTOR
-
-
-
 namespace Amara {
     class Tween;
     class Actor: public Amara::Entity {
@@ -83,6 +77,7 @@ namespace Amara {
                 for (Amara::Script* script: scripts) {
                     if (!script->isFinished) {
                         script->receiveMessages();
+                        script->updateMessages();
                         script->script();
                         script->script(this);
                     }
@@ -147,8 +142,45 @@ namespace Amara {
             }
 
             void run() {
-                Amara::Entity::run();
-                if (!isDestroyed) reciteScripts();
+                receiveMessages();
+				updateMessages();
+
+				Amara::Interactable::run();
+				if (isInteractable && isDraggable && interact.isDown) {
+					if (physics) {
+						physics->velocityX = interact.movementX;
+						physics->velocityY = interact.movementY;
+					}
+					else {
+						x += interact.movementX;
+						y += interact.movementY;
+					}
+				}
+
+				update();
+
+				if (physics != nullptr) {
+					if (physics->isActive) physics->run();
+
+					if (physics->isDestroyed) {
+						removePhysics();
+					}
+				}
+
+				if (attachedTo != nullptr) {
+					if (attachedTo->isDestroyed) {
+                        attachedTo = nullptr;
+                    }
+                    else {
+                        x = attachedTo->x + attachmentOffsetX;
+                        y = attachedTo->y + attachmentOffsetY;
+                    }
+				}
+                
+                reciteScripts();
+
+				runChildren();
+				checkChildren();
             }
 
             Amara::Actor* clearScripts() {
@@ -245,5 +277,3 @@ namespace Amara {
             }
     };
 }
-
-#endif

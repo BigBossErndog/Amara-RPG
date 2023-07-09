@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_WALKER
-#define AMARA_WALKER
-
-#include "amaraRPG.h"
-
 namespace Amara {
     class Walker: public Amara::Prop, public Amara::WallFinder {
         public:
@@ -484,5 +478,3 @@ namespace Amara {
 			}
 	};
 }
-
-#endif

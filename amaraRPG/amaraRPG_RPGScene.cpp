@@ -1,16 +1,8 @@
-#pragma once
-#ifndef AMARA_AREA
-#define AMARA_AREA
-
-#include "amaraRPG.h"
-
 namespace Amara {
     class RPGScene : public Amara::Scene, public Amara::WallFinder {
         public:
             Amara::Tilemap* tilemap = nullptr;
             nlohmann::json mapData = nullptr;
-
-            Amara::LightLayer* lighting = nullptr;
 
             std::deque<Amara::RPGCutsceneBase*> cutscenes;
             Amara::RPGCutsceneBase* currentCutscene = nullptr;
@@ -112,8 +104,6 @@ namespace Amara {
 
                 clearCutscenes();
 
-                lighting = nullptr;
-
                 prepare();
 				mapData = createMap();
 
@@ -161,10 +151,6 @@ namespace Amara {
                 }
 
                 create();
-
-                if (lighting != nullptr) {
-                    lighting->depth = aboveDepth + i + 1;
-                }
             }
 
             virtual void rpgUpdate() {
@@ -380,5 +366,3 @@ namespace Amara {
         return rpgScene->tilemap->isWall(gx, gy);
     }
 }
-
-#endif

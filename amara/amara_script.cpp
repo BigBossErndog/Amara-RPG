@@ -1,15 +1,9 @@
-#pragma once
-#ifndef AMARA_SCRIPT
-#define AMARA_SCRIPT
-
-
-
 namespace Amara {
     class Game;
     class Scene;
     class Actor;
 
-    class Script: public Amara::StateManager {
+    class Script: public Amara::StateManager, public Amara::Broadcaster {
         public:
             Amara::GameProperties* properties = nullptr;
             Amara::Game* game = nullptr;
@@ -21,7 +15,6 @@ namespace Amara {
             Amara::AudioGroup* audio = nullptr;
             Amara::AssetManager* assets = nullptr;
             Amara::Loader* load = nullptr;
-            Amara::MessageQueue* messages = nullptr;
 
 			std::string id;
 
@@ -97,18 +90,6 @@ namespace Amara {
 			virtual void cancel() {}
 			virtual void cancel(Amara::Actor* actor) {}
 
-            Message& broadcastMessage(std::string key, nlohmann::json gData) {
-				Message& msg = ((Entity*)parent)->broadcastMessage(key, gData);
-                return msg;
-			}
-            Message& broadcastMessage(std::string key) {
-                return broadcastMessage(key, nullptr);
-            }
-			Message& getMessage(std::string key) {
-				return properties->messages->get(key);
-			}
-            virtual void receiveMessages() {}
-
             ~Script() {
                 if (deleteChainOnDelete && chainedScript) {
                     delete chainedScript;
@@ -116,5 +97,3 @@ namespace Amara {
             }
     };
 }
-
-#endif

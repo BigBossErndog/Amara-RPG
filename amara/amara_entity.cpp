@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_ENTITY
-#define AMARA_ENTITY
-
-
-
 namespace Amara {
 	class Game;
 	class Scene;
@@ -25,7 +19,7 @@ namespace Amara {
 		}
 	};
 
-	class Entity : public Amara::SortedEntity, public Amara::Interactable {
+	class Entity : public Amara::SortedEntity, public Amara::Interactable, public Amara::Broadcaster {
 		public:
 			Amara::GameProperties* properties = nullptr;
 			Amara::Game*  game = nullptr;
@@ -41,12 +35,10 @@ namespace Amara {
 			Amara::AudioGroup* audio = nullptr;
 			Amara::AssetManager* assets = nullptr;
 			Amara::Loader* load = nullptr;
-			Amara::MessageQueue* messages = nullptr;
 
 			std::list<Amara::Entity*> children;
 
 			Amara::PhysicsBase* physics = nullptr;
-			bool pushedMessages = false;
 
 			nlohmann::json data;
 
@@ -219,6 +211,12 @@ namespace Amara {
 					setDraggable(config["isDraggable"]);
 				}
 			}
+			void recursiveConfigure(nlohmann::json config) {
+				configure(config);
+				for (Amara::Entity* child: children) {
+					child->recursiveConfigure(config);
+				}
+			}
 
 			virtual nlohmann::json toData() {
 				nlohmann::json config;
@@ -373,6 +371,7 @@ namespace Amara {
 				}
 
 				update();
+
 				if (physics != nullptr) {
 					if (physics->isActive) physics->run();
 
@@ -396,6 +395,7 @@ namespace Amara {
 			}
 
 			virtual void runChildren() {
+				if (isDestroyed) return;
 				Amara::Entity* entity;
 				for (auto it = children.begin(); it != children.end();) {
 					entity = *it;
@@ -654,37 +654,20 @@ namespace Amara {
 				setLoader(gLoader, true);
 			}
 
-			void updateMessages() {
-				if (pushedMessages) {
-					pushedMessages = false;
-					Amara::MessageQueue& messages = *(properties->messages);
-					for (auto it = messages.begin(); it != messages.end();) {
-						Message msg = *it;
-						if (msg.parent == this) {
-							if (msg.skip) {
-								msg.skip = false;
-								pushedMessages = true;
-							}
-							else {
-								it = messages.queue.erase(it);
-								continue;
-							}
-						}
-						++it;
-					}
+			
+
+			virtual void reloadAssets() {}
+			void reloadChildrenAssets(bool recursive) {
+				Amara::Entity* entity;
+				for (auto it = children.begin(); it != children.end(); it++) {
+					entity = *it;
+					entity->reloadAssets();
+					if (recursive) entity->reloadChildrenAssets(recursive);
 				}
 			}
-			Message& broadcastMessage(std::string key, nlohmann::json gData) {
-				pushedMessages = true;
-				return properties->messages->broadcast(this, key, gData);
+			void reloadChildrenAssets() {
+				reloadChildrenAssets(false);
 			}
-			Message& broadcastMessage(std::string key) {
-				return broadcastMessage(key, nullptr);
-			}
-			Message& getMessage(std::string key) {
-				return properties->messages->get(key);
-			}
-			virtual void receiveMessages() {}
 
 			virtual void preload() {}
 			virtual void create() {}
@@ -699,4 +682,3 @@ namespace Amara {
 		protected:
 	};
 }
-#endif

@@ -151,7 +151,6 @@ class TestArea: public RPGScene {
             controls->addButton("full", BUTTON_RIGHTSHOULDER);
 
             controls->addKey("confirm", KEY_Z);
-            box->setProgressControl("confirm");
 
             // mainCamera->startFollow(gnik);
             mainCamera->offsetY = -TILE_HEIGHT/2;

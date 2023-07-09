@@ -1,6 +1,3 @@
-#pragma once
-#include "amaraRPG.h"
-
 namespace Amara {
     class RPGEventTrigger: public Script {
         public:

@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_PROP
-#define AMARA_PROP
-
-#include "amaraRPG.h"
-
 namespace Amara {
     class RPGScene;
 
@@ -253,5 +247,3 @@ namespace Amara {
 
     };
 }
-
-#endif

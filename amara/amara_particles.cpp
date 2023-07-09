@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_PARTICLES
-#define AMARA_PARTICLES
-
-
-
 namespace Amara {
     class Particle: public Amara::Image, public Amara::StateManager {
         public:
@@ -86,9 +80,7 @@ namespace Amara {
                         particle.draw(vx, vy, vw, vh);
                     }
                 }
-                Amara::Entity::draw(vx, vy, vw, vh);
+                Amara::Actor::draw(vx, vy, vw, vh);
             }
     };
 }
-
-#endif

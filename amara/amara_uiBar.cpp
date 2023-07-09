@@ -1,6 +1,3 @@
-#pragma once
-
-
 namespace Amara {
     class UIBar: public Actor {
     public:
@@ -78,6 +75,12 @@ namespace Amara {
                 return true;
             }
             return false;
+        }
+
+        void reloadAssets() {
+            backBar->reloadAssets();
+            frontBar->reloadAssets();
+            if (textDisplay) textDisplay->reloadAssets();
         }
 
         void setValue(float gVal) {

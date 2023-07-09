@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_CUTSCENEBASE
-#define AMARA_CUTSCENEBASE
-
-#include "amaraRPG.h"
-
 namespace Amara {
     class RPGCutsceneBase: public Amara::Script {
         public:
@@ -50,5 +44,3 @@ namespace Amara {
             }
     };
 }
-
-#endif

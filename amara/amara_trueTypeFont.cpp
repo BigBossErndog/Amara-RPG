@@ -1,9 +1,3 @@
-#pragma once
-#ifndef AMARA_TRUETYPEFONT
-#define AMARA_TRUETYPEFONT
-
-
-
 namespace Amara {
     enum Alignment {
         ALIGN_LEFT,
@@ -87,6 +81,10 @@ namespace Amara {
                 if (config.find("font") != config.end()) {
                     setFont(config["font"]);
                 }
+                if (config.find("reloadFont") != config.end()) {
+                    nlohmann::json check = config["reloadFont"];
+                    if (check.is_boolean() && check) setFont(fontKey);
+                }
                 if (config.find("outline") != config.end()) {
                     outline = config["outline"];
                 }
@@ -124,6 +122,10 @@ namespace Amara {
                     SDL_Log("Font with key: \"$s\" was not found.", gFontKey.c_str());
                 }
                 return false;
+            }
+
+            void reloadAssets() {
+                setFont(fontKey);
             }
 
             void setText(std::string newTxt) {
@@ -352,9 +354,7 @@ namespace Amara {
                 effect.color = color;
                 drawText(x, y);
 
-                Amara::Entity::draw(vx, vy, vw, vh);
+                Amara::Actor::draw(vx, vy, vw, vh);
             }
     };
 }
-
-#endif
