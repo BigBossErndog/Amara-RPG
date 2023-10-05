@@ -55,7 +55,7 @@ namespace Amara {
             void run() {
                 if (justFinishedWalking && !isBusy()) {
                     std::string standAnimKey = Amara::standAnim(direction);
-                    if (anims->get(standAnimKey)) play(standAnimKey);
+                    if (anims.get(standAnimKey)) play(standAnimKey);
                 }
                 justFinishedWalking = false;
                 handleWalking();
@@ -114,7 +114,7 @@ namespace Amara {
                 }
 
                 std::string walkAnimKey = Amara::walkAnim(dir);
-                if (replaceAnim && anims->get(walkAnimKey)) {
+                if (replaceAnim && anims.get(walkAnimKey)) {
                     play(walkAnimKey);
                 }
             }
@@ -127,7 +127,7 @@ namespace Amara {
                 forceWalk(dir);
                 movementSpeed = runSpeed;
                 std::string runAnimKey = Amara::runAnim(dir);
-                if (replaceAnim && anims->get(runAnimKey)) play(runAnimKey);
+                if (replaceAnim && anims.get(runAnimKey)) play(runAnimKey);
             }
 
             void forceRun(Amara::Direction dir) {
@@ -162,7 +162,7 @@ namespace Amara {
                 if (walk(dir, false)) {
                     movementSpeed = runSpeed;
                     std::string runAnimKey = Amara::runAnim(dir);
-                    if (replaceAnim && anims->get(runAnimKey)) play(runAnimKey);
+                    if (replaceAnim && anims.get(runAnimKey)) play(runAnimKey);
                     return true;
                 }
 
@@ -246,7 +246,7 @@ namespace Amara {
                 direction = dir;
                 walkDirection = NoDir;
                 std::string standAnimKey = Amara::standAnim(dir);
-                if (anims->get(standAnimKey)) play(standAnimKey);
+                if (anims.get(standAnimKey)) play(standAnimKey);
             }
 
             bool isFacing(Amara::Direction dir) {

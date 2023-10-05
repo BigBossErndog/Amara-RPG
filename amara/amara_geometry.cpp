@@ -15,7 +15,7 @@ namespace Amara {
         int z = 0;
     } IntVector;
 
-    typedef struct FloatVector3{
+    typedef struct FloatVector3 {
         float x = 0;
         float y = 0;
         float z = 0;
@@ -57,23 +57,17 @@ namespace Amara {
         return angle;
     }
 
-    typedef struct IntRect {
-        int x = 0;
-        int y = 0;
+    typedef struct IntRect: public IntVector2 {
         int width = 0;
         int height = 0;
     } IntRect;
 
-    typedef struct FloatRect {
-        float x = 0;
-        float y = 0;
+    typedef struct FloatRect: public FloatVector2 {
         float width = 0;
         float height = 0;
     } FloatRect;
 
-    typedef struct FloatCircle {
-        float x = 0;
-        float y = 0;
+    typedef struct FloatCircle: public FloatVector2 {
         float radius = 0;
     } FloatCircle;
     

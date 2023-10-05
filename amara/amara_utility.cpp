@@ -1,8 +1,11 @@
-bool listContains(std::vector<nlohmann::json> list, nlohmann::json f) {
-    for (nlohmann::json obj: list) {
-        if (obj.is_null() && f.is_null()) return true;
-        if (obj.is_string() && f.is_string() && ((std::string)f).compare(obj) == 0) return true;
-        if (obj.is_number() && f.is_number() && ((float)obj == (float)f)) return true;
+namespace Amara { 
+    template <class T> bool vectorContains(std::vector<T> list, T f) {
+        for (T obj: list) 
+            if (obj == f) return true;
+        return false;
     }
-    return false;
+
+    template <class T> void vectorAppend(std::vector<T>& list1, std::vector<T> list2) {
+        for (T element: list2) list1.push_back(element);
+    }
 }

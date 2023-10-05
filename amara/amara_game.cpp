@@ -10,14 +10,13 @@ namespace Amara {
 			std::unordered_map<std::string, void*> globalObjects;
 			RNG rng;
 
-			Amara::MessageQueue messages = MessageQueue();
+			Amara::MessageQueue messages;
 
 			std::string name;
 			bool quit = false;
 			bool dragged = false;
 
 			SDL_Window* gWindow = NULL;
-			SDL_Surface* gSurface = NULL;
 			SDL_Renderer* gRenderer = NULL;
 
 			int width = 0;
@@ -61,6 +60,8 @@ namespace Amara {
 			
 			int frameCounter = 0;
 			int logicDelay = 0;
+
+			bool reloadAssets = false;
 
 			SDL_Event e;
 
@@ -122,14 +123,6 @@ namespace Amara {
 					return false;
 				}
 				properties->gWindow = gWindow;
-
-				// Get window surface
-				gSurface = SDL_GetWindowSurface(gWindow);
-				properties->gSurface = gSurface;
-
-				// Fill the surface black
-				// Background color
-				SDL_FillRect(gSurface, NULL, SDL_MapRGB(gSurface->format, 0, 0, 0));
 
 				//Update the surface
 				SDL_UpdateWindowSurface(gWindow);
@@ -205,7 +198,9 @@ namespace Amara {
 				input->touches = new Amara::TouchManager(properties);
 				properties->input = input;
 
+				messages = MessageQueue(properties);
 				messages.clear();
+
 				properties->messages = &messages;
 
 				writer = new FileWriter();
@@ -238,9 +233,13 @@ namespace Amara {
 				properties->audio = audio;
 				audio->rootGroup = true;
 
+				properties->rng = &rng;
+
 				writeProperties();
 
 				setWindowSize(width, height);
+
+				return true;
 			}
 
 			// For when the player closes the game
@@ -277,23 +276,21 @@ namespace Amara {
 			void gameLoop() {
 				renderTargetsReset = false;
 				renderDeviceReset = false;
-				
 				manageFPSStart();
-
 				writeProperties();
-
 				// Draw Screen
 				draw();
-
 				// Manage frame catch up and slow down
 				manageFPSEnd();
-
 				deleteEntities();
 				deleteObjects();
 				deleteTransitions();
 				taskManager->run();
-
 				if (renderTargetsReset || renderDeviceReset) {
+					reloadAssets = true;
+				}
+				else if (reloadAssets) {
+					reloadAssets = false;
 					load->regenerateAssets();
 				}
 			}
@@ -303,11 +300,11 @@ namespace Amara {
 				Amara::Entity* obj;
                 int size = deleteQueue.size();
                 if (testing && size > 0) {
-                    std::cout << "TaskManager: Deleting " << size << " children." << std::endl;
+                    SDL_Log("TaskManager: Deleting %d entities.", size);
                 }
                 for (size_t i = 0; i < size; i++) {
                     obj = deleteQueue.at(i);
-                    delete obj;
+                    if (obj) delete obj;
                 }
                 deleteQueue.clear();
 			}
@@ -317,11 +314,11 @@ namespace Amara {
 				void* obj;
                 int size = deleteQueue.size();
                 if (testing && size > 0) {
-                    std::cout << "TaskManager: Deleting " << size << " objects." << std::endl;
+                    SDL_Log("TaskManager: Deleting %d objects.", size);
                 }
                 for (size_t i = 0; i < size; i++) {
                     obj = deleteQueue.at(i);
-                    delete obj;
+                    if (obj) delete obj;
                 }
                 deleteQueue.clear();
 			}
@@ -331,11 +328,11 @@ namespace Amara {
 				Amara::SceneTransitionBase* obj;
                 int size = deleteQueue.size();
                 if (testing && size > 0) {
-                    std::cout << "TaskManager: Deleting " << size << " transitions." << std::endl;
+                    SDL_Log("TaskManager: Deleting %d transitions.", size);
                 }
                 for (size_t i = 0; i < size; i++) {
                     obj = deleteQueue.at(i);
-                    delete obj;
+                    if (obj) delete obj;
                 }
                 deleteQueue.clear();
 			}
@@ -352,7 +349,7 @@ namespace Amara {
 				void* obj = globalObjects[gKey];
 				globalObjects.erase(gKey);
 				if (del) {
-					delete obj;
+					if (obj) delete obj;
 					return nullptr;
 				}
 				return obj;
@@ -459,7 +456,6 @@ namespace Amara {
 
 			void writeProperties() {
 				properties->gWindow = gWindow;
-				properties->gSurface = gSurface;
 				properties->gRenderer = gRenderer;
 
 				properties->testing = testing;
@@ -504,15 +500,11 @@ namespace Amara {
 					frameCounter = 0;
 				}
 				frameCounter += 1;
-
 				scenes->draw();
-				events->manageInteracts();
 
+				events->manageInteracts();
 				/// Draw to renderer
 				SDL_RenderPresent(gRenderer);
-				if (!hardwareRendering) {
-					SDL_UpdateWindowSurface(gWindow);
-				}
 			}
 
 			void manageFPSStart() {
@@ -532,7 +524,7 @@ namespace Amara {
 					}
 				}
 				else if (fps > lps) {
-					logicDelay = fps/lps;
+					logicDelay = floor(fps/(float)lps);
 				}
 
 				int frameTicks = capTimer.getTicks();

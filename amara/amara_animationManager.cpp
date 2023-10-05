@@ -13,6 +13,7 @@ namespace Amara {
 
             float frameCounter = 0;
 
+            AnimationManager() {}
             AnimationManager(Amara::GameProperties* gameProperties, Amara::Image* givenParent) {
                 properties = gameProperties;
                 parent = givenParent;
@@ -27,7 +28,7 @@ namespace Amara {
                     std::cout << "Spritesheet \"" << texture->key << "\" does not have the animation \"" << animKey << "\"." << std::endl;
                 }
                 if (anim != currentAnim || (anim != nullptr && isFinished)) {
-					if (currentAnim != nullptr && currentAnim->deleteOnFinish) delete currentAnim;
+					if (currentAnim != nullptr && currentAnim->deleteOnFinish) properties->taskManager->queueDeletion(currentAnim);
                     currentAnim = anim;
 
                     currentIndex = 0;
@@ -53,7 +54,7 @@ namespace Amara {
             }
 			void play(Amara::ImageTexture* texture, Amara::Animation* anim) {
 				if (anim != currentAnim || (anim != nullptr && isFinished)) {
-					if (currentAnim != nullptr && currentAnim->deleteOnFinish && currentAnim != anim) delete currentAnim;
+					if (currentAnim != nullptr && currentAnim->deleteOnFinish && currentAnim != anim) properties->taskManager->queueDeletion(currentAnim);
                     currentAnim = anim;
 
                     currentIndex = 0;
@@ -93,7 +94,7 @@ namespace Amara {
             }
 
             void stop() {
-				if (currentAnim != nullptr && currentAnim->deleteOnFinish) delete currentAnim;
+				if (currentAnim != nullptr && currentAnim->deleteOnFinish) properties->taskManager->queueDeletion(currentAnim);
                 currentAnim = nullptr;
 				isFinished = true;
             }
@@ -123,8 +124,8 @@ namespace Amara {
 				parent->frame = currentFrame;
 			}
 
-            void syncWith(Amara::Animated* other) {
-                setProgress(other->anims->getProgress());
+            void syncWith(AnimationManager& other) {
+                setProgress(other.getProgress());
             }
 
             void pause() {
@@ -154,7 +155,7 @@ namespace Amara {
                         }
                         else {
                             currentFrame = currentAnim->frameAt(currentAnim->length() - 1);
-							if (currentAnim != nullptr && currentAnim->deleteOnFinish) delete currentAnim;
+							if (currentAnim != nullptr && currentAnim->deleteOnFinish) properties->taskManager->queueDeletion(currentAnim);
                             currentAnim = nullptr;
 							isFinished = true;
 							isActive = false;
@@ -167,5 +168,15 @@ namespace Amara {
                     frameCounter -= frameDelay;
                 }
             }
+    };
+
+    class Animated {
+        public:
+            Amara::AnimationManager anims;
+
+            Animated() {}
+
+            virtual bool play(std::string key) {}
+			virtual void play(Amara::Animation* anim) {}
     };
 }

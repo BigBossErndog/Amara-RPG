@@ -105,10 +105,15 @@ namespace Amara {
 							break;
 					}
 				}
-                if (config.find("r") != config.end()) color.r = config["r"];
-                if (config.find("g") != config.end()) color.g = config["g"];
-                if (config.find("b") != config.end()) color.b = config["b"];
-                if (config.find("a") != config.end()) color.a = config["a"];
+                if (config.find("color") != config.end()) {
+                    nlohmann::json check = config["color"];
+                    if (check.is_array()) {
+                        color.r = check[0];
+                        color.g = check[1];
+                        color.b = check[2];
+                        if (check.size() >= 4) color.a = check[3];
+                    }
+                }
             }
 
             bool setFont(std::string gFontKey) {
@@ -128,10 +133,11 @@ namespace Amara {
                 setFont(fontKey);
             }
 
-            void setText(std::string newTxt) {
+            Amara::TrueTypeFont* setText(std::string newTxt) {
                 text = newTxt;
                 const char* txt = text.c_str();
                 findDimensions();
+                return this;
             }
 
             std::string getWrappedText(std::string gText, float wrapWidth) {
@@ -143,73 +149,80 @@ namespace Amara {
                 return wrapping;
             }
 
-            void setWrappedText(std::string gText, float wrapWidth) {
-                setText(getWrappedText(gText, wrapWidth));
+            Amara::TrueTypeFont* setWrappedText(std::string gText, float wrapWidth) {
+                return setText(getWrappedText(gText, wrapWidth));
             }
 
-            void setColor(int r, int g, int b, int a) {
+            Amara::TrueTypeFont* setColor(int r, int g, int b, int a) {
                 color.r = r;
                 color.g = g;
                 color.b = b;
                 color.a = a;
+                return this;
             }
-            void setColor(int r, int g, int b) {
-                setColor(r, g, b, 255);
+            Amara::TrueTypeFont* setColor(int r, int g, int b) {
+                return setColor(r, g, b, 255);
             }
-            void setColor(Amara::Color gColor) {
+            Amara::TrueTypeFont* setColor(Amara::Color gColor) {
                 color = gColor;
+                return this;
             }
 
-            void setOutlineColor(int r, int g, int b, int a) {
+            Amara::TrueTypeFont* setOutlineColor(int r, int g, int b, int a) {
                 outlineColor.r = r;
                 outlineColor.g = g;
                 outlineColor.b = b;
                 outlineColor.a = a;
+                return this;
             }
-            void setOutlineColor(int r, int g, int b) {
-                setOutlineColor(r, g, b, 255);
+            Amara::TrueTypeFont* setOutlineColor(int r, int g, int b) {
+                return setOutlineColor(r, g, b, 255);
             }
-            void setOutlineColor(SDL_Color gColor) {
+            Amara::TrueTypeFont* setOutlineColor(SDL_Color gColor) {
                 outlineColor = gColor;
+                return this;
             }
 
-            void setOutline(int size, int r, int g, int b, int a) {
+            Amara::TrueTypeFont* setOutline(int size, int r, int g, int b, int a) {
                 outline = size;
-                setOutlineColor(r, g, b, a);
+                return setOutlineColor(r, g, b, a);
             }
-            void setOutline(int size, int r, int g, int b) {
-                setOutline(size, r, g, b, 255);
+            Amara::TrueTypeFont* setOutline(int size, int r, int g, int b) {
+                return setOutline(size, r, g, b, 255);
             }
-            void setOutline(int size, SDL_Color gColor) {
+            Amara::TrueTypeFont* setOutline(int size, SDL_Color gColor) {
                 outline = size;
-                setOutlineColor(gColor);
+                return setOutlineColor(gColor);
             }
 
-            void setOrigin(float gx, float gy) {
+            Amara::TrueTypeFont* setOrigin(float gx, float gy) {
                 originX = gx;
                 originY = gy;
                 findDimensions();
+                return this;
             }
-            void setOrigin(float g) {
-                setOrigin(g, g);
+            Amara::TrueTypeFont* setOrigin(float g) {
+                return setOrigin(g, g);
             }
-
-            void setScale(float gx, float gy) {
+            
+            Amara::TrueTypeFont* setScale(float gx, float gy) {
                 scaleX = gx;
                 scaleY = gy;
                 findDimensions();
+                return this;
             }
-            void setScale(float g) {
-                setScale(g, g);
+            Amara::TrueTypeFont* setScale(float g) {
+                return setScale(g, g);
             }
 
-            void changeScale(float gx, float gy) {
+            Amara::TrueTypeFont* changeScale(float gx, float gy) {
                 scaleX += gx;
                 scaleY += gy;
                 findDimensions();
+                return this;
             }
-            void changeScale(float gi) {
-                changeScale(gi, gi);
+            Amara::TrueTypeFont* changeScale(float gi) {
+                return changeScale(gi, gi);
             }
 
             void setWordWrap() {
@@ -285,8 +298,8 @@ namespace Amara {
                             offsetX = width;
                         }
 
-						int rx = floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
-						int ry = floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY);
+						float rx = floor((dx - properties->scrollX*scrollFactorX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
+						float ry = floor((dy-z - properties->scrollY*scrollFactorY + properties->offsetY - (height * originY)) * nzoomY);
                         
                         FC_DrawColumnEffect(
                             fontAsset->font,
@@ -296,7 +309,7 @@ namespace Amara {
                             effect,
                             txt
                         );
-
+                        
 						checkHover(viewbox.x, viewbox.y, viewbox.width, viewbox.height, rx, ry, width * effect.scale.x, height * effect.scale.y);
                     }
                     else {
@@ -308,8 +321,8 @@ namespace Amara {
                             offsetX = width;
                         }
 
-						int rx = floor((dx - properties->scrollX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
-						int ry = floor((dy-z - properties->scrollY + properties->offsetY - (height * originY)) * nzoomY);
+						float rx = floor((dx - properties->scrollX*scrollFactorX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
+						float ry = floor((dy-z - properties->scrollY*scrollFactorY + properties->offsetY - (height * originY)) * nzoomY);
 
                         FC_DrawEffect(
                             fontAsset->font,

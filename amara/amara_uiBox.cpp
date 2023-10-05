@@ -339,8 +339,11 @@ namespace Amara {
                 float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
                 float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
 
-                destRect.x = ((x*scaleX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
-                destRect.y = ((y*scaleY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
+                float rotatedX = (x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX));
+                float rotatedY = (y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY));
+
+                destRect.x = (rotatedX * nzoomX);
+                destRect.y = (rotatedY * nzoomY);
                 destRect.w = ((width * scaleX) * nzoomX);
                 destRect.h = ((height * scaleY) * nzoomY);
 
@@ -456,13 +459,21 @@ namespace Amara {
                 return false;
             }
 
+            UIBox* setPartitions(int top, int bottom, int left, int right) {
+                partitionTop = top;
+                partitionBottom = bottom;
+                partitionLeft = left;
+                partitionRight = right;
+                return this;
+            }
+
             void reloadAssets() {
                 setTexture(textureKey);
             }
 
-            bool removeTexture() {
+            void removeTexture() {
                 textureKey.clear();
-                if (texture && texture->temp) delete texture;
+                if (texture && texture->temp) properties->taskManager->queueDeletion(texture);
                 texture = nullptr;
             }
 
@@ -501,19 +512,21 @@ namespace Amara {
 				if (ver) openHeight = height;
 			} 
 
-            void setOrigin(float gx, float gy) {
+            Amara::UIBox* setOrigin(float gx, float gy) {
                 originX = gx;
                 originY = gy;
+                return this;
             }
-            void setOrigin(float gi) {
-                setOrigin(gi, gi);
+            Amara::UIBox* setOrigin(float g) {
+                return setOrigin(g, g);
             }
-            void setOriginPosition(float gx, float gy) {
+            Amara::UIBox* setOriginPosition(float gx, float gy) {
                 originX = gx/width;
                 originY = gy/height;
+                return this;
             }
-            void setOriginPosition(float g) {
-                setOriginPosition(g, g);
+            Amara::UIBox* setOriginPosition(float g) {
+                return setOriginPosition(g, g);
             }
 
             void copyStateManager(Amara::StateManager* gsm) {
@@ -527,9 +540,7 @@ namespace Amara {
                 if (copySm != nullptr) {
                     return *copySm;
                 }
-                else {
-                    return mySm;
-                }
+                return mySm;
             }
 
             virtual bool show() {

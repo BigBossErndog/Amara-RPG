@@ -146,7 +146,7 @@ namespace Amara {
                 properties->zoomFactorX = recZoomFactorX;
                 properties->zoomFactorY = recZoomFactorY;
                 properties->alpha = recAlpha;
-                if (entity->isDestroyed || entity->parent != this) {
+                if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
                     it = children.erase(it);
                     continue;
                 }
@@ -448,19 +448,21 @@ namespace Amara {
             textureHeight = height;
         }
 
-        void setOrigin(float gx, float gy) {
+        Amara::TextureContainer* setOrigin(float gx, float gy) {
             originX = gx;
             originY = gy;
+            return this;
         }
-        void setOrigin(float go) {
-            setOrigin(go, go);
+        Amara::TextureContainer* setOrigin(float g) {
+            return setOrigin(g, g);
         }
-        void setOriginPosition(float gx, float gy) {
+        Amara::TextureContainer* setOriginPosition(float gx, float gy) {
             originX = gx/width;
             originY = gy/height;
+            return this;
         }
-        void setOriginPosition(float g) {
-            setOriginPosition(g, g);
+        Amara::TextureContainer* setOriginPosition(float g) {
+            return setOriginPosition(g, g);
         }
 
         void draw(int vx, int vy, int vw, int vh) {

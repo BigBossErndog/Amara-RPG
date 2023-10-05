@@ -18,8 +18,10 @@ namespace Amara {
             int eventLooker = 0;
 
             int waitCounter = 0;
+            float waitTimeElapsed = 0;
 
             bool skipEvent = false;
+            bool killLog = false;
 
 			nlohmann::json data;
 
@@ -30,8 +32,12 @@ namespace Amara {
             }
 
             StateManager(Amara::GameProperties* gProperties) {
-                properties = gProperties;
+                init(gProperties);
                 StateManager();
+            }
+
+            void init(Amara::GameProperties* gProperties) {
+                properties = gProperties;
             }
 
             void reset() {
@@ -88,6 +94,10 @@ namespace Amara {
                 currentState = key;
                 currentEvent = 1;
 				data.clear();
+
+                if (properties && properties->testing && !killLog) {
+                    SDL_Log("SWITCHSTATE: %s", key.c_str());
+                }
             }
 
             bool switchStateEvt(std::string key) {
@@ -111,13 +121,19 @@ namespace Amara {
                     jumpFlag = record.jumpFlag;
 					data = record.data;
                     stateRecords.pop_back();
+
+                    if (properties && properties->testing && !killLog) {
+                        SDL_Log("RETURNSTATE: %s", currentState.c_str());
+                    }
                 }
             }
 
-            void returnStateEvt() {
+            bool returnStateEvt() {
                 if (evt()) {
                     returnState();
+                    return true;
                 }
+                return false;
             }
 
             void restartState() {
@@ -127,6 +143,9 @@ namespace Amara {
             bool restartStateEvt() {
                 if (evt()) {
                     restartState();
+                    if (properties && properties->testing && !killLog) {
+                        SDL_Log("RESTARTSTATE: %s", currentState.c_str());
+                    }
                     return true;
                 }
                 return false;
@@ -172,6 +191,7 @@ namespace Amara {
 
                 if (once()) {
                     waitCounter = 0;
+                    waitTimeElapsed = 0;
                     ret = true;
                 }
 
