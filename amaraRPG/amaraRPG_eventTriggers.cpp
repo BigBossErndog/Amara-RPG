@@ -43,7 +43,7 @@ namespace Amara {
                     rpgScene->startCutscene(cutscene);
                     walker->stopWalking();
                     if (finishOnTrigger) finish();
-                    else cutscene->deleteOnFinish = false;
+                    else cutscene->manualDeletion = false;
                 }
             }
 
@@ -67,7 +67,7 @@ namespace Amara {
                     rpgScene->startCutscene(cutscene);
                     walker->stopWalking();
                     if (finishOnTrigger) finish();
-                    else cutscene->deleteOnFinish = false;
+                    else cutscene->manualDeletion = false;
                 }
             }
     };
@@ -89,7 +89,7 @@ namespace Amara {
                     rpgScene->startCutscene(cutscene);
                     walker->stopWalking();
                     if (finishOnTrigger) finish();
-                    else cutscene->deleteOnFinish = false;
+                    else cutscene->manualDeletion = false;
                 }
             }
     };
@@ -126,7 +126,7 @@ namespace Amara {
 				if (overlapping(&point, &checkBox)) {
 					rpgScene->startCutscene(cutscene);
 					if (finishOnTrigger) finish();
-                    else cutscene->deleteOnFinish = false;
+                    else cutscene->manualDeletion = false;
 				}
 			}
 		}
