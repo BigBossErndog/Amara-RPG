@@ -207,7 +207,7 @@ namespace Amara {
                             }
                         }
                         else currentCutscene = nullptr;
-                        if (orig->manualDeletion) {
+                        if (!orig->manualDeletion) {
                             properties->taskManager->queueDeletion(orig);
                         }
                     }
@@ -336,11 +336,11 @@ namespace Amara {
             void clearCutscenes() {
                 if (cutscenes.size()) {
                     for (Amara::RPGCutsceneBase* cutscene: cutscenes) {
-                        if (cutscene && cutscene->manualDeletion) properties->taskManager->queueDeletion(cutscene);
+                        if (cutscene && !cutscene->manualDeletion) properties->taskManager->queueDeletion(cutscene);
                     }
                     cutscenes.clear();
                 }
-                if (currentCutscene && currentCutscene->manualDeletion) properties->taskManager->queueDeletion(currentCutscene);
+                if (currentCutscene && !currentCutscene->manualDeletion) properties->taskManager->queueDeletion(currentCutscene);
                 currentCutscene = nullptr;
                 if (inState("cutscenes")) {
                     sm.returnState();
