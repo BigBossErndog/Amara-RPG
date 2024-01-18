@@ -68,33 +68,59 @@ namespace Amara {
                     if (!load->stillLoading) {
                         initialLoaded = true;
                         setLoader(properties->loader);
-                        create();
+                        rpgCreate();
                     }
                     else whileLoading();
                 }
                 else updateScene();
             }
-            
+
             virtual void run() {
                 properties->currentScene = this;
 				properties->currentCamera = mainCamera;
                 manageScene();
             }
 
-            void updateScene() {
+            virtual void updateScene() {
                 receiveMessages();
                 updateMessages();
                 
+                properties->entityDepth = 0;
+                properties->scrollX = 0;
+                properties->scrollY = 0;
+                properties->offsetX = 0;
+                properties->offsetY = 0;
+                properties->zoomX = 1;
+                properties->zoomY = 1;
+                properties->zoomFactorX = 1;
+                properties->zoomFactorY = 1;
+                properties->angle = 0;
+                properties->alpha = 1;
+                
                 rpgUpdate();
-
                 reciteScripts();
 
                 runChildren();
                 checkChildren();
 
-                for (Amara::Camera* cam : cameras) {
-                    if (cam->isDestroyed || cam->parent != this) continue;
-                    cam->run();
+                Amara::Camera* cam;
+                for (auto it = cameras.begin(); it != cameras.end(); ++it) {
+                    cam = *it;
+                    if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
+                        continue;
+                    }
+                    else {
+                        cam->run();
+                    }
+                }
+                for (auto it = cameras.begin(); it != cameras.end();) {
+                    cam = *it;
+                    if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
+                        if (mainCamera == cam) mainCamera = nullptr;
+                        it = cameras.erase(it);
+                        continue;
+                    }
+                    ++it;
                 }
             }
 
