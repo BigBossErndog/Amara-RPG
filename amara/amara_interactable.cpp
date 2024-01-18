@@ -9,6 +9,7 @@ namespace Amara {
 
 			bool isInteractable = false;
 			bool isDraggable = false;
+			bool isBeingDragged = false;
             
             virtual void init(Amara::GameProperties* gameProperties) {
                 properties = gameProperties;
@@ -16,10 +17,10 @@ namespace Amara {
                 input = properties->input;
             }
 
-            void setInteractable(bool g) {
+            virtual void setInteractable(bool g) {
                 isInteractable = g;
             }
-            void setInteractable() {
+            virtual void setInteractable() {
                 setInteractable(true);
             }
 
@@ -54,16 +55,17 @@ namespace Amara {
 			}
 
 			void checkHover(float gx, float gy, float gw, float gh) {
+				if (!isInteractable) return;
 				Amara::FloatRect box = { 
 					properties->interactOffsetX + gx*properties->interactScaleX, 
-					properties->interactOffsetY + gy*properties->interactScaleY, 
-					gw*properties->interactScaleX, 
+					properties->interactOffsetY + gy*properties->interactScaleY,
+					gw*properties->interactScaleX,
 					gh*properties->interactScaleY
 				};
 
-				Amara::Mouse* mouse = input->mouse;
-				Amara::TouchManager* touches = input->touches;
-				std::vector<TouchPointer*>& fingers = touches->pointers;
+				Amara::Mouse* mouse = &input->mouse;
+				Amara::TouchManager* touches = &input->touches;
+				std::vector<TouchPointer>& fingers = touches->pointers;
 
 				bool touchHovered = false;
 				bool mouseHovered = false;
@@ -77,10 +79,10 @@ namespace Amara {
 				if (overlapping(mouse->dx, mouse->dy, &box)) {
 					mouseHovered = true;
 				}
-				for (TouchPointer* finger: fingers) {
-					if ((finger->isDown || finger->tapped || finger->justUp) && overlapping(finger->dx, finger->dy, &box)) {
+				for (TouchPointer& finger: fingers) {
+					if ((finger.isDown || finger.tapped || finger.justUp) && overlapping(finger.dx, finger.dy, &box)) {
 						touchHovered = true;
-						interact.finger = finger;
+						interact.finger = &finger;
 					}
 				}
 

@@ -1,9 +1,9 @@
 namespace Amara {
     class Control {
         public:
-            Amara::GameProperties* properties;
-            Amara::InputManager* input;
-            Amara::GamepadManager* gamepads;
+            Amara::GameProperties* properties = nullptr;
+            Amara::InputManager* input = nullptr;
+            Amara::GamepadManager* gamepads = nullptr;
 
             std::string id;
             std::vector<Amara::Key*> keys;
@@ -22,17 +22,18 @@ namespace Amara {
 
             Amara::Key* lastKeyDown = nullptr;
 
+            Control() {}
             Control(Amara::GameProperties* gProperties, std::string givenId) {
                 properties = gProperties;
                 input = properties->input;
-                gamepads = input->gamepads;
+                gamepads = &input->gamepads;
 
                 id = givenId;
                 keys.clear();
             }
 
-            virtual nlohmann::json toData() {
-                nlohmann::json config;
+            nlohmann::json toData() {
+                nlohmann::json config = nlohmann::json::object();
                 config["keys"] = nlohmann::json::array();
                 for (Amara::Key* key: keys) {
                     config["keys"].push_back(key->keyCode);

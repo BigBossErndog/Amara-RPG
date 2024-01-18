@@ -55,7 +55,7 @@ namespace Amara {
 
                 add(mainCamera = new Amara::Camera());
                 preload();
-                SDL_Log("START LOADING TASKS: %d loading tasks.", load->numTasks());
+                SDL_Log("START LOADING TASKS: %d loading tasks.", load->numberOfTasks);
 
                 entityType = "scene";
             }
@@ -75,6 +75,7 @@ namespace Amara {
 
 			virtual Amara::Entity* removeCamera(Amara::Camera* rem) {
 				Amara::Camera* cam;
+                if (mainCamera == rem) mainCamera = nullptr;
 				for (auto it = cameras.begin(); it != cameras.end();) {
                     cam = *it;
                     if (cam == rem) {
@@ -86,65 +87,75 @@ namespace Amara {
 				return nullptr;
 			}
 
-            virtual void run() {
-                properties->currentScene = this;
-				properties->currentCamera = mainCamera;
-                receiveMessages();
-                updateMessages();
+            virtual void manageScene() {
+                if (transition != nullptr) {
+                    transition->run();
 
-                if (!initialLoaded) {
-                    if (transition != nullptr) {
-                        transition->run();
+                    if (transition != nullptr && transition->endScene == this) {
+                        if (transition->isFinished) {
+                            initialLoaded = true;
+                            transition->complete();
+                            transition = nullptr;
+                        }
+                        else if (transition->waitingForPermission) {
+                            transition->grantPermission();
+                        }
                     }
 
-                    load->run();
-					
-                    if (!load->stillLoading) {
-                        if (transition != nullptr) {
-                            if (transition->isFinished) {
+                    if (transition == nullptr || 
+                        (transition->startScene == this && transition->endScene != this) || 
+                        (transition->endScene == this && transition->permissionGranted)
+                    ) {
+                        if (!initialLoaded) {
+                            load->run();
+                            if (!load->stillLoading) {
                                 initialLoaded = true;
-                                transition->complete();
-                                transition = nullptr;
-                            }
-                            else if (transition->waitingForPermission) {
-                                transition->grantPermission();
                                 setLoader(properties->loader);
                                 create();
                             }
-                            else if (transition->permissionGranted) {
-                                updateScene();
-                            }
+                            else whileLoading();
                         }
-                        else {
-                            initialLoaded = true;
+                        else updateScene();
+                    }
+                }
+                else if (!initialLoaded) {
+                    load->run();
+                    if (!load->stillLoading) {
+                        initialLoaded = true;
+                        setLoader(properties->loader);
+                        create();
+                    }
+                    else whileLoading();
+                }
+                else updateScene();
+            }
 
-                            setLoader(properties->loader);
-                            create();
-                        }
-                    }
-                }
-                else {
-                    updateScene();
-                    if (transition != nullptr) {
-                        transition->run();
-                        if (transition && transition->fromWake) {
-                            if (transition->isFinished) {
-                                transition->complete();
-                                transition = nullptr;
-                            }
-                            else if (transition->waitingForPermission) {
-                                transition->grantPermission();
-                            }
-                        }
-                    }
-                }
+            virtual void run() {
+                properties->currentScene = this;
+				properties->currentCamera = mainCamera;
+
+                manageScene();
             }
 
             virtual void updateScene() {
-                update();
-                reciteScripts();
+                receiveMessages();
+                updateMessages();
                 
                 properties->entityDepth = 0;
+                properties->scrollX = 0;
+                properties->scrollY = 0;
+                properties->offsetX = 0;
+                properties->offsetY = 0;
+                properties->zoomX = 1;
+                properties->zoomY = 1;
+                properties->zoomFactorX = 1;
+                properties->zoomFactorY = 1;
+                properties->angle = 0;
+                properties->alpha = 1;
+                
+                update();
+                reciteScripts();
+
                 runChildren();
                 checkChildren();
 
@@ -161,6 +172,7 @@ namespace Amara {
                 for (auto it = cameras.begin(); it != cameras.end();) {
                     cam = *it;
                     if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
+                        if (mainCamera == cam) mainCamera = nullptr;
                         it = cameras.erase(it);
                         continue;
                     }
@@ -207,6 +219,8 @@ namespace Amara {
 
 					properties->interactOffsetX = 0;
 					properties->interactOffsetY = 0;
+                    properties->interactScaleX = 1;
+                    properties->interactScaleY = 1;
 
                     cam->draw(vx, vy, properties->resolution->width, properties->resolution->height);
                 }
@@ -243,6 +257,7 @@ namespace Amara {
             }
 
             virtual void preload() {}
+            virtual void whileLoading() {}
             virtual void create() {}
             virtual void update() {}
 
@@ -253,7 +268,7 @@ namespace Amara {
             virtual void onSleep() {}
             virtual void onWake() {}
 
-            ~Scene() {
+            virtual ~Scene() {
                 if (load) delete load;
             }
     };

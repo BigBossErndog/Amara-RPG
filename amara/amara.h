@@ -85,10 +85,11 @@ namespace Amara {
 #define AMARA_LIBRARY
     #include "amara_string.cpp"
     #include "amara_math.cpp"
-    #include "amara_easing.cpp"
     #include "amara_geometry.cpp"
+    #include "amara_easing.cpp"
     #include "amara_utility.cpp"
     #include "amara_ltimer.cpp"
+    #include "amara_random.cpp"
 
     #include "amara_fdeclarations.cpp"
     
@@ -102,8 +103,6 @@ namespace Amara {
     #include "amara_taskManager.cpp"
     #include "amara_debugging.cpp"
 
-    #include "amara_inputManager.cpp"
-
     #include "amara_keyCodes.cpp"
     #include "amara_key.cpp"
     #include "amara_keyboard.cpp"
@@ -116,8 +115,12 @@ namespace Amara {
 
     #include "amara_pointer.cpp"
     #include "amara_mouse.cpp"
-    #include "amara_touches.cpp"
+    #include "amara_touchPointer.cpp"
+    
     #include "amara_interactionManager.cpp"
+    #include "amara_touchManager.cpp"
+    
+    #include "amara_inputManager.cpp"
     #include "amara_events.cpp"
 
     #include "amara_animation.cpp"
@@ -142,7 +145,6 @@ namespace Amara {
     #include "amara_script.cpp"
     #include "amara_actor.cpp"
 
-    #include "amara_random.cpp"
     #include "amara_timer.cpp"
     #include "amara_textureGeneration.cpp"
 
@@ -193,7 +195,7 @@ namespace Amara {
     #include "amara_textBox.cpp"
 
     #include "amara_sceneTransition.cpp"
-    #include "amara_transitions.cpp"
+    #include "amara_sceneTransitions.cpp"
 
     #include "amara_game.cpp"
 #endif

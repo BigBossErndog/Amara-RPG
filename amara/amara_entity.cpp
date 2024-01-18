@@ -21,7 +21,6 @@ namespace Amara {
 
 	class Entity : public Amara::SortedEntity, public Amara::Interactable, public Amara::Broadcaster, public Amara::FloatVector3 {
 	public:
-		Amara::GameProperties* properties = nullptr;
 		Amara::Game*  game = nullptr;
 		Amara::Scene* scene = nullptr;
 		Amara::Entity* parent = nullptr;
@@ -30,7 +29,6 @@ namespace Amara {
 		float attachmentOffsetX = 0;
 		float attachmentOffsetY = 0;
 
-		Amara::InputManager* input = nullptr;
 		Amara::ControlScheme* controls = nullptr;
 		Amara::AudioGroup* audio = nullptr;
 		Amara::AssetManager* assets = nullptr;
@@ -56,12 +54,13 @@ namespace Amara {
 		float zoomFactorX = 1;
 		float zoomFactorY = 1;
 
-		float angle = 0;
+		double angle = 0; // Using Degrees
 		float alpha = 1;
 
 		bool isActive = false;
 		bool isDestroyed = false;
 		bool isVisible = true;
+		bool isPaused = false;
 
 		bool shouldSortChildren = true;
 		bool sortChildrenOnce = false;
@@ -74,16 +73,14 @@ namespace Amara {
 		bool debugging = debuggingDefault;
 
 		Entity() {}
+		Entity(Amara::GameProperties* gProperties) {
+			Amara::Entity::init(gProperties);
+		}
 
-		virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
+		virtual void init(Amara::GameProperties* gameProperties) {
 			Amara::Interactable::init(gameProperties);
 
-			properties = gameProperties;
 			game = properties->game;
-			scene = givenScene;
-			parent = givenParent;
-
-			input = properties->input;
 			controls = properties->controls;
 			audio = properties->audio;
 			assets = properties->assets;
@@ -92,6 +89,12 @@ namespace Amara {
 
 			isActive = true;
 			entityType = "entity";
+		}
+		virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
+			Amara::Entity::init(gameProperties);
+
+			scene = givenScene;
+			parent = givenParent;
 
 			init();
 			preload();
@@ -109,12 +112,10 @@ namespace Amara {
 				id = config["id"];
 			}
 
-			if (config.find("x") != config.end()) {
-				x = config["x"];
-			}
-			if (config.find("y") != config.end()) {
-				y = config["y"];
-			}
+			if (config.find("x") != config.end()) x = config["x"];
+			if (config.find("y") != config.end()) y = config["y"];
+			if (config.find("z") != config.end()) z = config["z"];
+
 			if (config.find("xFromRight") != config.end()) {
 				int xFromRight = config["xFromRight"];
 				x = properties->resolution->width - xFromRight;
@@ -179,6 +180,9 @@ namespace Amara {
 			if (config.find("isVisible") != config.end()) {
 				isVisible = config["isVisible"];
 			}
+			if (config.find("angle") != config.end()) {
+				angle = config["angle"];
+			}
 			if (config.find("alpha") != config.end()) {
 				alpha = config["alpha"];
 			}
@@ -224,6 +228,7 @@ namespace Amara {
 			config["entityType"] = entityType;
 			config["x"] = x;
 			config["y"] = y;
+			config["z"] = z;
 			config["scaleX"] = scaleX;
 			config["scaleY"] = scaleY;
 			config["scrollFactorX"] = scrollFactorX;
@@ -360,6 +365,23 @@ namespace Amara {
 			drawToTexture(tx, x, y);
 		}
 
+		Amara::Entity* goToXY(float gx, float gy) {
+			x = gx; y = gy;
+			return this;
+		}
+		Amara::Entity* goToXYZ(float gx, float gy, float gz) {
+			goToXY(gx, gy);
+			x = gz;
+			return this;
+		}
+
+		Amara::Entity* pause(bool p) {
+			isPaused = p;
+			return this;
+		}
+		Amara::Entity* pause() { return pause(true); }
+		Amara::Entity* unpause() { return pause(false); }
+
 		virtual void run() {
 			debugID = id;
 			if (debugging) {
@@ -374,6 +396,7 @@ namespace Amara {
 
 			Amara::Interactable::run();
 			if (isInteractable && isDraggable && interact.isDown) {
+				isBeingDragged = true;
 				if (physics) {
 					physics->velocityX = interact.movementX;
 					physics->velocityY = interact.movementY;
@@ -383,6 +406,7 @@ namespace Amara {
 					y += interact.movementY;
 				}
 			}
+			else isBeingDragged = false;
 
 			update();
 
@@ -420,7 +444,7 @@ namespace Amara {
 			for (auto it = children.begin(); it != children.end();) {
 				entity = *it;
 				++it;
-				if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
+				if (entity == nullptr || entity->isDestroyed || entity->parent != this || entity->isPaused) {
 					continue;
 				}
 				if (debugging) SDL_Log("%s (%s): Running Child %d \"%s\"", debugID.c_str(), entityType.c_str(), std::distance(it, children.begin()), entity->id.c_str());
@@ -611,7 +635,7 @@ namespace Amara {
 		}
 		
 		float setRadianAngle(float gAngle) {
-			angle = radiansToDegrees(gAngle);
+			angle = toDegrees(gAngle);
 			return angle;
 		}
 

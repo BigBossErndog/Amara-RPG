@@ -61,6 +61,21 @@ namespace Amara {
 				return list;
 			}
 
+            template <typename T >int randomIndex(std::vector<T> list) {
+                return floor(random()*list.size());
+            }
+
+            template <typename T> T randomItem(std::vector<T> list) {
+                return list[randomIndex<T>(list)];
+            }
+
+            IntVector2 spotWithin(IntRect rect) {
+                return {
+                    rect.x + floor(random()*rect.width),
+                    rect.y + floor(random()*rect.height)
+                };
+            }
+
             nlohmann::json shuffle(nlohmann::json list) {
                 if (list.is_array()) {
                     std::shuffle(std::begin(list), std::end(list), e);

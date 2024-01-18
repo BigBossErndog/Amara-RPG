@@ -4,25 +4,49 @@ namespace Amara {
             Amara::GameProperties* properties = nullptr;
             Amara::InputManager* input = nullptr;
 
-            std::unordered_map<std::string, Amara::Control*> controls;
+            std::unordered_map<std::string, Amara::Control> controls;
             std::vector<Amara::Control*> controlList;
 
+            ControlScheme() {}
             ControlScheme(Amara::GameProperties* gameProperties) {
                 properties = gameProperties;
                 input = gameProperties->input;
-                controlList.clear();
+                clear();
             }
 
-            virtual void configure(nlohmann::json config) {
-
+            void configure(nlohmann::json config) {
+                std::string cKey;
+                nlohmann::json cData;
+                Amara::Control* control;
+                for (auto it = config.begin(); it != config.end(); ++it) {
+                    cKey = it.key();
+                    cData = it.value();
+                    control = get(cKey);
+                    if (!control) control = newControl(cKey);
+                    if (cData.find("keys") != cData.end()) {
+                        nlohmann::json keys = cData["keys"];
+                        for (nlohmann::json keyCode: keys)
+                            addKey(cKey, (Amara::KeyCode)keyCode);
+                    }
+                    if (cData.find("buttons") != cData.end()) {
+                        nlohmann::json buttons = cData["buttons"];
+                        for (nlohmann::json buttonCode: buttons)
+                            control->addButton((Amara::ButtonCode)buttonCode);
+                    }
+                }
             }
 
-            virtual nlohmann::json toData() {
+            nlohmann::json toData() {
                 nlohmann::json config;
                 for (Amara::Control* control: controlList) {
                     config[control->id] = control->toData();
                 }
                 return config;
+            }
+
+            void clear() {
+                controls.clear();
+                controlList.clear();
             }
 
             Amara::Control* newControl(std::string key) {
@@ -31,17 +55,17 @@ namespace Amara {
                     return get(key);
                 }
 
-                Amara::Control* newControl = new Amara::Control(properties, key);
-                controls[key] = newControl;
-                controlList.push_back(newControl);
+                controls[key] = Amara::Control(properties, key);
+                Amara::Control& newControl = controls[key];
+                controlList.push_back(&newControl);
 
-                return newControl;
+                return &newControl;
             }
 
             Amara::Control* get(std::string key) {
-                std::unordered_map<std::string, Amara::Control*>::iterator got = controls.find(key);
+                auto got = controls.find(key);
                 if (got != controls.end()) {
-                    return got->second;
+                    return &got->second;
                 }
                 return nullptr;
             }
@@ -58,12 +82,12 @@ namespace Amara {
             }
 
             Amara::Control* addKey(std::string id, Amara::Keycode keyCode) {
-                Amara::Key* key = input->keyboard->get(keyCode);
+                Amara::Key* key = input->keyboard.get(keyCode);
                 if (key != nullptr) {
                     return addKey(id, key);
                 }
 
-                key = input->keyboard->addKey(keyCode);
+                key = input->keyboard.addKey(keyCode);
                 return addKey(id, key);
             }
 
@@ -79,12 +103,12 @@ namespace Amara {
             }
 
             Amara::Control* setKey(std::string id, Amara::Keycode keyCode) {
-                Amara::Key* key = input->keyboard->get(keyCode);
+                Amara::Key* key = input->keyboard.get(keyCode);
                 if (key != nullptr) {
                     return setKey(id, key);
                 }
 
-                key = input->keyboard->addKey(keyCode);
+                key = input->keyboard.addKey(keyCode);
                 return setKey(id, key);
             }
 

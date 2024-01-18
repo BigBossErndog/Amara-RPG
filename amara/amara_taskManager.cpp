@@ -9,6 +9,7 @@ namespace Amara {
             std::vector<Amara::SceneTransitionBase*> transitionDeletionQueue;
             std::vector<void*> objectDeletionQueue;
 
+            TaskManager() {}
             TaskManager(Amara::GameProperties* gameProperties) {
                 properties = gameProperties;
             }
@@ -35,6 +36,47 @@ namespace Amara {
                 return objectDeletionQueue;
             }
 
-            void run() {}
+            void run() {
+                clearGarbage();
+            }
+
+            void clearGarbage() {
+                deleteEntities();
+                deleteObjects();
+                deleteTransitions();
+            }
+
+            void deleteEntities() {
+                int size = entityDeletionQueue.size();
+                if (properties->testing && size > 0) {
+                    SDL_Log("TaskManager: Deleting %d entities.", entityDeletionQueue.size());
+                }
+                for (Amara::Entity* entity: entityDeletionQueue) {
+                    delete entity;
+                }
+                entityDeletionQueue.clear();
+			}
+
+			void deleteObjects() {
+                int size = objectDeletionQueue.size();
+                if (properties->testing && size > 0) {
+                    SDL_Log("TaskManager: Deleting %d objects.", size);
+                }
+                for (void* obj: objectDeletionQueue) {
+                    delete obj;
+                }
+                objectDeletionQueue.clear();
+			}
+
+			void deleteTransitions() {
+                int size = transitionDeletionQueue.size();
+                if (properties->testing && size > 0) {
+                    SDL_Log("TaskManager: Deleting %d transitions.", size);
+                }
+                for (Amara::SceneTransitionBase* transition: transitionDeletionQueue) {
+                    delete transition;
+                }
+                transitionDeletionQueue.clear();
+			}
     };
 }

@@ -37,7 +37,7 @@ namespace Amara {
                     }
                     ++it;
                 }
-                if (script->deleteOnFinish) properties->taskManager->queueDeletion(script);
+                if (!script->manualDeletion) properties->taskManager->queueDeletion(script);
                 if (script->chainedScript) destroyScript(script->chainedScript);
             } 
         }
@@ -106,7 +106,7 @@ namespace Amara {
                         script->chainedScript = nullptr;
                     }
                     it = scripts.erase(it);
-                    if (script->deleteOnFinish) properties->taskManager->queueDeletion(script);
+                    if (!script->manualDeletion) properties->taskManager->queueDeletion(script);
                     continue;
                 }
                 ++it;
@@ -202,6 +202,13 @@ namespace Amara {
             checkChildren();
         }
 
+        using Amara::Entity::destroy;
+        
+        virtual void destroy(bool recursiveDestroy) {
+            clearScripts();
+            Amara::Entity::destroy(recursiveDestroy);
+        }
+
         Amara::Actor* clearScripts() {
             for (Amara::Script* script: scripts) {
                 script->deleteScript();
@@ -223,7 +230,7 @@ namespace Amara {
                         recite(script->chainedScript);
                     }
                     it = scripts.erase(it);
-                    if (script->deleteOnFinish) {
+                    if (!script->manualDeletion) {
                         properties->taskManager->queueDeletion(script);
                     }
                     break;
@@ -237,7 +244,7 @@ namespace Amara {
                         recite(script->chainedScript);
                     }
                     it = scripts.erase(it);
-                    if (script->deleteOnFinish) {
+                    if (!script->manualDeletion) {
                         properties->taskManager->queueDeletion(script);
                     }
                     break;
@@ -260,7 +267,7 @@ namespace Amara {
             for (Amara::Script* script: scripts) {
                 script->cancel();
                 script->cancel(this);
-                if (script->deleteOnFinish) {
+                if (!script->manualDeletion) {
                     properties->taskManager->queueDeletion(script);
                 }
             }
@@ -268,7 +275,7 @@ namespace Amara {
             for (Amara::Script* script: scriptBuffer) {
                 script->cancel();
                 script->cancel(this);
-                if (script->deleteOnFinish) {
+                if (!script->manualDeletion) {
                     properties->taskManager->queueDeletion(script);
                 }
             }
@@ -284,10 +291,6 @@ namespace Amara {
         Amara::Actor* resumeActing() {
             actingPaused = false;
             return this;
-        }
-
-        ~Actor() {
-            clearScripts();
         }
     };
 }

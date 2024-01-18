@@ -61,7 +61,7 @@ namespace Amara {
             UIBox() {}
 
             UIBox(Amara::StateManager* gsm) {
-                copyStateManager(gsm);
+                registerStateManager(gsm);
                 setVisible(false);
             }
 
@@ -529,10 +529,10 @@ namespace Amara {
                 return setOriginPosition(g, g);
             }
 
-            void copyStateManager(Amara::StateManager* gsm) {
+            void registerStateManager(Amara::StateManager* gsm) {
                 copySm = gsm;
             }
-            void copyStateManager(Amara::StateManager& gsm) {
+            void registerStateManager(Amara::StateManager& gsm) {
                 copySm = &gsm;
             }
 
@@ -718,11 +718,13 @@ namespace Amara {
                 if (openSpeedY > 0) setOpenSize(openWidth, 0);
             }
 
-            ~UIBox() {
+            using Amara::Actor::destroy;
+            virtual void destroy(bool recursive) {
                 if (canvas) {
                     SDL_DestroyTexture(canvas);
                     canvas = nullptr;
                 }
+                Amara::Actor::destroy(recursive);
             }
     };
 
@@ -735,7 +737,7 @@ namespace Amara {
 
 		void prepare() {
 			if (box == nullptr) box = (UIBox*)parent;
-			box->copyStateManager(this);
+			box->registerStateManager(this);
 		}
 
 		void script() {
@@ -743,7 +745,7 @@ namespace Amara {
 				finish();
 				return;
 			}
-			box->copyStateManager(this);
+			box->registerStateManager(this);
 			start();
 			box->open();
 			finishEvt();
@@ -766,7 +768,7 @@ namespace Amara {
 				finish();
 				return;
 			}
-			box->copyStateManager(this);
+			box->registerStateManager(this);
 			start();
 			box->close();
 			finishEvt();

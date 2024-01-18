@@ -201,7 +201,15 @@ namespace Amara {
             entityType = "textureLayer";
         }
 
-        void createTexture() {
+        virtual void configure(nlohmann::json config) {
+            Amara::Layer::configure(config);
+
+            if (config.find("textureLocked") != config.end()) {
+                setTextureLock(config["textureLocked"]);
+            }
+        }
+
+        virtual void createTexture() {
             if (tx) {
                 SDL_DestroyTexture(tx);
             }
@@ -214,6 +222,23 @@ namespace Amara {
             );
             textureWidth = properties->currentCamera->width;
             textureHeight = properties->currentCamera->height;
+            clearTexture();
+
+            pleaseUpdate = true;
+        }
+
+        void clearTexture() {
+            recTarget = SDL_GetRenderTarget(properties->gRenderer);
+            SDL_SetRenderTarget(properties->gRenderer, tx);
+            SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
+            SDL_RenderClear(properties->gRenderer);
+
+            SDL_SetRenderTarget(properties->gRenderer, recTarget);
+        }
+
+        void setTextureLock(bool gLock) {
+            textureLocked = gLock;
+            pleaseUpdate = true;
         }
 
         void draw(int vx, int vy, int vw, int vh) {
@@ -279,23 +304,21 @@ namespace Amara {
             if (destRect.w <= 0) skipDrawing = true;
             if (destRect.h <= 0) skipDrawing = true;
 
-            if (!skipDrawing) {
-                if (tx != nullptr) {
-                    SDL_SetTextureBlendMode(tx, blendMode);
-                    SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
+            if (!skipDrawing && tx != nullptr) {
+                SDL_SetTextureBlendMode(tx, blendMode);
+                SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
 
-                    SDL_RenderCopyExF(
-                        properties->gRenderer,
-                        tx,
-                        NULL,
-                        &destRect,
-                        0,
-                        &origin,
-                        SDL_FLIP_NONE
-                    );
+                SDL_RenderCopyExF(
+                    properties->gRenderer,
+                    tx,
+                    NULL,
+                    &destRect,
+                    0,
+                    &origin,
+                    SDL_FLIP_NONE
+                );
 
-					checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
-                }
+                checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
             }
         }
 
@@ -352,11 +375,13 @@ namespace Amara {
             properties->alpha = recAlpha;
         }
 
-        ~TextureLayer() {
+        using Amara::Layer::destroy;
+        virtual void destroy(bool recursive) {
             if (tx) {
                 SDL_DestroyTexture(tx);
                 tx = nullptr;
             }
+            Amara::Layer::destroy(recursive);
         }
     };
 
@@ -431,9 +456,12 @@ namespace Amara {
 				originX = config["originPosition"];
 				setOriginPosition(originX, originX);
 			}
+            if (config.find("textureLocked") != config.end()) {
+                setTextureLock(config["textureLocked"]);
+            }
 		}
 
-        void createTexture() {
+        virtual void createTexture() {
             if (tx) {
                 SDL_DestroyTexture(tx);
             }
@@ -446,6 +474,24 @@ namespace Amara {
             );
             textureWidth = width;
             textureHeight = height;
+
+            clearTexture();
+
+            pleaseUpdate = true;
+        }
+
+        void clearTexture() {
+            recTarget = SDL_GetRenderTarget(properties->gRenderer);
+            SDL_SetRenderTarget(properties->gRenderer, tx);
+            SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
+            SDL_RenderClear(properties->gRenderer);
+
+            SDL_SetRenderTarget(properties->gRenderer, recTarget);
+        }
+
+        void setTextureLock(bool gLock) {
+            textureLocked = gLock;
+            pleaseUpdate = true;
         }
 
         Amara::TextureContainer* setOrigin(float gx, float gy) {
@@ -469,7 +515,7 @@ namespace Amara {
             float recAlpha = properties->alpha;
             bool skipDrawing = false;
 
-			if (properties->renderTargetsReset || properties->renderDeviceReset) {
+			if (properties->renderTargetsReset || properties->renderDeviceReset || textureWidth != width || textureHeight != height) {
 				createTexture();
 				pleaseUpdate = true;
 			}
@@ -498,7 +544,7 @@ namespace Amara {
             destRect.y = ((y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
             destRect.w = ((width * scaleX) * nzoomX);
             destRect.h = ((height * scaleY) * nzoomY);
-
+            
             if (pixelLocked) {
                 destRect.x = floor(destRect.x);
                 destRect.y = floor(destRect.y);
@@ -519,70 +565,65 @@ namespace Amara {
             if (destRect.w <= 0) skipDrawing = true;
             if (destRect.h <= 0) skipDrawing = true;
 
-			properties->interactOffsetX += vx + destRect.x;
-			properties->interactOffsetY += vy + destRect.y;
+            if (!skipDrawing && tx != nullptr) {
+                properties->interactOffsetX += vx + destRect.x;
+                properties->interactOffsetY += vy + destRect.y;
 
-			properties->interactScaleX *= scaleX;
-			properties->interactScaleY *= scaleY;
-
-			drawChildren();
-
-			properties->interactOffsetX -= vx + destRect.x;
-			properties->interactOffsetY -= vy + destRect.y;
-
-			properties->interactScaleX /= scaleX;
-			properties->interactScaleY /= scaleY;
-
-            if (!skipDrawing) {
-                if (tx != nullptr) {
-					viewport.x = vx;
-					viewport.y = vy;
-					viewport.w = vw;
-					viewport.h = vh;
-					SDL_RenderSetViewport(properties->gRenderer, &viewport);
-
-                    SDL_SetTextureBlendMode(tx, blendMode);
-                    SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
-
-                    SDL_RendererFlip flipVal = SDL_FLIP_NONE;
-                    if (!flipHorizontal != !scaleFlipHorizontal) {
-                        flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_HORIZONTAL);
-                    }
-                    if (!flipVertical != !scaleFlipVertical) {
-                        flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
-                    }
-
-                    SDL_RenderCopyExF(
-                        properties->gRenderer,
-                        tx,
-                        NULL,
-                        &destRect,
-                        0,
-                        &origin,
-                        flipVal
-                    );
-
-					checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
-                }
-            }
-        }
-
-		void drawChildren() {
-			if (!textureLocked || pleaseUpdate) {
-                if (textureWidth != width || textureHeight != height) {
-                    createTexture();
-                }
-                if (!tx) return;
-				pleaseUpdate = false;
+                properties->interactScaleX *= scaleX;
+                properties->interactScaleY *= scaleY;
 
                 recTarget = SDL_GetRenderTarget(properties->gRenderer);
                 SDL_SetRenderTarget(properties->gRenderer, tx);
                 SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
                 SDL_RenderClear(properties->gRenderer);
 
-                drawEntities(0, 0, width, height);
+                drawChildren();
 
                 SDL_SetRenderTarget(properties->gRenderer, recTarget);
+
+                properties->interactOffsetX -= vx + destRect.x;
+                properties->interactOffsetY -= vy + destRect.y;
+
+                properties->interactScaleX /= scaleX;
+                properties->interactScaleY /= scaleY;
+
+                viewport.x = vx;
+                viewport.y = vy;
+                viewport.w = vw;
+                viewport.h = vh;
+                SDL_RenderSetViewport(properties->gRenderer, &viewport);
+                
+                SDL_SetTextureBlendMode(tx, blendMode);
+                SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
+
+                SDL_RendererFlip flipVal = SDL_FLIP_NONE;
+                if (!flipHorizontal != !scaleFlipHorizontal) {
+                    flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_HORIZONTAL);
+                }
+                if (!flipVertical != !scaleFlipVertical) {
+                    flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
+                }
+
+                SDL_RenderCopyExF(
+                    properties->gRenderer,
+                    tx,
+                    NULL,
+                    &destRect,
+                    0,
+                    &origin,
+                    flipVal
+                );
+
+                checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
+            }
+        }
+
+		virtual void drawChildren() {
+			if (!textureLocked || pleaseUpdate) {
+                if (!tx) return;
+				pleaseUpdate = false;
+
+                drawEntities(0, 0, width, height);
             }
             else {
                 if (!tx) return;
@@ -651,11 +692,13 @@ namespace Amara {
             properties->angle = recAngle;
         }
 
-        ~TextureContainer() {
+        using Amara::Layer::destroy;
+        virtual void destroy(bool recursive) {
             if (tx) {
                 SDL_DestroyTexture(tx);
                 tx = nullptr;
             }
+            Amara::Layer::destroy(recursive);
         }
     };
 }
