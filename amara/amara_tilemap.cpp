@@ -193,7 +193,7 @@ namespace Amara {
                         }
                     }
                     else {
-                        std::cout << "JSON with key: \"" << tiledJsonKey << "\" was not found." << std::endl;
+                        SDL_Log("JSON with key: \"%s\" was not found.", tiledJsonKey.c_str());
                     }
                 }
             }
@@ -253,7 +253,7 @@ namespace Amara {
                     return true;
                 }
                 else {
-                    std::cout << "Texture with key: \"" << gTextureKey << "\" was not found." << std::endl;
+                    SDL_Log("Texture with key: \"%s\" was not found.", gTextureKey);
                 }
                 return false;
             }
@@ -476,27 +476,6 @@ namespace Amara {
                         if (destRect.h <= 0) skipDrawing = true;
 
                         if (!skipDrawing) {
-                            int hx = 0, hy = 0, hw = 0, hh = 0;
-                            hw = destRect.w;
-                            hh = destRect.h;
-
-                            if (destRect.x >= 0) {
-                                hx = destRect.x + vx;
-                            }
-                            else {
-                                hw -= -(destRect.x);
-                                hx = vx;
-                            }
-                            if (destRect.y >= 0) {
-                                hy = destRect.y + vy;
-                            }
-                            else {
-                                hh -= -(destRect.h);
-                                hy = vy;
-                            }
-                            if (hx + hw > vx + vw) hw = (vx - hx);
-                            if (hy + hh > vy + vh) hh = (vy - hy);
-                            
                             auto got = animations.find(frame);
                             if (got != animations.end()) {
                                 frame = got->second.currentTileId;
@@ -611,27 +590,6 @@ namespace Amara {
                         if (destRect.h <= 0) skipDrawing = true;
 
                         if (!skipDrawing) {
-                            int hx = 0, hy = 0, hw = 0, hh = 0;
-                            hw = destRect.w;
-                            hh = destRect.h;
-
-                            if (destRect.x >= 0) {
-                                hx = destRect.x + vx;
-                            }
-                            else {
-                                hw -= -(destRect.x);
-                                hx = vx;
-                            }
-                            if (destRect.y >= 0) {
-                                hy = destRect.y + vy;
-                            }
-                            else {
-                                hh -= -(destRect.h);
-                                hy = vy;
-                            }
-                            if (hx + hw > vx + vw) hw = (vx - hx);
-                            if (hy + hh > vy + vh) hh = (vy - hy);
-                            
                             auto got = animations.find(frame);
                             if (got != animations.end()) {
                                 frame = got->second.currentTileId;
@@ -771,7 +729,7 @@ namespace Amara {
                 textureLockDefault = gLock;
             }
     };
-    bool TilemapLayer::textureLockDefault = false;
+    bool TilemapLayer::textureLockDefault = true;
     
     class Tilemap: public Amara::Actor, public Amara::WallFinder {
         public:
@@ -904,7 +862,7 @@ namespace Amara {
                     return true;
                 }
                 else {
-                    std::cout << "Texture with key: \"" << gTextureKey << "\" was not found." << std::endl;
+                    SDL_Log("Texture with key: \"%s\" was not found.", gTextureKey.c_str());
                 }
                 return false;
             }

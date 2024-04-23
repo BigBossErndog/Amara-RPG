@@ -1,6 +1,7 @@
 namespace Amara {
     class RNG {
         public:
+            std::string lastSeed;
             std::random_device rd;
             std::default_random_engine e;
 
@@ -20,6 +21,7 @@ namespace Amara {
                 uint32_t sn; 
                 MurmurHash3_x86_32(s.c_str(), s.size(), st, &sn);
 				seed(sn);
+                lastSeed = s;
 				return this;
             }
 
@@ -61,6 +63,21 @@ namespace Amara {
 				return list;
 			}
 
+            std::vector<nlohmann::json> randomItems(nlohmann::json list, int numItems, bool useItemOnce) {
+                std::vector<nlohmann::json> newList;
+                int index;
+                for (int i = 0; i < numItems; i++) {
+                    if (list.size() == 0) break;
+                    index = floor(random() * list.size());
+                    newList.push_back(list[index]);
+                    if (useItemOnce) list.erase(list.begin() + index);
+                }
+                return newList;
+            }
+            std::vector<nlohmann::json> randomItems(nlohmann::json list, int numItems) {
+                return randomItems(list, numItems, true);
+            }
+
             template <typename T >int randomIndex(std::vector<T> list) {
                 return floor(random()*list.size());
             }
@@ -73,6 +90,12 @@ namespace Amara {
                 return {
                     rect.x + floor(random()*rect.width),
                     rect.y + floor(random()*rect.height)
+                };
+            }
+            FloatVector2 spotWithin(FloatRect rect) {
+                return {
+                    rect.x + random()*rect.width,
+                    rect.y + random()* rect.height
                 };
             }
 

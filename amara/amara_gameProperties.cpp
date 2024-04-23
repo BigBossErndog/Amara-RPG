@@ -63,7 +63,7 @@ namespace Amara {
             Amara::FloatVector2* scale = nullptr;
 
             bool lagging = false;
-            bool dragged = false;
+            bool windowMoved = false;
             bool windowFocused = false;
 			bool isFullscreen = false;
 
@@ -72,7 +72,8 @@ namespace Amara {
 
             int fps = 60;
             int lps = fps;
-            int realFPS = fps;
+            double realFPS = fps;
+            double deltaTime = 1;
 
             Amara::Loader* loader = nullptr;
             Amara::AssetManager* assets = nullptr;

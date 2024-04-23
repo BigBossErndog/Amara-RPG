@@ -463,8 +463,8 @@ namespace Amara {
 				Amara::Script::finish();
 			}
 
-			void prepare(Actor* actor) {
-				walker = (Walker*)actor;
+			void prepare() {
+				walker = (Walker*)parent;
 			}
 
 			void script() {

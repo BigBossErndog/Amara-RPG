@@ -21,9 +21,13 @@ namespace Amara {
             bool manualDeletion = false;
             bool deleteChained = true;
 
+            bool repeatable = false;
+
 			bool initiated = false;
 
-            Amara::Script* chainedScript = nullptr;
+            nlohmann::json endConfig = nullptr;
+
+            std::vector<Amara::Script*> chainedScripts;
 
             Script(bool deleteWhenDone): Amara::StateManager() {
                 manualDeletion = deleteWhenDone;
@@ -31,16 +35,47 @@ namespace Amara {
 
             Script(): Script(true) {}
 
-            Amara::Script* chain(Amara::Script* gScript) {
-                if (chainedScript) chainedScript->chain(gScript);
-                else chainedScript = gScript;
-                return chainedScript;
+            Amara::Script* chain(Amara::Script* gScript, bool parallel) {
+                if (parallel || chainedScripts.size() == 0) chainedScripts.push_back(gScript);
+                else chainedScripts.back()->chain(gScript);
+                return gScript;
             }
 
-            Amara::Script* unchain() {
-                Amara::Script* recScript = chainedScript;
-                chainedScript = nullptr;
-                return recScript;
+            Amara::Script* chain(Amara::Script* gScript) {
+                return chain(gScript, false);
+            }
+
+            Amara::Script* parallel(Amara::Script* gScript) {
+                chain(gScript, true);
+                return this;
+            }
+
+            std::vector<Amara::Script*> unchain() {
+                std::vector<Amara::Script*> recScripts = chainedScripts;
+                chainedScripts.clear();
+                return recScripts;
+            }
+
+            void destroyChains() {
+                if (chainedScripts.size() > 0) {
+                    for (Amara::Script* chainedScript: chainedScripts) {
+                        chainedScript->properties = properties;
+                        chainedScript->deleteScript();
+                    }
+                    chainedScripts.clear();
+                }
+            }
+
+            Amara::Script* thenConfigure(nlohmann::json config) {
+                if (endConfig.is_null()) endConfig = nlohmann::json::object();
+                endConfig.update(config);
+                return this;
+            }
+
+            Amara::Script* thenConfigure(std::string key, nlohmann::json val) {
+                nlohmann::json config = nlohmann::json::object();
+                config[key] = val;
+                return thenConfigure(config);
             }
 
             virtual void init(Amara::GameProperties* gameProperties) {
@@ -65,6 +100,7 @@ namespace Amara {
                 parent = parentActor;
                 parentEntity = (Amara::Entity*)parent;
                 initiated = true;
+                Amara::StateManager::init(gameProperties);
                 init(gameProperties);
             }
 
@@ -82,28 +118,32 @@ namespace Amara {
             }
 
             virtual void prepare() {}
-            virtual void prepare(Amara::Actor* actor) {}
-
             virtual void script() {}
-            virtual void script(Amara::Actor* actor) {}
-
 			virtual void cancel() {}
-			virtual void cancel(Amara::Actor* actor) {}
 
             virtual void deleteScript() {
-                if (chainedScript && deleteChained) {
-                    chainedScript->properties = properties;
-                    chainedScript->deleteScript();
-                    chainedScript = nullptr;
+                if (deleteChained) {
+                    destroyChains();
                 }
                 if (!manualDeletion) properties->taskManager->queueDeletion(this);
             }
             
             virtual ~Script() {
-                if (deleteChained && chainedScript) {
-                    chainedScript->properties = properties;
-                    chainedScript->deleteScript();
-                }
+                if (deleteChained) destroyChains();
             }
     };
+
+    bool StateManager::waitOnScript(Amara::Script* script) {
+        if (evt()) {
+            if (script == nullptr) nextEvt();
+            else {
+                script->manualDeletion = true;
+                if (nextEvtOn(script->isFinished)) {
+                    delete script;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 }

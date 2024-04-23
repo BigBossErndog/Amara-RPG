@@ -26,6 +26,7 @@ namespace Amara {
             int cropRight = 0;
 
             int frame = 0;
+            int maxFrame = 0;
 
             float originX = 0;
             float originY = 0;
@@ -41,19 +42,25 @@ namespace Amara {
             Image(): Actor() {
                 textureKey.clear();
             }
-
             Image(float gx, float gy) {
                 x = gx;
                 y = gy;
             }
-
-            Image(std::string givenKey): Amara::Actor() {
-                textureKey = givenKey;
+            Image(std::string gKey): Amara::Actor() {
+                textureKey = gKey;
             }
-
-            Image(float gx, float gy, std::string givenKey): Image(givenKey) {
+            Image(float gx, float gy, std::string gKey): Image(gKey) {
                 x = gx;
                 y = gy;
+            }
+
+            Image(FloatVector2 v2): Image(v2.x, v2.y) {}
+            Image(FloatVector2 v2, std::string gKey): Image(v2.x, v2.y, gKey) {}
+            Image(FloatVector3 v3): Image(v3.x, v3.y) {
+                z = v3.z;
+            }
+            Image(FloatVector3 v3, std::string gKey): Image(v3.x, v3.y, gKey) {
+                z = v3.z;
             }
             
             using Amara::Actor::init;
@@ -203,28 +210,7 @@ namespace Amara {
                 if (destRect.h <= 0) skipDrawing = true;
 				
                 if (!skipDrawing) {
-                    int hx, hy, hw, hh = 0;
-                    hw = destRect.w;
-                    hh = destRect.h;
-
                     onCamera = true;
-
-                    if (destRect.x >= 0) {
-                        hx = destRect.x + vx;
-                    }
-                    else {
-                        hw -= -(destRect.x);
-                        hx = vx;
-                    }
-                    if (destRect.y >= 0) {
-                        hy = destRect.y + vy;
-                    }
-                    else {
-                        hh -= -(destRect.y);
-                        hy = vy;
-                    }
-                    if (hx + hw > vx + vw) hw = ((vx + vw) - hx);
-                    if (hy + hh > vy + vh) hh = ((vy + vh) - hy);
 
                     if (texture != nullptr) {
                         SDL_Texture* tx = (SDL_Texture*)texture->asset;
@@ -237,9 +223,8 @@ namespace Amara {
                                 srcRect.h = imageHeight - cropTop - cropBottom;
                                 break;
                             case SPRITESHEET:
+                                setFrame(frame);
                                 Amara::Spritesheet* spr = (Amara::Spritesheet*)texture;
-                                int maxFrame = ((texture->width / spr->frameWidth) * (texture->height / spr->frameHeight));
-                                frame = frame % maxFrame;
 
                                 srcRect.x = (frame % (texture->width / spr->frameWidth)) * spr->frameWidth + cropLeft;
                                 srcRect.y = floor(frame / (texture->width / spr->frameWidth)) * spr->frameHeight + cropTop;
@@ -293,19 +278,24 @@ namespace Amara {
                     if (texture->type == SPRITESHEET) {
                         width = ((Amara::Spritesheet*)texture)->frameWidth;
                         height = ((Amara::Spritesheet*)texture)->frameHeight;
+                        Amara::Spritesheet* spr = (Amara::Spritesheet*)texture;
+                        maxFrame = ((texture->width / spr->frameWidth) * (texture->height / spr->frameHeight));
+                        setFrame(frame);
                     }
                     else {
                         width = texture->width;
                         height = texture->height;
+                        maxFrame = 0;
+                        frame = 0;
                     }
 
                     imageWidth = width;
                     imageHeight = height;
-
+                    
                     return true;
                 }
                 else {
-                    std::cout << "Texture with key: \"" << gTextureKey << "\" was not found." << std::endl;
+                    SDL_Log("Texture with key: \"%s\" was not found.", gTextureKey.c_str());
                 }
                 return false;
             }
@@ -323,6 +313,8 @@ namespace Amara {
                 imageWidth = texture->width;
                 imageWidth = texture->height;
                 textureKey = "temp";
+                maxFrame = 0;
+                frame = 0;
 
                 return true;
             }
@@ -336,6 +328,8 @@ namespace Amara {
                 imageWidth = texture->width;
                 imageWidth = texture->height;
                 textureKey = "temp";
+                maxFrame = 0;
+                frame = 0;
                 
                 return true;
             }
@@ -349,10 +343,15 @@ namespace Amara {
                 if (texture->type == SPRITESHEET) {
                     width = ((Amara::Spritesheet*)texture)->frameWidth;
                     height = ((Amara::Spritesheet*)texture)->frameHeight;
+                    Amara::Spritesheet* spr = (Amara::Spritesheet*)texture;
+                    maxFrame = ((texture->width / spr->frameWidth) * (texture->height / spr->frameHeight));
+                    setFrame(frame);
                 }
                 else {
                     width = texture->width;
                     height = texture->height;
+                    maxFrame = 0;
+                    frame = 0;
                 }
 
                 imageWidth = width;
@@ -367,7 +366,7 @@ namespace Amara {
                 texture = nullptr;
                 return this;
             }
-
+            
             Amara::Image* setOrigin(float gx, float gy) {
                 originX = gx;
                 originY = gy;
@@ -396,7 +395,8 @@ namespace Amara {
             }
 
             Amara::Image* setFrame(int fr) {
-                frame = fr;
+                if (maxFrame == 0) frame = 0;
+                else frame = fr % maxFrame;
                 return this;
             }
 

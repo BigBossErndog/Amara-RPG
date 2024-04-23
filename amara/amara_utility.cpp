@@ -1,12 +1,20 @@
 namespace Amara { 
-    template <class T> bool vectorContains(std::vector<T> list, T f) {
+    template <class T> bool vector_contains(std::vector<T> list, T f) {
         for (T obj: list) 
             if (obj == f) return true;
         return false;
     }
-
-    template <class T> void vectorAppend(std::vector<T>& list1, std::vector<T> list2) {
+    
+    template <class T> void vector_append(std::vector<T>& list1, std::vector<T> list2) {
         for (T element: list2) list1.push_back(element);
+    }
+
+    bool json_has(nlohmann::json data, std::string key) {
+        return (data.find(key) != data.end()) ? true : false;
+    }
+
+    bool json_is(nlohmann::json data, std::string key) {
+        return json_has(data, key) && data[key].is_boolean() && data[key];
     }
 
     SDL_Color getPixelFromSurface(SDL_Surface* gSurface, int gx, int gy) {
@@ -38,4 +46,22 @@ namespace Amara {
         SDL_GetRGBA(pixelData, gSurface->format, &rgba.r, &rgba.g, &rgba.b, &rgba.a);
         return rgba;
     }
+
+    SDL_BlendMode AMARA_BLENDMODE_MASK = SDL_ComposeCustomBlendMode(
+        SDL_BLENDFACTOR_ZERO,
+        SDL_BLENDFACTOR_SRC_COLOR,
+        SDL_BLENDOPERATION_ADD,
+        SDL_BLENDFACTOR_ZERO,
+        SDL_BLENDFACTOR_SRC_ALPHA,
+        SDL_BLENDOPERATION_ADD
+    );
+
+    SDL_BlendMode AMARA_BLENDMODE_COLOR = SDL_ComposeCustomBlendMode(
+        SDL_BLENDFACTOR_ZERO,
+        SDL_BLENDFACTOR_DST_COLOR,
+        SDL_BLENDOPERATION_ADD,
+        SDL_BLENDFACTOR_ZERO,
+        SDL_BLENDFACTOR_SRC_ALPHA,
+        SDL_BLENDOPERATION_ADD
+    );
 }

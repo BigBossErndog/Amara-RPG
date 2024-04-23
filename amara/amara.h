@@ -56,7 +56,7 @@ namespace Amara {
 
     std::vector<Amara::Direction> DirectionsInOrder = { Right, DownRight, Down, DownLeft, Left, UpLeft, Up, UpRight };
     std::vector<Amara::Direction> CardinalDirections = { Right, Down, Left, Up };
-    std::vector<Amara::Direction> DiagonalDirections = { DownLeft, UpLeft, UpRight, DownRight };
+    std::vector<Amara::Direction> OrdinalDirections = { DownLeft, UpLeft, UpRight, DownRight };
 }
 
 #endif
@@ -83,13 +83,14 @@ namespace Amara {
 
 #ifndef AMARA_LIBRARY
 #define AMARA_LIBRARY
-    #include "amara_string.cpp"
     #include "amara_math.cpp"
     #include "amara_geometry.cpp"
     #include "amara_easing.cpp"
     #include "amara_utility.cpp"
     #include "amara_ltimer.cpp"
+    #include "amara_string.cpp"
     #include "amara_random.cpp"
+    #include "amara_dataObject.cpp"
 
     #include "amara_fdeclarations.cpp"
     

@@ -37,7 +37,7 @@ class CameraStuff: public RPGCutscene {
             gnik = (PlayerProp*)scene->get("Gnikolas");
             gnik->controlsEnabled = false;
             tb = (TextBox*)scene->get("textBox");
-            tb->copyStateManager(this);
+            tb->registerStateManager(this);
             tb->setOpenCloseSpeed(10);
         }
         void script() {
@@ -161,9 +161,9 @@ class TestArea: public RPGScene {
             if (controls->justDown("full")) {
                 if (!game->isFullscreen) {
                     int w = 480;
-                    int h = w * (game->display->height/(float)game->display->width);
+                    int h = w * (game->display.height/(float)game->display.width);
                     game->setResolution(w, h);
-                    game->setWindowSize(game->display->width, game->display->height);
+                    game->setWindowSize(game->display.width, game->display.height);
                     game->startWindowedFullscreen();
                 }
                 else {
@@ -192,7 +192,7 @@ int main(int argc, char** args) {
     game->setWindowSize(960, 720);
     game->setBackgroundColor(0,0,0);
 
-    game->scenes->add("test", new TestArea());
+    game->scenes.add("test", new TestArea());
     game->start("test");
 
     // game->scenes->add("enterSceneKey", new GiveSceneInstance());

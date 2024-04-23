@@ -48,7 +48,7 @@ namespace Amara {
                     }
 
                     if (transition == nullptr || 
-                        (transition->startScene == this && transition->endScene != this) || 
+                        (transition->startScene == this && !transition->waitingForPermission && !transition->permissionGranted) || 
                         (transition->endScene == this && transition->permissionGranted)
                     ) {
                         if (!initialLoaded) {
@@ -213,7 +213,6 @@ namespace Amara {
                 if (currentCutscene != nullptr && !currentCutscene->isFinished) {
                     currentCutscene->receiveMessages();
                     currentCutscene->script();
-                    currentCutscene->script(this);
                 }
                 
                 if (currentCutscene == nullptr || currentCutscene->isFinished) {
@@ -228,7 +227,6 @@ namespace Amara {
                             if (!currentCutscene->initiated) {
                                 currentCutscene->init(properties, this);
                                 currentCutscene->prepare();
-                                currentCutscene->prepare(this);
                             }
                         }
                         else currentCutscene = nullptr;
@@ -244,7 +242,6 @@ namespace Amara {
                             if (!currentCutscene->initiated) {
                                 currentCutscene->init(properties, this);
                                 currentCutscene->prepare();
-                                currentCutscene->prepare(this);
                             }
                         }
                         else {
@@ -286,7 +283,7 @@ namespace Amara {
             }
 
             Amara::TilemapLayer* getLayer(std::string layerKey) {
-                return tilemap->getLayer(layerKey);
+                return tilemap->getTilemapLayer(layerKey);
             }
 
             bool isWall(int tx, int ty, Amara::Prop* propExclusion) {
@@ -340,7 +337,6 @@ namespace Amara {
             Amara::RPGCutsceneBase* startCutscene(Amara::RPGCutsceneBase* cutscene) {
                 cutscene->init(properties, this);
                 cutscene->prepare();
-                cutscene->prepare(this);
 
                 if (currentCutscene) cutscenes.push_back(currentCutscene);
                 currentCutscene = cutscene;

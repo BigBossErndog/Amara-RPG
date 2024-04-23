@@ -28,6 +28,9 @@ namespace Amara {
             int width = 0;
             int height = 0;
 
+            float renderOffsetX = 0;
+            float renderOffsetY = 0;
+
             bool wordWrap = false;
             Uint16 wordWrapWidth = 0;
 
@@ -281,8 +284,8 @@ namespace Amara {
                             offsetX = width;
                         }
 
-						float rx = floor((dx - properties->scrollX*scrollFactorX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
-						float ry = floor((dy-z - properties->scrollY*scrollFactorY + properties->offsetY - (height * originY)) * nzoomY);
+						float rx = floor((dx+renderOffsetX - properties->scrollX*scrollFactorX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
+						float ry = floor((dy-z+renderOffsetY - properties->scrollY*scrollFactorY + properties->offsetY - (height * originY)) * nzoomY);
                         
                         FC_DrawColumnEffect(
                             fontAsset->font,
@@ -304,8 +307,8 @@ namespace Amara {
                             offsetX = width;
                         }
 
-						float rx = floor((dx - properties->scrollX*scrollFactorX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
-						float ry = floor((dy-z - properties->scrollY*scrollFactorY + properties->offsetY - (height * originY)) * nzoomY);
+						float rx = floor((dx+renderOffsetX - properties->scrollX*scrollFactorX + properties->offsetX - (width * originX) + offsetX) * nzoomX);
+						float ry = floor((dy-z+renderOffsetY - properties->scrollY*scrollFactorY + properties->offsetY - (height * originY)) * nzoomY);
 
                         FC_DrawEffect(
                             fontAsset->font,
@@ -326,29 +329,31 @@ namespace Amara {
                 viewport.w = vw;
                 viewport.h = vh;
                 SDL_RenderSetViewport(gRenderer, &viewport);
-
+                
 				viewbox = { vx, vy, vw, vh };
 
                 color.a = alpha * properties->alpha * 255;
+
+                int dx = floor(x), dy = floor(y);
 
                 if (outline) {
                     effect.color = outlineColor;
 					effect.color.a = outlineColor.a * pow(alpha, 1) * outlineAlpha;
                     for (int i = 0; i < outline+1; i++) {
-                        drawText(x+i,y, false);
-                        drawText(x-i,y, false);
+                        drawText(dx+i,dy, false);
+                        drawText(dx-i,dy, false);
                         for (int j = 0; j < outline+1; j++) {
                             if (outlineCorners || i != j || i != outline) {
-                                drawText(x+i,y+j, false);
-                                drawText(x-i,y-j, false);
-                                drawText(x+i,y-j, false);
-                                drawText(x-i,y+j, false);
+                                drawText(dx+i,dy+j, false);
+                                drawText(dx-i,dy-j, false);
+                                drawText(dx+i,dy-j, false);
+                                drawText(dx-i,dy+j, false);
                             }
                         }
                     }
                 }
                 effect.color = color;
-                drawText(x, y, true);
+                drawText(dx, dy, true);
 
                 Amara::Actor::draw(vx, vy, vw, vh);
             }

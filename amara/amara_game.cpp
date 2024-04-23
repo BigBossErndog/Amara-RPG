@@ -1,19 +1,17 @@
 namespace Amara {
-	class Game {
+	class Game: public Amara::DataObject {
 		public:
 			SDL_version compiledVersion;
             SDL_version linkedVersion;
 
 			Amara::GameProperties properties;
 
-			nlohmann::json data;
 			RNG rng;
 
 			Amara::MessageQueue messages;
 
 			std::string name;
 			bool quit = false;
-			bool dragged = false;
 
 			SDL_Window* gWindow = NULL;
 			SDL_Renderer* gRenderer = NULL;
@@ -21,6 +19,7 @@ namespace Amara {
 			int width = 0;
 			int height = 0;
 
+			int displayIndex = 0;
 			Amara::IntRect display;
 			Amara::IntRect resolution;
 			Amara::IntRect window;
@@ -28,6 +27,7 @@ namespace Amara {
 			bool lagging = false;
 			int lagCounter = 0;
 
+			bool windowMoved = false;
 			bool windowFocused = false;
 			bool isFullscreen = false;
 
@@ -48,13 +48,14 @@ namespace Amara {
 			Amara::EventManager events;
 			Amara::TaskManager taskManager;
 
-			Amara::FileWriter writer;
+			Amara::FileManager files;
 
 			bool vsync = false;
 			int fps = 60;
 			int tps = 1000 / fps;
 			int lps = fps;
-			int realFPS = fps;
+			double realFPS = fps;
+			double deltaTime = 1;
 			LTimer capTimer;
 			
 			int frameCounter = 0;
@@ -173,8 +174,11 @@ namespace Amara {
 
 				// Setting game logical size
 				SDL_RenderSetLogicalSize(gRenderer, width, height);
-
-				display = Amara::IntRect{ 0, 0, dm.w, dm.h };
+				
+				displayIndex = SDL_GetWindowDisplayIndex(gWindow);
+				SDL_Rect displayRect;
+				SDL_GetDisplayBounds(displayIndex, &displayRect);
+				display = Amara::IntRect{ displayRect.x, displayRect.y, displayRect.w, displayRect.h };
 				properties.display = &display;
 
 				resolution = Amara::IntRect{ 0, 0, width, height };
@@ -183,8 +187,8 @@ namespace Amara {
 				window = Amara::IntRect{ 0, 0, width, height };
 				properties.window = &window;
 
+				// Update window position.
 				SDL_GetWindowPosition(gWindow, &window.x, &window.y);
-				// SDL_Log("Game Info: Display width: %d, Display height: %d\n", dm.w, dm.h);
 
 				load = Amara::Loader(&properties);
 				properties.loader = &load;
@@ -200,7 +204,7 @@ namespace Amara {
 
 				properties.messages = &messages;
 
-				writer = FileWriter();
+				files = FileManager();
 
 				data.clear();
 				rng.randomize();
@@ -342,6 +346,23 @@ namespace Amara {
 				}
 			}
 
+			void setWindowRelativePosition(int newx, int newy) {
+				int displayIndex = SDL_GetWindowDisplayIndex(gWindow);
+				SDL_Rect rect;
+				SDL_GetDisplayBounds(displayIndex, &rect);
+				setWindowPosition(rect.x + newx, rect.y + newy);
+			}
+
+			void centerWindowPosition() {
+				int displayIndex = SDL_GetWindowDisplayIndex(gWindow);
+				SDL_Rect rect;
+				SDL_GetDisplayBounds(displayIndex, &rect);
+				setWindowPosition(
+					rect.x + rect.w/2.0 - window.width/2.0, 
+					rect.y + rect.h/2.0 - window.height/2.0
+				);
+			}
+
 			void setResolution(int neww, int newh) {
 				if (gRenderer != NULL) {
 					SDL_RenderSetLogicalSize(gRenderer, neww, newh);
@@ -395,11 +416,12 @@ namespace Amara {
 				properties.renderDeviceReset = renderDeviceReset;
 
 				properties.lagging = lagging;
-				properties.dragged = dragged;
+				properties.windowMoved = windowMoved;
 
 				properties.fps = fps;
 				properties.lps = lps;
 				properties.realFPS = realFPS;
+				properties.deltaTime = deltaTime;
 
 				properties.backgroundColor = backgroundColor;
 			}
@@ -458,6 +480,7 @@ namespace Amara {
 					totalWait += (tps - frameTicks);
 				}
 				realFPS = fps / (frameTicks / 1000.f);
+				deltaTime = fps / realFPS;
 
 				// Delay if game has not caught up
 				if (totalWait > 0) {
@@ -471,6 +494,8 @@ namespace Amara {
 				input.mouse.manage();
 				input.gamepads.manage();
 				input.touches.manage();
+
+				windowMoved = false;
 
 				// manageControllers();
 
@@ -548,8 +573,15 @@ namespace Amara {
 						input.mouse.isActivated = true;
 					}
 					else if (e.type == SDL_WINDOWEVENT && (e.window.event == SDL_WINDOWEVENT_MOVED)) {
-						dragged = true;
-						properties.dragged = true;
+						windowMoved = true;
+						properties.windowMoved = true;
+						window.x = e.window.data1;
+						window.y = e.window.data2;
+
+						displayIndex = SDL_GetWindowDisplayIndex(gWindow);
+						SDL_Rect displayRect;
+						SDL_GetDisplayBounds(displayIndex, &displayRect);
+						display = Amara::IntRect{ displayRect.x, displayRect.y, displayRect.w, displayRect.h };
 					}
 					else if (e.type == SDL_WINDOWEVENT && (e.window.event == SDL_WINDOWEVENT_LEAVE)) {
 						windowFocused = false;
