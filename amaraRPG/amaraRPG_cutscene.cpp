@@ -6,7 +6,8 @@ namespace Amara {
 			Camera* cam;
 
             Amara::RPGCutscene* chainedCutscene = nullptr;
-
+            
+            using RPGCutsceneBase::init;
             virtual void init(Amara::GameProperties* gameProperties) {
                 Amara::RPGCutsceneBase::init(gameProperties);
                 

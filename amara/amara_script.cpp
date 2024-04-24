@@ -14,6 +14,7 @@ namespace Amara {
             Amara::ControlScheme* controls = nullptr;
             Amara::AudioGroup* audio = nullptr;
             Amara::AssetManager* assets = nullptr;
+            Amara::TaskManager* tasks = nullptr;
             Amara::Loader* load = nullptr;
 
 			std::string id;
@@ -21,6 +22,7 @@ namespace Amara {
             bool manualDeletion = false;
             bool deleteChained = true;
             bool inQueue = false;
+            bool isDestroyed = false;
 
 			bool initiated = false;
             
@@ -59,7 +61,7 @@ namespace Amara {
                 if (chainedScripts.size() > 0) {
                     for (Amara::Script* chainedScript: chainedScripts) {
                         chainedScript->properties = properties;
-                        chainedScript->deleteScript();
+                        chainedScript->destroyScript();
                     }
                     chainedScripts.clear();
                 }
@@ -89,8 +91,11 @@ namespace Amara {
                 assets = properties->assets;
                 load = properties->loader;
                 messages = properties->messages;
+                tasks = properties->taskManager;
 
+                initiated = true;
                 isFinished = false;
+                
                 reset();
                 init();
             }
@@ -98,7 +103,6 @@ namespace Amara {
             virtual void init(Amara::GameProperties* gameProperties, Amara::Actor* parentActor) {
                 parent = parentActor;
                 parentEntity = (Amara::Entity*)parent;
-                initiated = true;
                 Amara::StateManager::init(gameProperties);
                 init(gameProperties);
             }
@@ -127,11 +131,13 @@ namespace Amara {
             virtual void script() {}
 			virtual void cancel() {}
 
-            virtual void deleteScript() {
+            virtual void destroyScript() {
+                if (isDestroyed) return;
+                isDestroyed = true;
                 if (deleteChained) {
                     destroyChains();
                 }
-                if (!manualDeletion) properties->taskManager->queueDeletion(this);
+                properties->taskManager->queueDeletion(this);
             }
             
             virtual ~Script() {
@@ -141,14 +147,16 @@ namespace Amara {
 
     bool StateManager::waitOnScript(Amara::Script* script) {
         if (evt()) {
-            if (script == nullptr || script->isFinished)  {
-                if (script && script->manualDeletion) delete script;
+            if (script == nullptr || script->notActing())  {
+                if (script && script->manualDeletion) {
+                    script->tasks->queueDeletion(script);
+                }
                 nextEvt();
             }
             else {
                 script->manualDeletion = true;
                 if (nextEvtOn(script->notActing())) {
-                    delete script;
+                    script->tasks->queueDeletion(script);
                 }
             }
             return true;

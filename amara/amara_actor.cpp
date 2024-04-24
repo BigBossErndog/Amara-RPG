@@ -8,6 +8,7 @@ namespace Amara {
     public:
         std::list<Amara::Script*> scripts;
         bool actingPaused = false;
+        bool scriptsCanceled = false;
 
         Actor(): Amara::Entity() {}
 
@@ -27,28 +28,13 @@ namespace Amara {
             return (Amara::Actor*)get(key);
         }
 
-        void destroyScript(Amara::Script* script) {
-            if (script != nullptr) {
-                Script* check;
-                for (auto it = scripts.begin(); it != scripts.end();) {
-                    check = *it;
-                    if (check == script) {
-                        it = scripts.erase(it);
-                        continue;
-                    }
-                    ++it;
-                }
-                if (!script->manualDeletion) properties->taskManager->queueDeletion(script);
-            } 
-        }
-
         virtual Amara::Script* recite(Amara::Script* script) {
             if (script == nullptr) {
-                SDL_Log("Null script was given.");
+                SDL_Log("Amara Actor: Null script was given.");
                 return nullptr;
             }
-            if (isDestroyed) {
-                destroyScript(script);
+            if (script->inQueue) {
+                SDL_Log("Amara Actor: Wait until script is dequeued before reciting.");
                 return script;
             }
             if (!inRecital) {
@@ -57,8 +43,12 @@ namespace Amara {
             else {
                 scriptBuffer.push_back(script);
             }
-            script->inQueue = true;
             script->init(properties, this);
+            if (isDestroyed) {
+                if (!script->manualDeletion) script->destroyScript();
+                return script;
+            }
+            script->inQueue = true;
             script->prepare();
             return script;
         }
@@ -77,14 +67,15 @@ namespace Amara {
 
         virtual void reciteScripts() {
             if (scripts.size() == 0 || actingPaused) return;
+            scriptsCanceled = false;
             
             inRecital = true;
             for (Amara::Script* script: scripts) {
                 if (!script->isFinished) {
                     script->receiveMessages();
                     script->updateMessages();
-                    if (!isDestroyed && !script->isFinished) script->script();
-                    if (isDestroyed) break;
+                    if (!isDestroyed && !script->isFinished && !script->isDestroyed) script->script();
+                    if (isDestroyed || scriptsCanceled) break;
                 }
                 if (isDestroyed) {
                     clearScripts();
@@ -99,18 +90,20 @@ namespace Amara {
             Amara::Script* script;
             for (auto it = scripts.begin(); it != scripts.end();) {
                 script = *it;
-                if (script->isFinished) {
+                if (script->isDestroyed) {
+                    it = scripts.erase(it);
+                }
+                else if (script->isFinished) {
                     if (!script->endConfig.is_null()) configure(script->endConfig);
                     if (script->chainedScripts.size() > 0) {
                         if (!isDestroyed) {
-                            for (Amara::Script* chainedScript: script->chainedScripts) chained.push_back(chainedScript);
+                            for (Amara::Script* chainedScript: script->chainedScripts) 
+                                chained.push_back(chainedScript);
                         }
                         script->chainedScripts.clear();
                     }
                     script->inQueue = false;
-                    if (!script->manualDeletion) {
-                        properties->taskManager->queueDeletion(script);
-                    }
+                    if (!script->manualDeletion) script->destroyScript();
                     it = scripts.erase(it);
                     continue;
                 }
@@ -125,6 +118,7 @@ namespace Amara {
 
             for (Amara::Script* chain: chained) {
                 recite(chain);
+                if (scriptsCanceled) break;
             }
 
             inRecital = false;
@@ -141,7 +135,7 @@ namespace Amara {
         bool stillActing() {
             return (scripts.size() > 0 || scriptBuffer.size() > 0);
         }
-
+        
         bool isActing() { return stillActing(); }
 
         bool notActing() {
@@ -165,12 +159,13 @@ namespace Amara {
 				debugID = "";
 				for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
 				debugID += id;
-				SDL_Log("%s (%s): Running.", debugID.c_str(), entityType.c_str());
+				SDL_Log("%s (%s): Running. - depth %d", debugID.c_str(), entityType.c_str(), properties->entityDepth);
 				debugCopy = debugID;
 			}
             
             receiveMessages();
             updateMessages();
+            if (isDestroyed) return;
 
             Amara::Interactable::run();
             if (isInteractable && interact.isDraggable && interact.isDown) {
@@ -188,6 +183,7 @@ namespace Amara {
 
 
             update();
+            if (isDestroyed) return;
 
             if (physics != nullptr) {
                 if (physics->isActive) physics->run();
@@ -209,9 +205,9 @@ namespace Amara {
             
             if (debugging) SDL_Log("%s (%s): Reciting Scripts.", debugCopy.c_str(), entityType.c_str());
             reciteScripts();
+            if (isDestroyed) return;
 
             runChildren();
-            checkChildren();
 
             if (debugging) SDL_Log("%s (%s): Finished Running.", debugCopy.c_str(), entityType.c_str());
         }
@@ -225,46 +221,15 @@ namespace Amara {
 
         Amara::Actor* clearScripts() {
             for (Amara::Script* script: scripts) {
-                script->deleteScript();
+                script->inQueue = false;
+                if (!script->manualDeletion) script->destroyScript();
             }
             scripts.clear();
             for (Amara::Script* script: scriptBuffer) {
-                script->deleteScript();
+                script->inQueue = false;
+                if (!script->manualDeletion) script->destroyScript();
             }
             scriptBuffer.clear();
-            return this;
-        }
-
-        Amara::Actor* clearScript(std::string gid) {
-            Amara::Script* script;
-            for (auto it = scripts.begin(); it != scripts.end();) {
-                script = *it;
-                if (script->id.compare(gid) == 0) {
-                    if (script->chainedScripts.size() > 0) {
-                        for (Amara::Script* chainedScript: script->chainedScripts) recite(chainedScript);
-                    }
-                    it = scripts.erase(it);
-                    if (!script->manualDeletion) {
-                        properties->taskManager->queueDeletion(script);
-                    }
-                    break;
-                }
-                ++it;
-            }
-            for (auto it = scriptBuffer.begin(); it != scriptBuffer.end();) {
-                script = *it;
-                if (script->id.compare(gid) == 0) {
-                    if (script->chainedScripts.size() > 0) {
-                        for (Amara::Script* chainedScript: script->chainedScripts) recite(chainedScript);
-                    }
-                    it = scriptBuffer.erase(it);
-                    if (!script->manualDeletion) {
-                        properties->taskManager->queueDeletion(script);
-                    }
-                    break;
-                }
-                ++it;
-            }
             return this;
         }
 
@@ -280,18 +245,18 @@ namespace Amara {
         Amara::Actor* cancelScripts() {
             for (Amara::Script* script: scripts) {
                 script->cancel();
-                if (!script->manualDeletion) {
-                    properties->taskManager->queueDeletion(script);
-                }
+                script->inQueue = false;
+                if (!script->manualDeletion) script->destroyScript();
             }
             scripts.clear();
             for (Amara::Script* script: scriptBuffer) {
                 script->cancel();
-                if (!script->manualDeletion) {
-                    properties->taskManager->queueDeletion(script);
-                }
+                script->inQueue = false;
+                if (!script->manualDeletion) script->destroyScript();
             }
             scriptBuffer.clear();
+
+            scriptsCanceled = true;
 
             return this;
         }

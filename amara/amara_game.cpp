@@ -68,6 +68,8 @@ namespace Amara {
 			bool testing = true;
 			bool hardwareRendering = true;
 
+			bool debugGameLoop = false;
+
 			Game() {}
 
 			Game(std::string givenName, bool gRendering) {
@@ -279,18 +281,29 @@ namespace Amara {
 				renderDeviceReset = false;
 				manageFPSStart();
 				writeProperties();
+				// Run game logic
+				if (debugGameLoop) SDL_Log("Amara Game: Start Logic");
+				logic();
+				if (debugGameLoop) SDL_Log("Amara Game: End Logic");
 				// Draw Screen
+				if (debugGameLoop) SDL_Log("Amara Game: Start Drawing");
 				draw();
+				if (debugGameLoop) SDL_Log("Amara Game: End Drawing");
 				// Manage frame catch up and slow down
+				if (debugGameLoop) SDL_Log("Amara Game: Manage FPS");
 				manageFPSEnd();
-				taskManager.run();
+
 				if (renderTargetsReset || renderDeviceReset) {
 					reloadAssets = true;
 				}
 				else if (reloadAssets && (isWindowed || windowFocused)) {
 					reloadAssets = false;
+					if (debugGameLoop) SDL_Log("Amara Game: Reload Assets");
 					load.regenerateAssets();
+					if (debugGameLoop) SDL_Log("Amara Game: End Reload Assets");
 				}
+				if (debugGameLoop) SDL_Log("Amara Game: Run Tasks");
+				taskManager.run();
 			}
 
 			void setFPS(int newFps, bool lockLogicSpeed) {
@@ -432,6 +445,7 @@ namespace Amara {
 			}
 
 			void update() {
+				if (debugGameLoop) SDL_Log("Amara Game: Update");
 				if (quit) return;
 				handleEvents();
 				writeProperties();
@@ -441,22 +455,39 @@ namespace Amara {
 				scenes.run();
 				scenes.manageTasks();
 				audio.run(1);
+				if (debugGameLoop) SDL_Log("Amara Game: End Update");
 			}
 
 			void draw() {
 				// Clear the Renderer
 				SDL_SetRenderDrawColor(gRenderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
 				SDL_RenderClear(gRenderer);
+				if (debugGameLoop) SDL_Log("Amara Game: Draw Scenes");
+				if (isWindowed || windowFocused) scenes.draw();
+				if (debugGameLoop) SDL_Log("Amara Game: Manage Interacts");
+				events.manageInteracts();
+				if (debugGameLoop) SDL_Log("Amara Game Render Present");
+				/// Draw to renderer
+				SDL_RenderPresent(gRenderer);
+				if (debugGameLoop) SDL_Log("Amara Game: End Render");
+			}
+
+			void logic() {
+				logicDelay = 0;
+				if (fps < lps) {
+					for (int i = 1; i < lps/fps; i++) {
+						update();
+					}
+				}
+				else if (fps > lps) {
+					logicDelay = floor(fps/(float)lps);
+				}
 
 				if (frameCounter >= logicDelay) {
 					update();
 					frameCounter = 0;
 				}
 				frameCounter += 1;
-				if (isWindowed || windowFocused) scenes.draw();
-				events.manageInteracts();
-				/// Draw to renderer
-				SDL_RenderPresent(gRenderer);
 			}
 
 			void manageFPSStart() {
@@ -467,17 +498,7 @@ namespace Amara {
 				// Check if frame finished early
 				if (quit) return;
 				int totalWait = 0;
-				logicDelay = 0;
 				lagging = false;
-
-				if (fps < lps) {
-					for (int i = 1; i < lps/fps; i++) {
-						update();
-					}
-				}
-				else if (fps > lps) {
-					logicDelay = floor(fps/(float)lps);
-				}
 
 				int frameTicks = capTimer.getTicks();
 				if (frameTicks < tps) {
@@ -486,7 +507,8 @@ namespace Amara {
 				}
 				realFPS = fps / (frameTicks / 1000.f);
 				deltaTime = fps / realFPS;
-
+				
+				if (debugGameLoop) SDL_Log("Amara Game: Delay");
 				// Delay if game has not caught up
 				if (totalWait > 0) {
 					SDL_Delay(totalWait);

@@ -32,6 +32,7 @@ namespace Amara {
 		Amara::ControlScheme* controls = nullptr;
 		Amara::AudioGroup* audio = nullptr;
 		Amara::AssetManager* assets = nullptr;
+		Amara::TaskManager* tasks = nullptr;
 		Amara::Loader* load = nullptr;
 
 		std::list<Amara::Entity*> children;
@@ -70,6 +71,9 @@ namespace Amara {
 		std::string debugID;
 		bool debugging = debuggingDefault;
 
+		std::vector<Amara::Entity*> entityBuffer;
+		bool runningEntities = false;
+
 		Entity() {}
 		Entity(Amara::GameProperties* gProperties) {
 			Amara::Entity::init(gProperties);
@@ -84,6 +88,7 @@ namespace Amara {
 			assets = properties->assets;
 			load = properties->loader;
 			messages = properties->messages;
+			tasks = properties->taskManager;
 
 			isActive = true;
 			entityType = "entity";
@@ -93,7 +98,7 @@ namespace Amara {
 
 			scene = givenScene;
 			parent = givenParent;
-
+			
 			init();
 			preload();
 			if (!isDestroyed) create();
@@ -109,6 +114,9 @@ namespace Amara {
 		virtual void configure(nlohmann::json config) {
 			if (config.find("id") != config.end()) {
 				id = config["id"];
+			}
+			if (config.find("entityType") != config.end()) {
+				entityType = config["entityType"];
 			}
 
 			if (config.find("x") != config.end()) x = config["x"];
@@ -376,12 +384,13 @@ namespace Amara {
 				debugID = "";
 				for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
 				debugID += id;
-				SDL_Log("%s (%s): Running.", debugID.c_str(), entityType.c_str());
+				SDL_Log("%s (%s): Running. - depth %d", debugID.c_str(), entityType.c_str(), properties->entityDepth);
 				debugCopy = debugID;
 			}
 			
 			receiveMessages();
 			updateMessages();
+			if (isDestroyed) return;
 
 			Amara::Interactable::run();
 			if (isInteractable && interact.isDraggable && interact.isDown) {
@@ -398,6 +407,7 @@ namespace Amara {
 			else interact.isBeingDragged = false;
 
 			update();
+			if (isDestroyed) return;
 
 			if (physics != nullptr) {
 				if (physics->isActive) physics->run();
@@ -416,7 +426,7 @@ namespace Amara {
 					y = attachedTo->y + attachmentOffsetY;
 				}
 			}
-
+			
 			runChildren();
 
 			if (debugging) SDL_Log("%s (%s): Finished Running.", debugCopy.c_str(), entityType.c_str());
@@ -426,6 +436,7 @@ namespace Amara {
 			if (isDestroyed) return;
 			Amara::Entity* entity;
 			properties->entityDepth += 1;
+			runningEntities = true;
 			if (debugging) {
 				debugID = "";
 				for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
@@ -433,14 +444,17 @@ namespace Amara {
 			}
 			for (auto it = children.begin(); it != children.end();) {
 				entity = *it;
-				++it;
 				if (entity == nullptr || entity->isDestroyed || entity->parent != this || entity->isPaused) {
+					++it;
 					continue;
 				}
 				if (debugging) SDL_Log("%s (%s): Running Child %d \"%s\" - depth %d", debugID.c_str(), entityType.c_str(), std::distance(it, children.begin()), entity->id.c_str(), properties->entityDepth);
 				entity->run();
+				++it;
+				if (isDestroyed) break;
 			}
-			checkChildren();
+			runningEntities = false;
+			if (!isDestroyed) pipeEntityBuffer();
 			properties->entityDepth -= 1;
 		}
 
@@ -448,6 +462,16 @@ namespace Amara {
 			if (find.size() == 0) return nullptr;
 			Amara::Entity* entity;
 			for (auto it = children.begin(); it != children.end();) {
+				entity = *it;
+				++it;
+				if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
+					continue;
+				}
+				if (entity->id.compare(find) == 0) {
+					return entity;
+				}
+			}
+			for (auto it = entityBuffer.begin(); it != entityBuffer.end();) {
 				entity = *it;
 				++it;
 				if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
@@ -468,7 +492,12 @@ namespace Amara {
 			if (entity->parent) {
 				return entity->setParent(this);
 			}
-			children.push_back(entity);
+			else {
+				if (runningEntities) {
+					entityBuffer.push_back(entity);
+				}
+				else children.push_back(entity);
+			}
 			entity->init(properties, scene, this);
 			return entity;
 		}
@@ -479,8 +508,13 @@ namespace Amara {
 				child = *it;
 				if (child == entity) {
 					if (entity->parent == this) entity->parent = nullptr;
-					it = children.erase(it);
-					continue;
+				}
+				++it;
+			}
+			for (auto it = entityBuffer.begin(); it != entityBuffer.end();) {
+				child = *it;
+				if (child == entity) {
+					if (entity->parent == this) entity->parent = nullptr;
 				}
 				++it;
 			}
@@ -520,6 +554,13 @@ namespace Amara {
 		}
 		void checkChildren() {
 			checkChildren(false);
+		}
+
+		void pipeEntityBuffer() {
+			for (Amara::Entity* entity: entityBuffer) {
+				children.push_back(entity);
+			}
+			entityBuffer.clear();
 		}
 
 		virtual Amara::PhysicsBase* addPhysics(Amara::PhysicsBase* gPhysics) {
@@ -682,6 +723,11 @@ namespace Amara {
 		Amara::Entity* bringToFront() {
 			if (parent) {
 				for (Amara::Entity* entity: parent->children) {
+					if (entity != this && entity->parent == parent && !entity->isDestroyed && depth <= entity->depth) {
+						depth = entity->depth + 0.1;
+					}
+				}
+				for (Amara::Entity* entity: parent->entityBuffer) {
 					if (entity != this && entity->parent == parent && !entity->isDestroyed && depth <= entity->depth) {
 						depth = entity->depth + 0.1;
 					}
