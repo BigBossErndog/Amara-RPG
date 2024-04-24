@@ -30,6 +30,7 @@ namespace Amara {
 			bool windowMoved = false;
 			bool windowFocused = false;
 			bool isFullscreen = false;
+			bool isWindowed = true;
 
 			bool renderTargetsReset = false;
 			bool renderDeviceReset = false;
@@ -49,8 +50,7 @@ namespace Amara {
 			Amara::TaskManager taskManager;
 
 			Amara::FileManager files;
-
-			bool vsync = false;
+			
 			int fps = 60;
 			int tps = 1000 / fps;
 			int lps = fps;
@@ -95,7 +95,7 @@ namespace Amara {
                 compiledVersion.major, compiledVersion.minor, compiledVersion.patch);
             	SDL_Log("Linking against SDL version %d.%d.%d.\n",
                 linkedVersion.major, linkedVersion.minor, linkedVersion.patch);
-
+				
 				// Creating the video context
 				if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 					SDL_Log("Game Error: Failed to initialize Video.");
@@ -135,7 +135,7 @@ namespace Amara {
 					SDL_Log("Started on Hardware Accelerated Rendering.");
 				}
 				else {
-					gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
+					gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
 					SDL_Log("Started on Software Rendering.");
 				}
 				if (gRenderer == NULL) {
@@ -287,7 +287,7 @@ namespace Amara {
 				if (renderTargetsReset || renderDeviceReset) {
 					reloadAssets = true;
 				}
-				else if (reloadAssets) {
+				else if (reloadAssets && (isWindowed || windowFocused)) {
 					reloadAssets = false;
 					load.regenerateAssets();
 				}
@@ -382,16 +382,19 @@ namespace Amara {
 			void startFullscreen() {
 				SDL_SetWindowFullscreen(gWindow, SDL_WINDOW_FULLSCREEN);
 				isFullscreen = true;
+				isWindowed = false;
 			}
 
 			void startWindowedFullscreen() {
 				SDL_SetWindowFullscreen(gWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
 				isFullscreen = true;
+				isWindowed = true;
 			}
 
 			void exitFullscreen() {
 				SDL_SetWindowFullscreen(gWindow, 0);
 				isFullscreen = false;
+				isWindowed = true;
 			}
 
 			void setWindowIcon(SDL_Surface* sf) {
@@ -411,12 +414,14 @@ namespace Amara {
 				properties.height = height;
 
 				properties.isFullscreen = isFullscreen;
+				properties.isWindowed = isWindowed;
 
 				properties.renderTargetsReset = renderTargetsReset;
 				properties.renderDeviceReset = renderDeviceReset;
 
 				properties.lagging = lagging;
 				properties.windowMoved = windowMoved;
+				properties.windowFocused = windowFocused;
 
 				properties.fps = fps;
 				properties.lps = lps;
@@ -448,7 +453,7 @@ namespace Amara {
 					frameCounter = 0;
 				}
 				frameCounter += 1;
-				scenes.draw();
+				if (isWindowed || windowFocused) scenes.draw();
 				events.manageInteracts();
 				/// Draw to renderer
 				SDL_RenderPresent(gRenderer);
@@ -583,14 +588,6 @@ namespace Amara {
 						SDL_GetDisplayBounds(displayIndex, &displayRect);
 						display = Amara::IntRect{ displayRect.x, displayRect.y, displayRect.w, displayRect.h };
 					}
-					else if (e.type == SDL_WINDOWEVENT && (e.window.event == SDL_WINDOWEVENT_LEAVE)) {
-						windowFocused = false;
-						properties.windowFocused = false;
-					}
-					else if (e.type == SDL_WINDOWEVENT && (e.window.event == SDL_WINDOWEVENT_ENTER)) {
-						windowFocused = true;
-						properties.windowFocused = true;
-					}
 					else if (e.type == SDL_RENDER_TARGETS_RESET) {
 						renderTargetsReset = true;
 					}
@@ -678,6 +675,12 @@ namespace Amara {
 					input.mode |= InputMode_Touch;
 					input.lastMode = InputMode_Touch;
 				}
+
+				Uint32 winFlags = SDL_GetWindowFlags(gWindow);
+				if (winFlags & SDL_WINDOW_MOUSE_FOCUS) {
+					windowFocused = true;
+				}
+				else windowFocused = false;
 			}
 	};
 }

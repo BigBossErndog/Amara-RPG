@@ -9,8 +9,6 @@ namespace Amara {
 		SDL_FRect destRect;
 		SDL_Point origin;
 
-		bool pixelLocked = false;
-
 		SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
 		float width = 0;
@@ -128,13 +126,6 @@ namespace Amara {
 			destRect.w = ((width * scaleX) * nzoomX);
 			destRect.h = ((height * scaleY) * nzoomY);
 
-			if (pixelLocked) {
-				destRect.x = floor(destRect.x);
-				destRect.y = floor(destRect.y);
-				destRect.w = ceil(destRect.w);
-				destRect.h = ceil(destRect.h);
-			}
-
 			origin.x = destRect.w * originX;
 			origin.y = destRect.h * originY;
 
@@ -158,6 +149,8 @@ namespace Amara {
 				SDL_RenderFillRectF(properties->gRenderer, &destRect);
 
 				SDL_SetRenderDrawColor(properties->gRenderer, recColor.r, recColor.g, recColor.b, recColor.a);
+
+				checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
 			}
 
 			Amara::Actor::draw(vx, vy, vw, vh);

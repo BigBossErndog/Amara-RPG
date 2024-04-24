@@ -11,8 +11,6 @@ namespace Amara {
             SDL_FRect destRect;
             SDL_FPoint origin;
 
-            bool pixelLocked = false;
-
             SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
             int width = 0;
@@ -188,13 +186,6 @@ namespace Amara {
                 destRect.y = (rotatedY * nzoomY);
                 destRect.w = (((imageWidth-cropLeft-cropRight) * scaleX) * nzoomX);
                 destRect.h = (((imageHeight-cropTop-cropBottom) * scaleY) * nzoomY);
-
-                if (pixelLocked) {
-                    destRect.x = floor(destRect.x);
-                    destRect.y = floor(destRect.y);
-                    destRect.w = ceil(destRect.w);
-                    destRect.h = ceil(destRect.h);
-                }
 
                 scaleX = recScaleX;
                 scaleY = recScaleY;
@@ -414,6 +405,14 @@ namespace Amara {
             Amara::Image* scaleToHeight(float gh) {
                 scaleY = gh/imageHeight;
                 scaleX = scaleY;
+                return this;
+            }
+
+            Amara::Image* cropToSection(int gx, int gy, int gw, int gh) {
+                cropLeft = gx;
+                cropTop = gy;
+                cropRight = width - gx - gw;
+                cropBottom = height - gy - gh;
                 return this;
             }
 

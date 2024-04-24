@@ -12,11 +12,12 @@ namespace Amara {
             Amara::SceneTransitionBase* transition = nullptr;
 
             Amara::Camera* mainCamera = nullptr;
-            std::list<Amara::Camera*> cameras;
+            std::vector<Amara::Camera*> cameras;
 
             bool initialLoaded = false;
 
             bool sortCameras = false;
+            bool stableSortCameras = false;
 
             using Actor::Actor;
 
@@ -60,13 +61,9 @@ namespace Amara {
                 entityType = "scene";
             }
 
-            virtual Amara::Entity* add(Amara::Entity* entity) {
-                children.push_back(entity);
-                entity->init(properties, this, this);
-                return entity;
-            }
-
+            using Amara::Actor::add;
             virtual Amara::Camera* add(Amara::Camera* cam) {
+                cam->depth = cameras.size() * 0.001;
                 cameras.push_back(cam);
                 cam->init(properties, this, this);
                 cam->sceneCameras = &cameras;
@@ -186,7 +183,10 @@ namespace Amara {
 				properties->scrollX = 0;
 				properties->scrollY = 0;
 
-                if (sortCameras) cameras.sort(sortEntitiesByDepth());
+                if (sortCameras) {
+                    if (stableSortCameras) std::stable_sort(cameras.begin(), cameras.end(), sortEntitiesByDepth());
+                    else std::sort(cameras.begin(), cameras.end(), sortEntitiesByDepth());
+                }
                 if (shouldSortChildren || sortChildrenOnce) {
                     sortChildrenOnce = false;
                     delayedSorting();
@@ -209,7 +209,7 @@ namespace Amara {
                 }
 
                 Amara::Camera* cam;
-                for (std::list<Amara::Camera*>::iterator it = cameras.begin(); it != cameras.end(); it++) {
+                for (std::vector<Amara::Camera*>::iterator it = cameras.begin(); it != cameras.end(); it++) {
                     cam = *it;
                     if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
                         continue;
@@ -267,6 +267,8 @@ namespace Amara {
             virtual void onResume() {}
             virtual void onSleep() {}
             virtual void onWake() {}
+
+            void bringToFront();
 
             virtual ~Scene() {
                 if (load) delete load;

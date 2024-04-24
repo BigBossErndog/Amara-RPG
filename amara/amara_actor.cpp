@@ -3,7 +3,8 @@ namespace Amara {
     class Actor: public Amara::Entity {
     private:
         bool inRecital = false;
-        std::list<Amara::Script*> scriptBuffer;
+        std::vector<Amara::Script*> scriptBuffer;
+        
     public:
         std::list<Amara::Script*> scripts;
         bool actingPaused = false;
@@ -56,6 +57,7 @@ namespace Amara {
             else {
                 scriptBuffer.push_back(script);
             }
+            script->inQueue = true;
             script->init(properties, this);
             script->prepare();
             return script;
@@ -87,7 +89,7 @@ namespace Amara {
                 if (isDestroyed) {
                     clearScripts();
                     inRecital = false;
-                    return;
+                    break;
                 }
             }
 
@@ -105,8 +107,11 @@ namespace Amara {
                         }
                         script->chainedScripts.clear();
                     }
+                    script->inQueue = false;
+                    if (!script->manualDeletion) {
+                        properties->taskManager->queueDeletion(script);
+                    }
                     it = scripts.erase(it);
-                    if (!script->manualDeletion) properties->taskManager->queueDeletion(script);
                     continue;
                 }
                 ++it;
@@ -154,33 +159,39 @@ namespace Amara {
         }
 
         void run() {
+			debugID = id;
+			std::string debugCopy;
 			if (debugging) {
 				debugID = "";
 				for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
 				debugID += id;
 				SDL_Log("%s (%s): Running.", debugID.c_str(), entityType.c_str());
+				debugCopy = debugID;
 			}
             
             receiveMessages();
             updateMessages();
 
             Amara::Interactable::run();
-            if (isInteractable && isDraggable && interact.isDown) {
-                if (physics) {
-                    physics->velocityX = interact.movementX;
-                    physics->velocityY = interact.movementY;
-                }
-                else {
-                    x += interact.movementX;
-                    y += interact.movementY;
-                }
-            }
+            if (isInteractable && interact.isDraggable && interact.isDown) {
+				interact.isBeingDragged = true;
+				if (physics) {
+					physics->velocityX = interact.movementX;
+					physics->velocityY = interact.movementY;
+				}
+				else {
+					x += interact.movementX;
+					y += interact.movementY;
+				}
+			}
+			else interact.isBeingDragged = false;
+
 
             update();
 
             if (physics != nullptr) {
                 if (physics->isActive) physics->run();
-
+                
                 if (physics->isDestroyed) {
                     removePhysics();
                 }
@@ -196,10 +207,13 @@ namespace Amara {
                 }
             }
             
+            if (debugging) SDL_Log("%s (%s): Reciting Scripts.", debugCopy.c_str(), entityType.c_str());
             reciteScripts();
 
             runChildren();
             checkChildren();
+
+            if (debugging) SDL_Log("%s (%s): Finished Running.", debugCopy.c_str(), entityType.c_str());
         }
 
         using Amara::Entity::destroy;
@@ -243,7 +257,7 @@ namespace Amara {
                     if (script->chainedScripts.size() > 0) {
                         for (Amara::Script* chainedScript: script->chainedScripts) recite(chainedScript);
                     }
-                    it = scripts.erase(it);
+                    it = scriptBuffer.erase(it);
                     if (!script->manualDeletion) {
                         properties->taskManager->queueDeletion(script);
                     }

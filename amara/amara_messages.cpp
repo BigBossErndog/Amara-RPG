@@ -38,10 +38,10 @@ namespace Amara {
             }
         }
 
-        std::list<Message>::iterator begin() {
+        auto begin() {
             return queue.begin();
         }
-        std::list<Message>::iterator end() {
+        auto end() {
             return queue.end();
         }
 

@@ -46,7 +46,7 @@ namespace Amara {
 
 		float cameraOffsetX = 0;
 		float cameraOffsetY = 0;
-
+		
 		float scrollFactorX = 1;
 		float scrollFactorY = 1;
 		float zoomFactorX = 1;
@@ -307,7 +307,8 @@ namespace Amara {
 				entity = *it;
 
 				if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
-					it = children.erase(it);
+					if (properties->inSceneDrawing) it = children.erase(it);
+					else ++it;
 					continue;
 				}
 				if (entity->isVisible) {
@@ -370,19 +371,21 @@ namespace Amara {
 
 		virtual void run() {
 			debugID = id;
+			std::string debugCopy;
 			if (debugging) {
 				debugID = "";
 				for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
 				debugID += id;
 				SDL_Log("%s (%s): Running.", debugID.c_str(), entityType.c_str());
+				debugCopy = debugID;
 			}
 			
 			receiveMessages();
 			updateMessages();
 
 			Amara::Interactable::run();
-			if (isInteractable && isDraggable && interact.isDown) {
-				isBeingDragged = true;
+			if (isInteractable && interact.isDraggable && interact.isDown) {
+				interact.isBeingDragged = true;
 				if (physics) {
 					physics->velocityX = interact.movementX;
 					physics->velocityY = interact.movementY;
@@ -392,7 +395,7 @@ namespace Amara {
 					y += interact.movementY;
 				}
 			}
-			else isBeingDragged = false;
+			else interact.isBeingDragged = false;
 
 			update();
 
@@ -415,7 +418,8 @@ namespace Amara {
 			}
 
 			runChildren();
-			checkChildren();
+
+			if (debugging) SDL_Log("%s (%s): Finished Running.", debugCopy.c_str(), entityType.c_str());
 		}
 
 		virtual void runChildren() {
@@ -433,9 +437,10 @@ namespace Amara {
 				if (entity == nullptr || entity->isDestroyed || entity->parent != this || entity->isPaused) {
 					continue;
 				}
-				if (debugging) SDL_Log("%s (%s): Running Child %d \"%s\"", debugID.c_str(), entityType.c_str(), std::distance(it, children.begin()), entity->id.c_str());
+				if (debugging) SDL_Log("%s (%s): Running Child %d \"%s\" - depth %d", debugID.c_str(), entityType.c_str(), std::distance(it, children.begin()), entity->id.c_str(), properties->entityDepth);
 				entity->run();
 			}
+			checkChildren();
 			properties->entityDepth -= 1;
 		}
 
@@ -676,10 +681,9 @@ namespace Amara {
 
 		Amara::Entity* bringToFront() {
 			if (parent) {
-				std::list<Amara::Entity*>& rSceneEntities = parent->children;
-				for (Amara::Entity* entity: rSceneEntities) {
-					if (entity != this && !entity->isDestroyed && depth <= entity->depth) {
-						depth = entity->depth + 1;
+				for (Amara::Entity* entity: parent->children) {
+					if (entity != this && entity->parent == parent && !entity->isDestroyed && depth <= entity->depth) {
+						depth = entity->depth + 0.1;
 					}
 				}
 				parent->sortChildrenOnce = true;
@@ -688,8 +692,7 @@ namespace Amara {
 		}
 
 		Amara::Entity* sendToBack() {
-			std::list<Amara::Entity*>& rSceneEntities = parent->children;
-			for (Amara::Entity* entity: rSceneEntities) {
+			for (Amara::Entity* entity: parent->children) {
 				if (entity != this && !entity->isDestroyed && depth >= entity->depth) {
 					depth = entity->depth - 1;
 				}

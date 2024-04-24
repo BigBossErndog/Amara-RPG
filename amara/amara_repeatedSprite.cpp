@@ -13,8 +13,6 @@ namespace Amara {
         float recWidth = -1;
         float recHeight = -1;
 
-        bool pixelLocked = false;
-
         SDL_Rect destRectInt;
         SDL_Texture* canvas = nullptr;
 
@@ -74,14 +72,6 @@ namespace Amara {
         }
 
         virtual void drawPattern() {
-            SDL_Texture* recTarget = SDL_GetRenderTarget(properties->gRenderer);
-            SDL_SetRenderTarget(properties->gRenderer, canvas);
-            SDL_SetTextureBlendMode(canvas, SDL_BLENDMODE_NONE);
-            SDL_SetTextureAlphaMod(canvas, 255);
-            SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 0);
-            SDL_RenderClear(gRenderer);
-            SDL_RenderSetViewport(properties->gRenderer, NULL);
-
             int cx = floor(patternBaseX + patternOffsetX);
             while (cx < 0) cx += Amara::Sprite::width;
             int cy = floor(patternBaseY + patternOffsetY);
@@ -128,12 +118,14 @@ namespace Amara {
                     }
                 }
             }
-
-            SDL_SetRenderTarget(properties->gRenderer, recTarget);
         }
 
         void drawTexture(int vx, int vy, int vw, int vh) {
-            if (alpha < 0) alpha = 0;
+            if (alpha < 0) {
+                alpha = 0;
+                return;
+            }
+            if (alpha > 1) alpha = 1;
             if (texture == nullptr) return;
             if (recWidth != width || recHeight != height) {
                 createNewCanvasTexture();
@@ -143,18 +135,11 @@ namespace Amara {
             }
 
             bool skipDrawing = false;
-            
-            if (alpha < 0) {
-                alpha = 0;
-                return;
-            }
-            if (alpha > 1) alpha = 1;
 
             viewport.x = vx;
             viewport.y = vy;
             viewport.w = vw;
             viewport.h = vh;
-            SDL_RenderSetViewport(properties->gRenderer, &viewport);
 
             float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
             float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
@@ -163,13 +148,6 @@ namespace Amara {
             destRect.y = ((y*scaleY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
             destRect.w = ((width * scaleX) * nzoomX);
             destRect.h = ((height * scaleY) * nzoomY);
-
-            if (pixelLocked) {
-                destRect.x = floor(destRect.x);
-                destRect.y = floor(destRect.y);
-                destRect.w = ceil(destRect.w);
-                destRect.h = ceil(destRect.h);
-            }
 
             origin.x = destRect.w * originX;
             origin.y = destRect.h * originY;
@@ -182,7 +160,17 @@ namespace Amara {
             if (destRect.h <= 0) skipDrawing = true;
 
             if (!skipDrawing && canvas != nullptr) {
+                SDL_Texture* recTarget = SDL_GetRenderTarget(properties->gRenderer);
+                SDL_SetRenderTarget(properties->gRenderer, canvas);
+                SDL_SetTextureBlendMode(canvas, SDL_BLENDMODE_NONE);
+                SDL_SetTextureAlphaMod(canvas, 255);
+                SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 0);
+                SDL_RenderClear(gRenderer);
+                SDL_RenderSetViewport(properties->gRenderer, NULL);
+                
                 drawPattern();
+
+                SDL_SetRenderTarget(properties->gRenderer, recTarget);
                 SDL_RenderSetViewport(properties->gRenderer, &viewport);
 
                 SDL_SetTextureBlendMode(canvas, blendMode);
