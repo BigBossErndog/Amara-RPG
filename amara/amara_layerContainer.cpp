@@ -10,9 +10,9 @@ namespace Amara {
 
         using Amara::Actor::init;
         void init() {
-                Amara::Actor::init();
-                entityType = "layer";
-            }
+            Amara::Actor::init();
+            entityType = "layer";
+        }
 
         virtual void draw(int vx, int vy, int vw, int vh) {
             Amara::Actor::draw(vx, vy, vw, vh);
@@ -40,14 +40,8 @@ namespace Amara {
         }
     };
 
-    class Container: public Amara::Layer {
+    class Container: public Amara::Layer, public Amara::MakeRect {
     public:
-        float width = 0;
-        float height = 0;
-
-        float originX = 0;
-        float originY = 0;
-
         Container(): Amara::Layer() {}
         Container(float w, float h): Container() {
             width = w;
@@ -60,35 +54,24 @@ namespace Amara {
 
         using Amara::Layer::init;
         void init() {
+            rectInit(this);
 			Amara::Layer::init();
 			entityType = "container";
 		}
 
 		void configure(nlohmann::json config) {
 			Amara::Layer::configure(config);
-			
-			if (config.find("originX") != config.end()) {
-				originX = config["originX"];
-			}
-			if (config.find("originY") != config.end()) {
-				originY = config["originY"];
-			}
-			if (config.find("origin") != config.end()) {
-				originX = config["origin"];
-				originY = config["origin"];
-			}
-			if (config.find("originPositionX") != config.end()) {
-				originX = config["originPositionX"];
-				originX = originX/width;
-			}
-			if (config.find("originPositionY") != config.end()) {
-				originY = config["originPositionY"];
-				originY = originY/height;
-			}
-			if (config.find("originPosition") != config.end()) {
-				originX = config["originPosition"];
-				setOriginPosition(originX, originX);
-			}
+			rectConfigure(config);
+		}
+
+        Amara::FloatRect calculateRect() {
+			// Doesn't take into account scrollFactor or zoomFactor.
+			return { 
+				(x + properties->offsetX - (originX * width * scaleX)),
+				(y-z + properties->offsetY - (originY * height * scaleY)),
+				(width * scaleX),
+				(height * scaleY)
+			};
 		}
 
         virtual void draw(int vx, int vy, int vw, int vh) override {
@@ -156,21 +139,6 @@ namespace Amara {
                 ++it;
             }
         }
-
-        void setOrigin(float gx, float gy) {
-            originX = gx;
-            originY = gy;
-        }
-        void setOrigin(float g) {
-            setOrigin(g, g);
-        }
-        void setOriginPosition(float gx, float gy) {
-            originX = gx/width;
-            originY = gy/height;
-        }
-        void setOriginPosition(float g) {
-            setOriginPosition(g, g);
-        }
     };
     
     class TextureLayer: public Amara::Layer {
@@ -189,6 +157,8 @@ namespace Amara {
 
         bool textureLocked = false;
 		bool pleaseUpdate = false;
+
+        SDL_Color fillColor = { 0, 0, 0, 0 };
 
         TextureLayer(): Layer() {}
         TextureLayer(float gx, float gy): Layer(gx, gy) {}
@@ -211,11 +181,11 @@ namespace Amara {
 
         virtual void createTexture() {
             if (tx) {
-                tasks->queueDeletion(tx);
+                tasks->queueTexture(tx);
             }
             tx = SDL_CreateTexture(
                 properties->gRenderer,
-                SDL_PIXELFORMAT_RGBA8888,
+                SDL_PIXELFORMAT_ARGB8888,
                 SDL_TEXTUREACCESS_TARGET,
                 properties->currentCamera->width,
                 properties->currentCamera->height
@@ -230,7 +200,7 @@ namespace Amara {
         void clearTexture() {
             recTarget = SDL_GetRenderTarget(properties->gRenderer);
             SDL_SetRenderTarget(properties->gRenderer, tx);
-            SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
+            SDL_SetRenderDrawColor(properties->gRenderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
             SDL_RenderClear(properties->gRenderer);
 
             SDL_SetRenderTarget(properties->gRenderer, recTarget);
@@ -249,7 +219,7 @@ namespace Amara {
         void draw(int vx, int vy, int vw, int vh) {
             float recAlpha = properties->alpha;
 
-			if (properties->renderTargetsReset || properties->renderDeviceReset) {
+			if (properties->reloadAssets) {
 				createTexture();
 			}
             else if (textureWidth != properties->currentCamera->width || textureHeight != properties->currentCamera->height) {
@@ -262,7 +232,7 @@ namespace Amara {
 
                 recTarget = SDL_GetRenderTarget(properties->gRenderer);
                 SDL_SetRenderTarget(properties->gRenderer, tx);
-                SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
+                SDL_SetRenderDrawColor(properties->gRenderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
                 SDL_RenderClear(properties->gRenderer);
                 SDL_RenderSetViewport(properties->gRenderer, nullptr);
 
@@ -301,8 +271,6 @@ namespace Amara {
             
             if (destRect.x + destRect.w <= 0) skipDrawing = true;
             if (destRect.y + destRect.h <= 0) skipDrawing = true;
-            if (destRect.x >= properties->currentCamera->width) skipDrawing = true;
-            if (destRect.y >= properties->currentCamera->height) skipDrawing = true;
             if (destRect.w <= 0) skipDrawing = true;
             if (destRect.h <= 0) skipDrawing = true;
 
@@ -357,10 +325,11 @@ namespace Amara {
             for (auto it = children.begin(); it != children.end();) {
                 entity = *it;
 
-                if (entity->isDestroyed || entity->parent != this) {
-                    it = children.erase(it);
-                    continue;
-                }
+                if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
+					if (properties->inSceneDrawing) it = children.erase(it);
+					else ++it;
+					continue;
+				}
                 if (entity->isVisible) {
                     properties->scrollX = recScrollX;
                     properties->scrollY = recScrollY;
@@ -387,319 +356,7 @@ namespace Amara {
         using Amara::Layer::destroy;
         virtual void destroy(bool recursive) {
             if (tx) {
-                tasks->queueDeletion(tx);
-                tx = nullptr;
-            }
-            Amara::Layer::destroy(recursive);
-        }
-    };
-
-    class TextureContainer: public Amara::Layer {
-    public:
-        SDL_Texture* tx = nullptr;
-        int textureWidth = -1;
-        int textureHeight = -1;
-
-        float width = 0;
-        float height = 0;
-        bool flipHorizontal = false;
-        bool flipVertical = false;
-        float originX = 0;
-        float originY = 0;
-
-        SDL_Texture* recTarget;
-        SDL_Rect viewport;
-        SDL_Rect srcRect;
-        SDL_FRect destRect;
-        SDL_FPoint origin = { 0, 0 };
-
-        SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
-
-        bool textureLocked = false;
-		bool pleaseUpdate = false;
-
-        TextureContainer(): Layer() {}
-        TextureContainer(float gw, float gh) {
-            width = gw;
-            height = gh;
-        }
-        TextureContainer(float gx, float gy, float gw, float gh) {
-            x = gx;
-            y = gy;
-            width = gw;
-            height = gh;
-        }
-
-        using Amara::Layer::init;
-        virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
-            properties = gameProperties;
-            createTexture();
-            Amara::Layer::init(gameProperties, givenScene, givenParent);
-            entityType = "textureContainer";
-        }
-
-		void configure(nlohmann::json config) {
-			Amara::Layer::configure(config);
-
-			if (config.find("originX") != config.end()) {
-				originX = config["originX"];
-			}
-			if (config.find("originY") != config.end()) {
-				originY = config["originY"];
-			}
-			if (config.find("origin") != config.end()) {
-				originX = config["origin"];
-				originY = config["origin"];
-			}
-			if (config.find("originPositionX") != config.end()) {
-				originX = config["originPositionX"];
-				originX = originX/width;
-			}
-			if (config.find("originPositionY") != config.end()) {
-				originY = config["originPositionY"];
-				originY = originY/height;
-			}
-			if (config.find("originPosition") != config.end()) {
-				originX = config["originPosition"];
-				setOriginPosition(originX, originX);
-			}
-            if (config.find("textureLocked") != config.end()) {
-                setTextureLock(config["textureLocked"]);
-            }
-		}
-
-        virtual void createTexture() {
-            if (tx) {
-                tasks->queueDeletion(tx);
-            }
-            tx = SDL_CreateTexture(
-                properties->gRenderer,
-                SDL_PIXELFORMAT_RGBA8888,
-                SDL_TEXTUREACCESS_TARGET,
-                width,
-                height
-            );
-            textureWidth = width;
-            textureHeight = height;
-
-            clearTexture();
-
-            pleaseUpdate = true;
-        }
-
-        void clearTexture() {
-            recTarget = SDL_GetRenderTarget(properties->gRenderer);
-            SDL_SetRenderTarget(properties->gRenderer, tx);
-            SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
-            SDL_RenderClear(properties->gRenderer);
-
-            SDL_SetRenderTarget(properties->gRenderer, recTarget);
-        }
-
-        void setTextureLock(bool gLock) {
-            textureLocked = gLock;
-            pleaseUpdate = true;
-        }
-
-        Amara::TextureContainer* setOrigin(float gx, float gy) {
-            originX = gx;
-            originY = gy;
-            return this;
-        }
-        Amara::TextureContainer* setOrigin(float g) {
-            return setOrigin(g, g);
-        }
-        Amara::TextureContainer* setOriginPosition(float gx, float gy) {
-            originX = gx/width;
-            originY = gy/height;
-            return this;
-        }
-        Amara::TextureContainer* setOriginPosition(float g) {
-            return setOriginPosition(g, g);
-        }
-
-        void draw(int vx, int vy, int vw, int vh) {
-            float recAlpha = properties->alpha;
-            bool skipDrawing = false;
-
-            if (alpha < 0) {
-                alpha = 0;
-                return;
-            }
-            if (alpha > 1) alpha = 1;
-
-            if (properties->renderTargetsReset || properties->renderDeviceReset || textureWidth != width || textureHeight != height) {
-				createTexture();
-			}
-
-            float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
-            float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
-            
-            bool scaleFlipHorizontal = false;
-            bool scaleFlipVertical = false;
-            float recScaleX = scaleX;
-            float recScaleY = scaleY;
-
-            if (scaleX < 0) {
-                scaleFlipHorizontal = true;
-                scaleX = abs(scaleX);
-            }
-            if (scaleY < 0) {
-                scaleFlipVertical = true;
-                scaleY = abs(scaleY);
-            }
-
-            destRect.x = ((x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
-            destRect.y = ((y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
-            destRect.w = ((width * scaleX) * nzoomX);
-            destRect.h = ((height * scaleY) * nzoomY);
-
-            scaleX = recScaleX;
-            scaleY = recScaleY;
-
-            origin.x = destRect.w * originX;
-            origin.y = destRect.h * originY;
-
-            if (destRect.x + destRect.w <= 0) skipDrawing = true;
-            if (destRect.y + destRect.h <= 0) skipDrawing = true;
-            if (destRect.x >= vw) skipDrawing = true;
-            if (destRect.y >= vh) skipDrawing = true;
-            if (destRect.w <= 0) skipDrawing = true;
-            if (destRect.h <= 0) skipDrawing = true;
-
-            if (!skipDrawing && tx != nullptr) {
-                if (!textureLocked || pleaseUpdate) {
-                    pleaseUpdate = false;
-
-                    properties->interactOffsetX += vx + destRect.x;
-                    properties->interactOffsetY += vy + destRect.y;
-
-                    properties->interactScaleX *= scaleX;
-                    properties->interactScaleY *= scaleY;
-
-                    recTarget = SDL_GetRenderTarget(properties->gRenderer);
-                    SDL_SetRenderTarget(properties->gRenderer, tx);
-                    SDL_SetRenderDrawColor(properties->gRenderer, 0, 0, 0, 0);
-                    SDL_RenderClear(properties->gRenderer); 
-                    SDL_RenderSetViewport(properties->gRenderer, nullptr);
-
-                    drawContent();
-                    
-                    properties->interactOffsetX -= vx + destRect.x;
-                    properties->interactOffsetY -= vy + destRect.y;
-
-                    properties->interactScaleX /= scaleX;
-                    properties->interactScaleY /= scaleY;
-                    
-                    SDL_SetRenderTarget(properties->gRenderer, recTarget);
-                }
-
-                viewport.x = vx;
-                viewport.y = vy;
-                viewport.w = vw;
-                viewport.h = vh;
-                SDL_RenderSetViewport(properties->gRenderer, &viewport);
-                
-                SDL_SetTextureBlendMode(tx, blendMode);
-                SDL_SetTextureAlphaMod(tx, alpha * recAlpha * 255);
-
-                SDL_RendererFlip flipVal = SDL_FLIP_NONE;
-                if (!flipHorizontal != !scaleFlipHorizontal) {
-                    flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_HORIZONTAL);
-                }
-                if (!flipVertical != !scaleFlipVertical) {
-                    flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
-                }
-
-                SDL_RenderCopyExF(
-                    properties->gRenderer,
-                    tx,
-                    NULL,
-                    &destRect,
-                    0,
-                    &origin,
-                    flipVal
-                );
-
-                checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
-            }
-        }
-
-		virtual void drawContent() {
-            drawEntities(0, 0, width, height);
-		}
-
-        void drawEntities(int vx, int vy, int vw, int vh) {
-            if (properties->quit) return;
-            
-            if (physics) {
-                physics->checkActiveCollisionTargets();
-            }
-
-            if (alpha < 0) alpha = 0;
-            if (alpha > 1) alpha = 1;
-
-            float recScrollX = properties->scrollX;
-            float recScrollY = properties->scrollY;
-            float recOffsetX = properties->offsetX;
-            float recOffsetY = properties->offsetY;
-            float recZoomX = properties->zoomX;
-            float recZoomY = properties->zoomY;
-            float recZoomFactorX = properties->zoomFactorX;
-            float recZoomFactorY = properties->zoomFactorY;
-            float recAngle = properties->angle;
-            float recAlpha = properties->alpha;
-            properties->alpha = 1;
-
-            if (shouldSortChildren || sortChildrenOnce) {
-                sortChildrenOnce = false;
-                delayedSorting();
-            }
-
-            Amara::Entity* entity;
-            for (auto it = children.begin(); it != children.end();) {
-                entity = *it;
-
-                if (entity->isDestroyed || entity->parent != this) {
-                    it = children.erase(it);
-                    continue;
-                }
-                if (entity->isVisible) {
-                    properties->scrollX = 0;
-                    properties->scrollY = 0;
-                    properties->offsetX = 0;
-                    properties->offsetY = 0;
-                    properties->zoomX = 1;
-                    properties->zoomY = 1;
-                    properties->zoomFactorX = 1;
-                    properties->zoomFactorY = 1;
-                    properties->angle = 0;
-                    properties->alpha = 1;
-                    entity->draw(vx, vy, vw, vh);
-                }
-                ++it;
-            }
-            properties->alpha = recAlpha;
-            properties->scrollX = recScrollX;
-            properties->scrollY = recScrollY;
-            properties->offsetX = recOffsetX;
-            properties->offsetY = recOffsetY;
-            properties->zoomX = recZoomX;
-            properties->zoomY = recZoomY;
-            properties->zoomFactorX = recZoomFactorX;
-            properties->zoomFactorY = recZoomFactorY;
-            properties->angle = recAngle;
-        }
-
-        void drawOnce() {
-            textureLocked = true;
-            pleaseUpdate = true;
-        }
-
-        using Amara::Layer::destroy;
-        virtual void destroy(bool recursive) {
-            if (tx) {
-                tasks->queueDeletion(tx);
+                tasks->queueTexture(tx);
                 tx = nullptr;
             }
             Amara::Layer::destroy(recursive);

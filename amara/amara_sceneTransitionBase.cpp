@@ -85,7 +85,7 @@ namespace Amara {
             virtual void complete() {
                 if (isDestroyed) return;
                 isDestroyed = true;
-                Amara::Actor::properties->taskManager->queueDeletion(this);
+                Amara::Actor::properties->taskManager->queueTransition(this);
 				destroyEntities();
             }
 

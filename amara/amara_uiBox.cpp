@@ -1,5 +1,5 @@
 namespace Amara {
-    class UIBox: public Amara::Actor {
+    class UIBox: public Amara::Actor, public Amara::MakeRect {
         public:
             SDL_Renderer* gRenderer = nullptr;
             SDL_Texture* canvas = nullptr;
@@ -16,8 +16,6 @@ namespace Amara {
 
             float recWidth = -1;
             float recHeight = -1;
-            int width = 0;
-            int height = 0;
 
             int minWidth = 0;
             int minHeight = 0;
@@ -38,15 +36,15 @@ namespace Amara {
             int imageWidth = 0;
             int imageHeight = 0;
 
+            bool flipHorizontal = false;
+            bool flipVertical = false;
+
             int partitionTop = 0;
             int partitionBottom = 0;
             int partitionLeft = 0;
             int partitionRight = 0;
 
             int frame = 0;
-
-            float originX = 0;
-            float originY = 0;
 
             bool textureLocked = true;
             bool pleaseUpdate = false;
@@ -84,6 +82,7 @@ namespace Amara {
                 properties = gameProperties;
                 load = properties->loader;
                 gRenderer = properties->gRenderer;
+                rectInit(this);
 
                 if (!textureKey.empty()) {
                     setTexture(textureKey);
@@ -98,13 +97,12 @@ namespace Amara {
 
             virtual void configure(nlohmann::json config) {
                 Amara::Actor::configure(config);
+                rectConfigure(config);
 
                 if (config.find("width") != config.end()) {
-                    width = config["width"];
                     openWidth = width;
                 }
                 if (config.find("height") != config.end()) {
-                    height = config["height"];
                     openHeight = height;
                 }
                 if (config.find("xFromRight") != config.end()) {
@@ -125,11 +123,11 @@ namespace Amara {
 				}
 				if (config.find("relativeXFromCenter") != config.end()) {
 					float relativeX = config["relativeXFromCenter"];
-					x = scene->mainCamera->width/2.0 + scene->mainCamera->width*relativeX/2.0 - width/2.0;
+					x = scene->mainCamera->centerX + scene->mainCamera->width*scene->mainCamera->zoomX*relativeX/2.0 - width/2.0;
 				}
 				if (config.find("relativeYFromCenter") != config.end()) {
 					float relativeY = config["relativeYFromCenter"];
-					y = scene->mainCamera->height/2.0 + scene->mainCamera->height*relativeY/2.0 - height/2.0;
+					y = scene->mainCamera->centerY + scene->mainCamera->height*scene->mainCamera->zoomY*relativeY/2.0 - height/2.0;
 				}
                 if (config.find("minWidth") != config.end()) {
                     minWidth = config["minWidth"];
@@ -313,7 +311,7 @@ namespace Amara {
                     if (openHeight > height) openHeight = height;
                     createTexture();
                 }
-				else if (properties->renderTargetsReset || properties->renderDeviceReset) {
+				else if (properties->reloadAssets) {
 					createTexture();
 				}
 
@@ -354,6 +352,22 @@ namespace Amara {
                 float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
                 float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
 
+                bool scaleFlipHorizontal = false;
+                bool scaleFlipVertical = false;
+                float recScaleX = scaleX;
+                float recScaleY = scaleY;
+
+                if (scaleX < 0) {
+                    scaleFlipHorizontal = true;
+                    scaleX = abs(scaleX);
+                }
+                if (scaleY < 0) {
+                    scaleFlipVertical = true;
+                    scaleY = abs(scaleY);
+                }
+                scaleX = scaleX * (1 + (nzoomX - 1)*(zoomScaleX - 1));
+                scaleY = scaleY * (1 + (nzoomY - 1)*(zoomScaleY - 1));
+
                 float rotatedX = (x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX));
                 float rotatedY = (y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY));
 
@@ -361,7 +375,7 @@ namespace Amara {
                 destRect.y = (rotatedY * nzoomY);
                 destRect.w = ((width * scaleX) * nzoomX);
                 destRect.h = ((height * scaleY) * nzoomY);
-
+                
                 origin.x = destRect.w * originX;
                 origin.y = destRect.h * originY;
 
@@ -377,6 +391,14 @@ namespace Amara {
                         SDL_SetTextureBlendMode(canvas, blendMode);
 				        SDL_SetTextureAlphaMod(canvas, alpha * properties->alpha * 255);
 
+                        SDL_RendererFlip flipVal = SDL_FLIP_NONE;
+                        if (!flipHorizontal != !scaleFlipHorizontal) {
+                            flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_HORIZONTAL);
+                        }
+                        if (!flipVertical != !scaleFlipVertical) {
+                            flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
+                        }
+
                         SDL_RenderCopyExF(
                             properties->gRenderer,
                             canvas,
@@ -384,7 +406,7 @@ namespace Amara {
                             &destRect,
                             angle + properties->angle,
                             &origin,
-                            SDL_FLIP_NONE
+                            flipVal
                         );
 
 						checkHover(vx, vy, vw, vh, destRect.x, destRect.y, destRect.w, destRect.h);
@@ -400,11 +422,11 @@ namespace Amara {
                 recWidth = width;
                 recHeight = height;
                 if (canvas != nullptr) {
-                    tasks->queueDeletion(canvas);
+                    tasks->queueTexture(canvas);
                 }
                 canvas = SDL_CreateTexture(
                     properties->gRenderer,
-                    SDL_PIXELFORMAT_RGBA8888,
+                    SDL_PIXELFORMAT_ARGB8888,
                     SDL_TEXTUREACCESS_TARGET,
                     floor(width),
                     floor(height)
@@ -465,7 +487,7 @@ namespace Amara {
             void removeTexture() {
                 textureKey.clear();
                 if (texture && texture->temp) {
-                    properties->taskManager->queueDeletion(texture);
+                    properties->taskManager->queueAsset(texture);
                 }
                 texture = nullptr;
             }
@@ -719,7 +741,7 @@ namespace Amara {
             using Amara::Actor::destroy;
             virtual void destroy(bool recursive) {
                 if (canvas) {
-                    tasks->queueDeletion(canvas);
+                    tasks->queueTexture(canvas);
                     canvas = nullptr;
                 }
                 Amara::Actor::destroy(recursive);

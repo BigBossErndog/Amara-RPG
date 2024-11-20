@@ -3,16 +3,16 @@ namespace Amara {
     class ScenePlugin;
     class AssetManager;
 
-    class Scene: public Amara::Actor {
+    class Scene: public Amara::Actor, public MakeRect {
         public:
             std::string key;
-            Amara::LoadManager* loadManager = nullptr;
+            Amara::LoadManager loadManager;
             Amara::ScenePlugin* scenes = nullptr;
 
             Amara::SceneTransitionBase* transition = nullptr;
 
             Amara::Camera* mainCamera = nullptr;
-            std::list<Amara::Camera*> cameras;
+            std::vector<Amara::Camera*> cameras;
 
             bool initialLoaded = false;
 
@@ -32,12 +32,9 @@ namespace Amara {
                 messages = properties->messages;
 
                 scene = this;
-                
-                if (loadManager != nullptr) {
-                    properties->taskManager->queueDeletion(loadManager);
-                }
-                loadManager = new Amara::LoadManager(properties);
-                setLoader(loadManager);
+
+                loadManager = Amara::LoadManager(properties);
+                setLoader(&loadManager);
 
                 transition = nullptr;
 
@@ -48,13 +45,16 @@ namespace Amara {
             virtual void init() {
                 initialLoaded = false;
 
-                setLoader(loadManager);
+                setLoader(&loadManager);
                 load->reset();
 
                 destroyEntities();
                 mainCamera = nullptr;
 
                 add(mainCamera = new Amara::Camera());
+                width = mainCamera->width;
+                height = mainCamera->height;
+                
                 preload();
                 SDL_Log("START LOADING TASKS: %d loading tasks.", load->numberOfTasks);
 
@@ -130,6 +130,8 @@ namespace Amara {
             virtual void run() {
                 properties->currentScene = this;
 				properties->currentCamera = mainCamera;
+                width = properties->resolution->width;
+                height = properties->resolution->height;
 
                 manageScene();
             }
@@ -147,6 +149,7 @@ namespace Amara {
 
                 receiveMessages();
                 updateMessages();
+                if (isDestroyed) return;
                 
                 properties->entityDepth = 0;
                 properties->scrollX = 0;
@@ -161,22 +164,27 @@ namespace Amara {
                 properties->alpha = 1;
                 
                 update();
+                if (isDestroyed) return;
 
                 if (debugging) SDL_Log("%s (%s): Reciting Scripts (%d).", debugCopy.c_str(), entityType.c_str(), scripts.size());
                 reciteScripts();
+                if (isDestroyed) return;
                 
                 runChildren();
-                checkChildren();
-
+                if (isDestroyed) return;
+                
+                std::vector<Amara::Camera*> copyCameras = cameras;
                 Amara::Camera* cam;
-                for (auto it = cameras.begin(); it != cameras.end(); ++it) {
+                for (auto it = copyCameras.begin(); it != copyCameras.end();) {
                     cam = *it;
                     if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
+                        ++it;
                         continue;
                     }
                     else {
                         cam->run();
                     }
+                    ++it;
                 }
 
                 if (debugging) SDL_Log("%s (%s): Finished Running.", debugCopy.c_str(), entityType.c_str());
@@ -188,7 +196,7 @@ namespace Amara {
 				properties->scrollX = 0;
 				properties->scrollY = 0;
 
-                if (sortCameras) cameras.sort(sortEntitiesByDepth());
+                if (sortCameras) stable_sort(cameras.begin(), cameras.end(), sortEntitiesByDepth());
 
                 if (shouldSortChildren || sortChildrenOnce) {
                     sortChildrenOnce = false;
@@ -232,20 +240,16 @@ namespace Amara {
             }
 
             virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
-                if (transition != nullptr) {
-                    return nullptr;
-                }
+                removeTransition();
                 transition = gTransition;
                 transition->init(properties, this);
                 return transition;
             }
 
             virtual void removeTransition() {
-                if (transition != nullptr && !initialLoaded && !load->stillLoading && transition->permissionGranted) {
-                    transition->finish();
+                if (transition != nullptr) {
                     transition->complete();
                     transition = nullptr;
-                    initialLoaded = true;
                 }
             }
 

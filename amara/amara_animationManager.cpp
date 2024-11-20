@@ -2,6 +2,7 @@ namespace Amara {
     class AnimationManager {
         public:
             Amara::GameProperties* properties = nullptr;
+            Amara::AssetManager* assets = nullptr;
             Amara::Image* parent = nullptr;
 
             Amara::Animation* currentAnim = nullptr;
@@ -17,19 +18,20 @@ namespace Amara {
             AnimationManager(Amara::GameProperties* gameProperties, Amara::Image* givenParent) {
                 properties = gameProperties;
                 parent = givenParent;
+                assets = properties->assets;
             }
 
             bool play(Amara::ImageTexture* texture, std::string animKey) {
                 if (texture == nullptr || texture->type != SPRITESHEET) {
                     return false;
                 }
-                Amara::Animation* anim = ((Amara::Spritesheet*)texture)->getAnim(animKey);
+                Amara::Animation* anim = assets->getAnimation(parent->texture->key, animKey);
                 if (anim == nullptr) {
                     SDL_Log("Spritesheet \"%s\" does not have the animation \"%s\".", texture->key.c_str(), animKey.c_str());
                 }
                 if (anim != currentAnim || (anim != nullptr && isFinished)) {
 					if (currentAnim != nullptr && currentAnim != anim && currentAnim->deleteOnFinish) {
-                        properties->taskManager->queueDeletion(currentAnim);
+                        properties->taskManager->queueObject(currentAnim);
                     }
                     currentAnim = anim;
 
@@ -57,7 +59,7 @@ namespace Amara {
 			void play(Amara::ImageTexture* texture, Amara::Animation* anim) {
 				if (anim != currentAnim || (anim != nullptr && isFinished)) {
 					if (currentAnim != nullptr && currentAnim != anim && currentAnim->deleteOnFinish && currentAnim != anim) {
-                        properties->taskManager->queueDeletion(currentAnim);
+                        properties->taskManager->queueObject(currentAnim);
                     }
                     currentAnim = anim;
 
@@ -83,12 +85,12 @@ namespace Amara {
 
             Amara::Animation* get(std::string animKey) {
                 if (parent && parent->texture && parent->texture->type == SPRITESHEET) {
-                    return ((Amara::Spritesheet*)parent->texture)->getAnim(animKey);
+                    return assets->getAnimation(parent->texture->key, animKey);
                 }
                 return nullptr;
             }
 
-            bool playingAnim(std::string gKey) {
+            bool isPlayingAnimation(std::string gKey) {
                 if (isActive && currentAnim) {
                     if (gKey.compare(currentAnim->key) == 0) {
                         return true;
@@ -99,7 +101,7 @@ namespace Amara {
 
             void stop() {
 				if (currentAnim != nullptr && currentAnim->deleteOnFinish) {
-                    properties->taskManager->queueDeletion(currentAnim);
+                    properties->taskManager->queueObject(currentAnim);
                 }
                 currentAnim = nullptr;
 				isFinished = true;
@@ -162,7 +164,7 @@ namespace Amara {
                         else {
                             currentFrame = currentAnim->frameAt(currentAnim->length() - 1);
 							if (currentAnim != nullptr && currentAnim->deleteOnFinish) {
-                                properties->taskManager->queueDeletion(currentAnim);
+                                properties->taskManager->queueObject(currentAnim);
                             }
                             currentAnim = nullptr;
 							isFinished = true;

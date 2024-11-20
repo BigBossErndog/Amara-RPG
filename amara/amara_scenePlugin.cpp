@@ -30,6 +30,8 @@ namespace Amara {
             bool isPaused = false;
             bool isSleeping = false;
 
+            bool reloadAssets = false;
+
             ScenePlugin(std::string givenKey, Amara::GameProperties* gameProperties, Amara::Scene* givenScene, std::unordered_map<std::string, Amara::Scene*>* givenSceneMap, std::list<Amara::Scene*>* givenSceneList) {
                 key = givenKey;
                 givenScene->id = key;
@@ -192,6 +194,11 @@ namespace Amara {
                             if (!isActive) {
                                 scene->init();
                                 scene->onStart();
+
+                                if (scene->transition && scene->transition->endScene != scene) {
+                                    scene->transition = nullptr;
+                                }
+
                                 if (properties->testing) SDL_Log("SCENE RUN: %s", key.c_str());
                             }
                             isActive = true;
@@ -203,6 +210,11 @@ namespace Amara {
                                 scene->init();
                                 scene->onStart();
                                 properties->messages->clearMessagesOfScene(scene);
+
+                                if (scene->transition && scene->transition->endScene != scene) {
+                                    scene->transition = nullptr;
+                                }
+                                
                                 if (properties->testing) SDL_Log("SCENE STARTED: %s", key.c_str());
                             }
                             isActive = true;
@@ -214,7 +226,13 @@ namespace Amara {
                                 scene->onStop();
                                 properties->messages->clearMessagesOfScene(scene);
                                 scene->destroyEntities();
+                                scene->children.clear();
                                 scene->clearScripts();
+
+                                if (scene->transition && scene->transition->endScene != scene) {
+                                    scene->transition = nullptr;
+                                }
+
                                 if (properties->testing) SDL_Log("SCENE STOPPED: %s", key.c_str());
                             }
                             isActive = false;
@@ -228,6 +246,7 @@ namespace Amara {
                             scene->clearScripts();
                             scene->onStop();
                             scene->destroyEntities();
+                            scene->children.clear();
                             scene->init();
                             scene->onStart();
                             properties->messages->clearMessagesOfScene(scene);
@@ -254,6 +273,11 @@ namespace Amara {
                                 isPaused = false;
                                 isSleeping = true;
                                 scene->onSleep();
+
+                                if (scene->transition && scene->transition->endScene != scene) {
+                                    scene->transition = nullptr;
+                                }
+
                                 if (properties->testing) SDL_Log("SCENE PUT TO SLEEP: %s", key.c_str());
                             }
                             break;

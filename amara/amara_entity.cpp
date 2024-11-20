@@ -34,8 +34,9 @@ namespace Amara {
 		Amara::AssetManager* assets = nullptr;
 		Amara::TaskManager* tasks = nullptr;
 		Amara::Loader* load = nullptr;
-
-		std::list<Amara::Entity*> children;
+		
+		std::vector<Amara::Entity*> children;
+		std::vector<Amara::Entity*> childCopyList;
 
 		Amara::PhysicsBase* physics = nullptr;
 
@@ -52,6 +53,8 @@ namespace Amara {
 		float scrollFactorY = 1;
 		float zoomFactorX = 1;
 		float zoomFactorY = 1;
+		float zoomScaleX = 1;
+		float zoomScaleY = 1;
 
 		double angle = 0; // Using Degrees
 		float alpha = 1;
@@ -63,6 +66,7 @@ namespace Amara {
 
 		bool shouldSortChildren = true;
 		bool sortChildrenOnce = false;
+		bool noChildrenLogic = false;
 
 		int sortingDelay = 0;
 		int sortingDelayCounter = 0;
@@ -70,9 +74,6 @@ namespace Amara {
 		static bool debuggingDefault;
 		std::string debugID;
 		bool debugging = debuggingDefault;
-
-		std::vector<Amara::Entity*> entityBuffer;
-		bool runningEntities = false;
 
 		Entity() {}
 		Entity(Amara::GameProperties* gProperties) {
@@ -180,6 +181,16 @@ namespace Amara {
 			if (config.find("zoomFactorY") != config.end()) {
 				zoomFactorY = config["zoomFactorY"];
 			}
+			if (config.find("zoomScaleX") != config.end()) {
+				zoomScaleX = config["zoomScaleX"];
+			}
+			if (config.find("zoomScaleY") != config.end()) {
+				zoomScaleY = config["zoomScaleY"];
+			}
+			if (config.find("zoomScale") != config.end()) {
+				zoomScaleX = config["zoomScale"];
+				zoomScaleY = zoomScaleX;
+			}
 			if (config.find("zoomFactor") != config.end()) {
 				zoomFactorX = config["zoomFactor"];
 				zoomFactorY = config["zoomFactor"];
@@ -258,7 +269,7 @@ namespace Amara {
 		}
 
 		Amara::Entity* sortChildren() {
-			children.sort(sortEntitiesByDepth());
+			stable_sort(children.begin(), children.end(), sortEntitiesByDepth());
 			return this;
 		}
 		Amara::Entity* delayedSorting() {
@@ -288,7 +299,8 @@ namespace Amara {
 		virtual void draw(int vx, int vy, int vw, int vh) {
 			if (properties->quit) return;
 			if (physics) {
-				physics->checkActiveCollisionTargets();
+				if (physics->isDestroyed) physics = nullptr;
+				else physics->checkActiveCollisionTargets();
 			}
 
 			if (alpha < 0) alpha = 0;
@@ -330,6 +342,7 @@ namespace Amara {
 					properties->zoomFactorY = recZoomFactorY;
 					properties->angle = recAngle;
 					properties->alpha = recAlpha;
+					
 					entity->draw(vx, vy, vw, vh);
 				}
 				++it;
@@ -395,9 +408,9 @@ namespace Amara {
 			Amara::Interactable::run();
 			if (isInteractable && interact.isDraggable && interact.isDown) {
 				interact.isBeingDragged = true;
-				if (physics) {
-					physics->velocityX = interact.movementX;
-					physics->velocityY = interact.movementY;
+				if (physics && !physics->isDestroyed) {
+					physics->velocity.x = interact.movementX;
+					physics->velocity.y = interact.movementY;
 				}
 				else {
 					x += interact.movementX;
@@ -433,16 +446,19 @@ namespace Amara {
 		}
 
 		virtual void runChildren() {
-			if (isDestroyed) return;
+			if (isDestroyed || noChildrenLogic) return;
 			Amara::Entity* entity;
 			properties->entityDepth += 1;
-			runningEntities = true;
+
 			if (debugging) {
 				debugID = "";
 				for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
 				debugID += id;
 			}
-			for (auto it = children.begin(); it != children.end();) {
+
+			childCopyList = children;
+
+			for (auto it = childCopyList.begin(); it != childCopyList.end();) {
 				entity = *it;
 				if (entity == nullptr || entity->isDestroyed || entity->parent != this || entity->isPaused) {
 					++it;
@@ -453,8 +469,9 @@ namespace Amara {
 				++it;
 				if (isDestroyed) break;
 			}
-			runningEntities = false;
-			if (!isDestroyed) pipeEntityBuffer();
+
+			checkChildren();
+
 			properties->entityDepth -= 1;
 		}
 
@@ -462,16 +479,6 @@ namespace Amara {
 			if (find.size() == 0) return nullptr;
 			Amara::Entity* entity;
 			for (auto it = children.begin(); it != children.end();) {
-				entity = *it;
-				++it;
-				if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
-					continue;
-				}
-				if (entity->id.compare(find) == 0) {
-					return entity;
-				}
-			}
-			for (auto it = entityBuffer.begin(); it != entityBuffer.end();) {
 				entity = *it;
 				++it;
 				if (entity == nullptr || entity->isDestroyed || entity->parent != this) {
@@ -489,15 +496,12 @@ namespace Amara {
 		*/
 		virtual Amara::Entity* add(Amara::Entity* entity) {
 			if (entity == nullptr || entity->isDestroyed) return nullptr;
+
 			if (entity->parent) {
 				return entity->setParent(this);
 			}
-			else {
-				if (runningEntities) {
-					entityBuffer.push_back(entity);
-				}
-				else children.push_back(entity);
-			}
+			else children.push_back(entity);
+
 			entity->init(properties, scene, this);
 			return entity;
 		}
@@ -505,13 +509,6 @@ namespace Amara {
 		Amara::Entity* remove(Amara::Entity* entity) {
 			Amara::Entity* child;
 			for (auto it = children.begin(); it != children.end();) {
-				child = *it;
-				if (child == entity) {
-					if (entity->parent == this) entity->parent = nullptr;
-				}
-				++it;
-			}
-			for (auto it = entityBuffer.begin(); it != entityBuffer.end();) {
 				child = *it;
 				if (child == entity) {
 					if (entity->parent == this) entity->parent = nullptr;
@@ -554,13 +551,6 @@ namespace Amara {
 		}
 		void checkChildren() {
 			checkChildren(false);
-		}
-
-		void pipeEntityBuffer() {
-			for (Amara::Entity* entity: entityBuffer) {
-				children.push_back(entity);
-			}
-			entityBuffer.clear();
 		}
 
 		virtual Amara::PhysicsBase* addPhysics(Amara::PhysicsBase* gPhysics) {
@@ -610,7 +600,6 @@ namespace Amara {
 				}
 				++it;
 			}
-			children.clear();
 		}
 
 		virtual void destroyEntities() {
@@ -620,10 +609,13 @@ namespace Amara {
 		virtual void destroy(bool recursiveDestroy) {
 			if (isDestroyed) return;
 			parent = nullptr;
+			
 			destroyEntities(recursiveDestroy);
+			children.clear();
+
 			isDestroyed = true;
 			isActive = false;
-			properties->taskManager->queueDeletion(this);
+			properties->taskManager->queueEntity(this);
 			if (physics) {
 				physics->destroy();
 				physics = nullptr;
@@ -707,6 +699,15 @@ namespace Amara {
 			return this;
 		}
 
+		Amara::Entity* setZoomScale(float gx, float gy) {
+			zoomScaleX = gx;
+			zoomScaleY = gy;
+			return this;
+		} 
+		Amara::Entity* setZoomScale(float gi) {
+			return setZoomScale(gi, gi);
+		}
+
 		void resetPassOnProperties() {
 			properties->zoomX = 1;
 			properties->zoomY = 1;
@@ -723,11 +724,6 @@ namespace Amara {
 		Amara::Entity* bringToFront() {
 			if (parent) {
 				for (Amara::Entity* entity: parent->children) {
-					if (entity != this && entity->parent == parent && !entity->isDestroyed && depth <= entity->depth) {
-						depth = entity->depth + 0.1;
-					}
-				}
-				for (Amara::Entity* entity: parent->entityBuffer) {
 					if (entity != this && entity->parent == parent && !entity->isDestroyed && depth <= entity->depth) {
 						depth = entity->depth + 0.1;
 					}
@@ -812,4 +808,10 @@ namespace Amara {
 		}
 	};
 	bool Amara::Entity::debuggingDefault = false;
+
+	void TaskManager::queueEntity(Amara::Entity* entity) {
+		if (entity == nullptr) return;
+		entity->isDestroyed = true;
+		entityBuffer.push_back(entity);
+	}
 }

@@ -1,15 +1,12 @@
 namespace Amara {
     class Scene;
 
-    class Camera : public Amara::Actor {
+    class Camera : public Amara::Actor, public Amara::MakeRect {
         public:
-            std::list<Amara::Camera*>* sceneCameras = nullptr;
+            std::vector<Amara::Camera*>* sceneCameras = nullptr;
             Amara::SceneTransitionBase* transition = nullptr;
 
             bool definedDimensions = false;
-
-            float width = 0;
-            float height = 0;
 
             float oldScrollX = 0;
             float oldScrollY = 0;
@@ -22,8 +19,11 @@ namespace Amara {
             float zoomY = 1;
             float zoomScale = 1;
 
-            float oldCenterX = 0;
-            float oldCenterY = 0;
+            float oldFocusX = 0;
+            float oldFocusY = 0;
+            float focusX = 0;
+            float focusY = 0;
+
             float centerX = 0;
             float centerY = 0;
 
@@ -39,10 +39,7 @@ namespace Amara {
             float lerpY = 1;
 
             bool lockedToBounds = false;
-            float boundX = 0;
-            float boundY = 0;
-            float boundW = 0;
-            float boundH = 0;
+            FloatRect bounds = { 0, 0, 0, 0 };
 
             Camera() {
                 definedDimensions = false;
@@ -81,18 +78,23 @@ namespace Amara {
                 parent = gParent;
                 scene = givenScene;
 
-                updateValues();
-                recordValues();
+                rectInit(this);
 
                 if (!definedDimensions) {
                     width = properties->resolution->width;
                     height = properties->resolution->height;
                 }
 
+                updateValues();
                 recordValues();
                 entityType = "camera";
                 
                 run();
+            }
+
+            void configure(nlohmann::json config) {
+                Amara::Actor::configure(config);
+                rectConfigure(config);
             }
 
             virtual void run() {
@@ -101,7 +103,7 @@ namespace Amara {
                     y = 0;
 
                     if (width != properties->resolution->width || height != properties->resolution->height) {
-                        centerOn(centerX, centerY);
+                        focusOn(focusX, focusY);
                     }
 
                     width = properties->resolution->width;
@@ -119,9 +121,9 @@ namespace Amara {
                         float tx = followTarget->x + followTarget->cameraOffsetX;
                         float ty = followTarget->y + followTarget->cameraOffsetY;
 
-                        float nx = (oldCenterX - tx) * (1 - lerpX) + tx;
-                        float ny = (oldCenterY - ty) * (1 - lerpY) + ty;
-                        centerOn(nx, ny);
+                        float nx = (oldFocusX - tx) * (1 - lerpX) + tx;
+                        float ny = (oldFocusY - ty) * (1 - lerpY) + ty;
+                        focusOn(nx, ny);
                     }
                 }
 
@@ -133,8 +135,10 @@ namespace Amara {
 
             void updateValues() {
                 fixValues();
-                centerX = scrollX + (width/(zoomX*zoomScale))/2;
-                centerY = scrollY + (height/(zoomY*zoomScale))/2;
+                centerX = width/2.0;
+                centerY = height/2.0;
+                focusX = scrollX + (width/(zoomX*zoomScale))/2.0;
+                focusY = scrollY + (height/(zoomY*zoomScale))/2.0;
             }
 
             void recordValues() {
@@ -144,8 +148,8 @@ namespace Amara {
                 oldZoomX = zoomX;
                 oldZoomY = zoomY;
 
-                oldCenterX = centerX;
-                oldCenterY = centerY;
+                oldFocusX = focusX;
+                oldFocusY = focusY;
             }
 
             void fixValues() {
@@ -153,25 +157,25 @@ namespace Amara {
                 if (zoomY < 0) zoomY = 0.00001;
 
                 if (lockedToBounds) {
-                    if (width/(zoomX*zoomScale) > boundW) {
-                        scrollX = boundX - ((width/(zoomX*zoomScale)) - (boundW))/2;
+                    if (width/(zoomX*zoomScale) > bounds.width) {
+                        scrollX = bounds.x - ((width/(zoomX*zoomScale)) - (bounds.width))/2;
                     }
-                    else if (scrollX < boundX) {
-                        scrollX = boundX;
+                    else if (scrollX < bounds.x) {
+                        scrollX = bounds.x;
                     }
-                    else if (scrollX + width/(zoomX*zoomScale) > boundX + boundW) {
-                        scrollX = (boundX + boundW) - (width/(zoomX*zoomScale));
+                    else if (scrollX + width/(zoomX*zoomScale) > bounds.x + bounds.width) {
+                        scrollX = (bounds.x + bounds.width) - (width/(zoomX*zoomScale));
                     }
 
 
-                    if (height/(zoomY*zoomScale) > boundH) {
-                        scrollY = boundY - ((height/(zoomY*zoomScale)) - (boundH))/2;
+                    if (height/(zoomY*zoomScale) > bounds.height) {
+                        scrollY = bounds.y - ((height/(zoomY*zoomScale)) - (bounds.height))/2;
                     }
-                    else if (scrollY < boundY) {
-                        scrollY = boundY;
+                    else if (scrollY < bounds.y) {
+                        scrollY = bounds.y;
                     }
-                    else if (scrollY + height/(zoomY*zoomScale) > boundY + boundH) {
-                        scrollY = (boundY + boundH) - (height/(zoomY*zoomScale));
+                    else if (scrollY + height/(zoomY*zoomScale) > bounds.y + bounds.height) {
+                        scrollY = (bounds.y + bounds.height) - (height/(zoomY*zoomScale));
                     }
                 }
             }
@@ -203,7 +207,8 @@ namespace Amara {
                 for (auto it = parent->children.begin(); it != parent->children.end();) {
                     entity = *it;
                     if (entity == nullptr || entity->isDestroyed || entity->scene != scene) {
-                        ++it;
+                        if (properties->inSceneDrawing) it = parent->children.erase(it);
+					    else ++it;
                         continue;
                     }
                     if (entity->isVisible) {
@@ -211,7 +216,6 @@ namespace Amara {
                         entity->draw(dx, dy, dw, dh);
                     }
                     ++it;
-
                 }
 
                 if (transition != nullptr) {
@@ -247,18 +251,17 @@ namespace Amara {
                 followTarget = nullptr;
             }
 
-            void centerOn(Amara::Entity* entity) {
-                scrollX = entity->x - (width/(zoomX*zoomScale))/2;
-                scrollY = entity->y - (height/(zoomY*zoomScale))/2;
-                updateValues();
-            }
-            void centerOn(float gx, float gy) {
+            void focusOn(float gx, float gy) {
                 scrollX = gx - (width/(zoomX*zoomScale))/2;
                 scrollY = gy - (height/(zoomY*zoomScale))/2;
                 updateValues();
             }
-            void centerOn(float gi) {
-                centerOn(gi, gi);
+            void focusOn(float gi) {
+                focusOn(gi, gi);
+            }
+            void focusOn(Amara::Entity* entity) {
+                focusOn(entity->x + entity->cameraOffsetX, entity->y + entity->cameraOffsetY);
+                updateValues();
             }
 
             void setScroll(float gx, float gy) {
@@ -284,13 +287,13 @@ namespace Amara {
             }
 
             void setZoom(float gx, float gy, float gZoomScale) {
-                float cx = centerX;
-                float cy = centerY;
+                float cx = focusX;
+                float cy = focusY;
 
                 setZoomScale(gZoomScale);
                 zoomX = gx;
                 zoomY = gy;
-                centerOn(cx, cy);
+                focusOn(cx, cy);
 
                 updateValues();
             }
@@ -311,10 +314,10 @@ namespace Amara {
 
             void setBounds(float gx, float gy, float gw, float gh) {
                 lockedToBounds = true;
-                boundX = gx;
-                boundY = gy;
-                boundW = gw;
-                boundH = gh;
+                bounds.x = gx;
+                bounds.y = gy;
+                bounds.width = gw;
+                bounds.height = gh;
             }
 
             void removeBounds() {
@@ -323,7 +326,7 @@ namespace Amara {
 
             virtual void bringToFront() {
                 if (sceneCameras == nullptr) return;
-                std::list<Amara::Camera*>& rSceneCameras = *sceneCameras;
+                std::vector<Amara::Camera*>& rSceneCameras = *sceneCameras;
 				for (Amara::Camera* cam: rSceneCameras) {
 					if (depth <= cam->depth) {
 						depth = cam->depth + 1;
@@ -343,24 +346,24 @@ namespace Amara {
 				}
 
 				if (lockedToBounds) {
-                    if (width/(zoomX*zoomScale) > boundW) {
-                        tx = boundX - ((width/(zoomX*zoomScale)) - (boundW))/2;
+                    if (width/(zoomX*zoomScale) > bounds.width) {
+                        tx = bounds.x - ((width/(zoomX*zoomScale)) - (bounds.width))/2;
                     }
-                    else if (tx < boundX) {
-                        tx = boundX;
+                    else if (tx < bounds.x) {
+                        tx = bounds.x;
                     }
-                    else if (tx + width/(zoomX*zoomScale) > boundX + boundW) {
-                        tx = (boundX + boundW) - (width/(zoomX*zoomScale));
+                    else if (tx + width/(zoomX*zoomScale) > bounds.x + bounds.width) {
+                        tx = (bounds.x + bounds.width) - (width/(zoomX*zoomScale));
                     }
 
-                    if (height/(zoomY*zoomScale) > boundH) {
-                        ty = boundY - ((height/(zoomY*zoomScale)) - (boundH))/2;
+                    if (height/(zoomY*zoomScale) > bounds.height) {
+                        ty = bounds.y - ((height/(zoomY*zoomScale)) - (bounds.height))/2;
                     }
-                    else if (ty < boundY) {
-                        ty = boundY;
+                    else if (ty < bounds.y) {
+                        ty = bounds.y;
                     }
-                    else if (ty + height/(zoomY*zoomScale) > boundY + boundH) {
-                        ty = (boundY + boundH) - (height/(zoomY*zoomScale));
+                    else if (ty + height/(zoomY*zoomScale) > bounds.y + bounds.height) {
+                        ty = (bounds.y + bounds.height) - (height/(zoomY*zoomScale));
                     }
                 }
 
@@ -478,7 +481,5 @@ namespace Amara {
                 if (recX != scrollX || recY != scrollY) return true;
                 return false;
             }
-
-            ~Camera() {}
     };
 }

@@ -17,6 +17,24 @@ namespace Amara {
         return json_has(data, key) && data[key].is_boolean() && data[key];
     }
 
+    bool json_erase(nlohmann::json& data, std::string key) {
+        if (json_has(data, key)) {
+            data.erase(key);
+            return true;
+        }
+        return false;
+    }
+
+    bool string_equal(std::string str1, std::string str2) {
+        return (str1.compare(str2) == 0) ? true : false;
+    }
+
+    float fixed_range(float num, float min, float max) {
+        if (num < min) return min;
+        if (num > max) return max;
+        return num;
+    }
+
     SDL_Color getPixelFromSurface(SDL_Surface* gSurface, int gx, int gy) {
         int bpp = gSurface->format->BytesPerPixel;
         Uint8* p = (Uint8*)gSurface->pixels + gy*gSurface->pitch + gx*bpp;
@@ -64,4 +82,12 @@ namespace Amara {
         SDL_BLENDFACTOR_SRC_ALPHA,
         SDL_BLENDOPERATION_ADD
     );
+
+    SDL_BlendMode AMARA_BLENDMODE_NONE = SDL_BLENDMODE_NONE;
+    SDL_BlendMode AMARA_BLENDMODE_BLEND = SDL_BLENDMODE_BLEND;
+
+    SDL_Color AMARA_BLACK = { 0, 0, 0, 255 };
+    SDL_Color AMARA_WHITE = { 255, 255, 255, 255 };
+
+    FloatVector2 OriginVector = { 0, 0 };
 }

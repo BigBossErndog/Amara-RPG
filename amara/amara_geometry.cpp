@@ -1,4 +1,6 @@
 namespace Amara {
+    class Entity;
+
     typedef struct IntVector2 {
         int x = 0;
         int y = 0;
@@ -26,6 +28,63 @@ namespace Amara {
         float width = 0;
         float height = 0;
     } FloatRect;
+
+    class MakeRect {
+    public:
+        Amara::Entity* rectEntity = nullptr;
+
+        float width = 0;
+        float height = 0;
+
+        float originX = 0;
+        float originY = 0;
+
+        void rectInit(Amara::Entity* initRect) {
+            rectEntity = initRect;
+        }
+        
+        void rectConfigure(nlohmann::json config);
+        
+        FloatRect toRect();
+        FloatRect fixedRect() { return { 0, 0, width, height }; }
+        MakeRect* setRect(FloatRect rect);
+        MakeRect* setRect(MakeRect* other) {
+            return setRect(other->toRect());
+        }
+
+        Amara::MakeRect* scaleTo(float gw, float gh);
+        Amara::MakeRect* scaleToWidth(float gw);
+        Amara::MakeRect* scaleToHeight(float gh);
+
+        Amara::MakeRect* scaleToFit(float gw, float gh);
+        Amara::MakeRect* scaleToFit(FloatRect rect);
+        Amara::MakeRect* scaleToFit(MakeRect* rect) {
+            return scaleToFit(rect->toRect());
+        }
+
+        Amara::MakeRect* setOrigin(float gx, float gy) {
+            originX = gx;
+            originY = gy;
+            return this;
+        }
+        Amara::MakeRect* setOrigin(float g) {
+            return setOrigin(g, g);
+        }
+        Amara::MakeRect* setOriginPosition(float gx, float gy) {
+            originX = gx/width;
+            originY = gy/height;
+            return this;
+        }
+        Amara::MakeRect* setOriginPosition(float g) {
+            return setOriginPosition(g, g);
+        }
+
+        FloatVector2 top();
+        FloatVector2 bottom();
+        FloatVector2 left();
+        FloatVector2 right();
+        FloatVector2 center();
+    };
 
     typedef struct FloatCircle: public FloatVector2 {
         float radius = 0;

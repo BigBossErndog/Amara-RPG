@@ -12,7 +12,7 @@ namespace Amara {
         return tileId;
     }
 
-    class TilemapLayer: public Amara::Actor {
+    class TilemapLayer: public Amara::Actor, public Amara::MakeRect {
         public:
             SDL_Renderer* gRenderer = nullptr;
             Amara::ImageTexture* texture = nullptr;
@@ -31,15 +31,6 @@ namespace Amara {
 
             Amara::Tilemap* tilemap = nullptr;
             Amara::Entity* tilemapEntity = nullptr;
-            
-            int width = 0;
-            int height = 0;
-
-            float originX = 0;
-            float originY = 0;
-
-            float scaleX = 1;
-            float scaleY = 1;
 
             SDL_Rect viewport;
             SDL_Rect srcRect;
@@ -59,6 +50,9 @@ namespace Amara {
 
             int widthInPixels = 0;
             int heightInPixels = 0;
+
+            bool flipHorizontal = false;
+            bool flipVertical = false;
 
             bool pleaseUpdate = true;
             bool textureLocked = false;
@@ -85,7 +79,7 @@ namespace Amara {
                 tiles.resize(width*height, tile);
                 for (int t = 0; t < tiles.size(); t++) {
                     Tile& tile = tiles[t];
-                    tile.x = (t % width);
+                    tile.x = (t % (int)width);
                     tile.y = floor(((float)t) / (float)width);
                 }
             }
@@ -101,6 +95,7 @@ namespace Amara {
 
             void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
                 textureLocked = textureLockDefault;
+                rectInit(this);
 
                 Amara::Actor::init(gameProperties, givenScene, givenParent);
                 gRenderer = properties->gRenderer;
@@ -123,6 +118,7 @@ namespace Amara {
 
             void configure(nlohmann::json config) {
                 Amara::Actor::configure(config);
+                rectConfigure(config);
 
                 if (config.find("texture") != config.end()) {
                     setTexture(config["texture"]);
@@ -233,7 +229,7 @@ namespace Amara {
                         Amara::Tile& tile = tiles.at(t);
                         tileId = tileId & ~(Amara::TILED_FLIPPEDHORIZONTALLY | Amara::TILED_FLIPPEDVERTICALLY | Amara::TILED_FLIPPEDANTIDIAGONALLY);
                         tile.id = (int)(tileId - firstgid);
-                        tile.x = (t % width);
+                        tile.x = (t % (int)width);
                         tile.y = floor(((float)t) / (float)width);
                         tile.fhorizontal = fhorizontal;
                         tile.fvertical = fvertical;
@@ -426,10 +422,10 @@ namespace Amara {
             }
 
             void createDrawTexture() {
-                if (drawTexture) tasks->queueDeletion(drawTexture);
+                if (drawTexture) tasks->queueTexture(drawTexture);
                 drawTexture = SDL_CreateTexture(
                     properties->gRenderer,
-                    SDL_PIXELFORMAT_RGBA8888,
+                    SDL_PIXELFORMAT_ARGB8888,
                     SDL_TEXTUREACCESS_TARGET,
                     widthInPixels,
                     heightInPixels
@@ -751,7 +747,7 @@ namespace Amara {
             void draw(int vx, int vy, int vw, int vh) {
                 if (merged && !merged->isDestroyed) {
                     if (drawTexture) {
-                        tasks->queueDeletion(drawTexture);
+                        tasks->queueTexture(drawTexture);
                         drawTexture = nullptr;
                     }
                     return;
@@ -762,7 +758,7 @@ namespace Amara {
                 if (alpha < 0) alpha = 0;
                 if (alpha > 1) alpha = 1;
 				
-				if (drawTexture == nullptr || properties->renderTargetsReset || properties->renderDeviceReset) {
+				if (drawTexture == nullptr || properties->reloadAssets) {
 					createDrawTexture();
 				}
 
@@ -793,6 +789,22 @@ namespace Amara {
 
                 float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
                 float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
+                
+                bool scaleFlipHorizontal = false;
+                bool scaleFlipVertical = false;
+                float recScaleX = scaleX;
+                float recScaleY = scaleY;
+
+                if (scaleX < 0) {
+                    scaleFlipHorizontal = true;
+                    scaleX = abs(scaleX);
+                }
+                if (scaleY < 0) {
+                    scaleFlipVertical = true;
+                    scaleY = abs(scaleY);
+                }
+                scaleX = scaleX * (1 + (nzoomX - 1)*(zoomScaleX - 1));
+                scaleY = scaleY * (1 + (nzoomY - 1)*(zoomScaleY - 1));
 
                 viewport.x = vx;
                 viewport.y = vy;
@@ -805,11 +817,22 @@ namespace Amara {
                 destRectF.w = (widthInPixels*scaleX*nzoomX);
                 destRectF.h = (heightInPixels*scaleY*nzoomY);
 
+                scaleX = recScaleX;
+                scaleY = recScaleY;
+
                 origin.x = destRectF.w * originX;
                 origin.y = destRectF.h * originY;
 				
                 SDL_SetTextureBlendMode(drawTexture, blendMode);
                 SDL_SetTextureAlphaMod(drawTexture, properties->alpha * alpha * 255);
+
+                SDL_RendererFlip flipVal = SDL_FLIP_NONE;
+                if (!flipHorizontal != !scaleFlipHorizontal) {
+                    flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_HORIZONTAL);
+                }
+                if (!flipVertical != !scaleFlipVertical) {
+                    flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
+                }
 
                 SDL_RenderCopyExF(
                     properties->gRenderer,
@@ -818,7 +841,7 @@ namespace Amara {
                     &destRectF,
                     0,
                     &origin,
-                    SDL_FLIP_NONE
+                    flipVal
                 );
 
 				checkHover(vx, vy, vw, vh, destRectF.x, destRectF.y, destRectF.w, destRectF.h);
@@ -867,14 +890,11 @@ namespace Amara {
     };
     bool TilemapLayer::textureLockDefault = true;
     
-    class Tilemap: public Amara::Actor, public Amara::WallFinder {
+    class Tilemap: public Amara::Actor, public Amara::WallFinder, public Amara::MakeRect {
         public:
             std::string textureKey;
             std::string tiledJsonKey;
             nlohmann::json tiledJson;
-
-            int width = 0;
-            int height = 0;
             
             int widthInPixels = 0;
             int heightInPixels = 0;
@@ -954,6 +974,7 @@ namespace Amara {
             }
 
             virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) {
+                rectInit(this);
                 Amara::Actor::init(gameProperties, givenScene, givenParent);
                 if (!tiledJsonKey.empty()) {
                     tiledJson = ((Amara::JsonFile*)load->get(tiledJsonKey))->jsonObj;
@@ -1167,6 +1188,7 @@ namespace Amara {
                 if (layers.find(layerKey) != layers.end()) {
                     return layers[layerKey];
                 }
+                if (properties->testing) SDL_Log("Tilemap: TilemapLayer \"%s\" was not found.", layerKey.c_str());
                 return nullptr;
             }
 
@@ -1176,6 +1198,10 @@ namespace Amara {
                     layers.erase(layerKey);
                     layer->destroy();
                 }
+            }
+
+            void mergeTilemapLayers(std::string layer1, std::string layer2) {
+                getTilemapLayer(layer1)->mergeInto(getTilemapLayer(layer2));
             }
 
             std::vector<Amara::TilemapLayer*> setWalls(std::vector<std::string> wallKeys) {
@@ -1311,7 +1337,8 @@ namespace Amara {
             }
         }
 
-        if (drawTexture) tasks->queueDeletion(drawTexture);
+        if (drawTexture) tasks->queueTexture(drawTexture);
+        drawTexture = nullptr;
         
         Amara::Actor::destroy();
     }

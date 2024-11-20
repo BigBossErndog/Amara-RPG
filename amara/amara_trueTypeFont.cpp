@@ -7,26 +7,18 @@ namespace Amara {
         ALIGN_BOTTOM
     };
 
-    class TrueTypeFont: public Amara::Actor {
+    class TrueTypeFont: public Amara::Actor, public Amara::MakeRect {
         public:
             SDL_Renderer* gRenderer = nullptr;
             Amara::TTFAsset* fontAsset = nullptr;
             std::string fontKey;
 
             std::string text;
+            std::string displayText;
             SDL_Rect viewport;
             Amara::Color color = FC_MakeColor(0, 0, 0, 255);
             Amara::Alignment alignment = ALIGN_LEFT;
             FC_Effect effect;
-
-            float originX = 0;
-            float originY = 0;
-
-            float scaleX = 1;
-            float scaleY = 1;
-
-            int width = 0;
-            int height = 0;
 
             float renderOffsetX = 0;
             float renderOffsetY = 0;
@@ -37,9 +29,7 @@ namespace Amara {
             int outline = 0;
             bool outlineCorners = true;
             Amara::Color outlineColor = FC_MakeColor(255, 255, 255, 255);
-			float outlineAlpha = 1;
-			bool outlineAlphaLocked = 1;
-			float outlineAlphaPow = 1;
+			float outlineAlphaRate = 1;
 
 			IntRect viewbox;
 
@@ -66,10 +56,12 @@ namespace Amara {
 				properties = gameProperties;
                 load = properties->loader;
                 gRenderer = properties->gRenderer;
+                rectInit(this);
 
                 if (!fontKey.empty()) {
                     setFont(fontKey);
                 }
+                if (!text.empty()) setText(text);
 
                 Amara::Actor::init(gameProperties, givenScene, givenParent);
 
@@ -78,6 +70,8 @@ namespace Amara {
 
             virtual void configure(nlohmann::json config) {
                 Amara::Actor::configure(config);
+                rectConfigure(config);
+
                 if (config.find("text") != config.end()) {
                     setText(config["text"]);
                 }
@@ -138,7 +132,10 @@ namespace Amara {
 
             Amara::TrueTypeFont* setText(std::string newTxt) {
                 text = newTxt;
-                const char* txt = text.c_str();
+                if (wordWrap) {
+                    displayText = StringParser::wrapString(fontAsset->font, text, wordWrapWidth);
+                }
+                else displayText = text;
                 findDimensions();
                 return this;
             }
@@ -185,39 +182,9 @@ namespace Amara {
                 return setOutlineColor(gColor);
             }
 
-            Amara::TrueTypeFont* setOrigin(float gx, float gy) {
-                originX = gx;
-                originY = gy;
-                findDimensions();
-                return this;
-            }
-            Amara::TrueTypeFont* setOrigin(float g) {
-                return setOrigin(g, g);
-            }
-            
-            Amara::TrueTypeFont* setScale(float gx, float gy) {
-                scaleX = gx;
-                scaleY = gy;
-                findDimensions();
-                return this;
-            }
-            Amara::TrueTypeFont* setScale(float g) {
-                return setScale(g, g);
-            }
-
-            Amara::TrueTypeFont* changeScale(float gx, float gy) {
-                scaleX += gx;
-                scaleY += gy;
-                findDimensions();
-                return this;
-            }
-            Amara::TrueTypeFont* changeScale(float gi) {
-                return changeScale(gi, gi);
-            }
-
             void setWordWrap() {
                 wordWrap = true;
-                findDimensions();
+                setText(text);
             }
             void setWordWrap(int w) {
                 wordWrapWidth = w;
@@ -226,21 +193,15 @@ namespace Amara {
                     wordWrapWidth = 0;
                     wordWrap = false;
                 }
-                findDimensions();
+                setWordWrap();
             }
 
             void findDimensions() {
-                const char* txt = text.c_str();
                 if (fontAsset == nullptr) return;
+                const char* txt = displayText.c_str();
 
-                if (wordWrap) {
-                    width = wordWrapWidth * scaleX;
-                    height = FC_GetColumnHeight(fontAsset->font, wordWrapWidth, txt) * scaleY;
-                }
-                else {
-                    width = FC_GetWidth(fontAsset->font, txt) * scaleX;
-                    height = FC_GetHeight(fontAsset->font, txt) * scaleY;
-                }
+                width = FC_GetWidth(fontAsset->font, txt);
+                height = FC_GetHeight(fontAsset->font, txt);
             }
 
             void drawText(float dx, float dy, bool middle) {
@@ -264,7 +225,7 @@ namespace Amara {
                 effect.scale.x = scaleX * nzoomX;
                 effect.scale.y = scaleY * nzoomY;
 
-				const char* txt = text.c_str();
+				const char* txt = displayText.c_str();
 
 				int txtWidth, txtHeight;
 				if (wordWrap) {
@@ -341,7 +302,7 @@ namespace Amara {
 
                     if (outline) {
                         effect.color = outlineColor;
-                        effect.color.a = outlineColor.a * pow(alpha, 1) * outlineAlpha;
+                        effect.color.a = outlineColor.a * pow(alpha, outlineAlphaRate);
                         for (int i = 0; i < outline+1; i++) {
                             drawText(dx+i,dy, false);
                             drawText(dx-i,dy, false);

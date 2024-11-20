@@ -30,15 +30,22 @@ namespace Amara {
 
             std::vector<Amara::Script*> chainedScripts;
 
-            Script(bool deleteWhenDone): Amara::StateManager() {
-                manualDeletion = deleteWhenDone;
+            Script(bool gManual): Amara::StateManager() {
+                manualDeletion = gManual;
             }
 
-            Script(): Script(true) {}
+            Script(): Script(false) {}
 
             Amara::Script* chain(Amara::Script* gScript, bool parallel) {
+                if (gScript == nullptr) {
+                    SDL_Log("Amara Actor: Null script was given to script chain.");
+                    return nullptr;
+                }
                 if (parallel || chainedScripts.size() == 0) chainedScripts.push_back(gScript);
-                else chainedScripts.back()->chain(gScript);
+                else {
+                    Amara:Script* last = chainedScripts.back();
+                    if (last) last->chain(gScript);
+                }
                 return gScript;
             }
 
@@ -61,7 +68,7 @@ namespace Amara {
                 if (chainedScripts.size() > 0) {
                     for (Amara::Script* chainedScript: chainedScripts) {
                         chainedScript->properties = properties;
-                        chainedScript->destroyScript();
+                        if (!chainedScript->manualDeletion) chainedScript->destroyScript();
                     }
                     chainedScripts.clear();
                 }
@@ -121,10 +128,12 @@ namespace Amara {
             virtual void finish() {
                 isFinished = true;
             }
-            void finishEvt() {
+            bool finishEvt() {
                 if (evt()) {
                     finish();
+                    return true;
                 }
+                return false;
             }
 
             virtual void prepare() {}
@@ -137,11 +146,7 @@ namespace Amara {
                 if (deleteChained) {
                     destroyChains();
                 }
-                properties->taskManager->queueDeletion(this);
-            }
-            
-            virtual ~Script() {
-                if (deleteChained) destroyChains();
+                properties->taskManager->queueScript(this);
             }
     };
 
@@ -149,18 +154,24 @@ namespace Amara {
         if (evt()) {
             if (script == nullptr || script->notActing())  {
                 if (script && script->manualDeletion) {
-                    script->tasks->queueDeletion(script);
+                    script->destroyScript();
                 }
                 nextEvt();
             }
             else {
                 script->manualDeletion = true;
                 if (nextEvtOn(script->notActing())) {
-                    script->tasks->queueDeletion(script);
+                    script->destroyScript();
                 }
             }
             return true;
         }
         return false;
     }
+
+    void TaskManager::queueScript(Amara::Script* script) {
+		if (script == nullptr) return;
+		script->isDestroyed = true;
+		scriptBuffer.push_back(script);
+	}
 }

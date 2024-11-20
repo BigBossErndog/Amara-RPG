@@ -4,31 +4,33 @@ namespace Amara {
 		Mix_Chunk* sound = nullptr;
 		int channel = -1;
 
+		Sound() { defaultLoops = 0; }
 		Sound(std::string givenKey, AssetType givenType, Mix_Chunk* givenAsset): Amara::AudioBase(givenKey, givenType) {
 			sound = givenAsset;
 			defaultLoops = 0;
 		}
 
+		using Amara::AudioBase::play;
 		virtual Amara::AudioBase* play(int loops) {
 			channel = Mix_PlayChannel(-1, sound, loops);
 			if (channel == -1) {
 				SDL_Log("Error playing sound: \"%s\"", key.c_str());
 				return this;
 			}
-			Mix_Volume(channel, floor(volume * masterVolume * MIX_MAX_VOLUME));
+			Mix_Volume(channel, floor(calculatedVolume * MIX_MAX_VOLUME));
 			isPaused = false;
 			isPlaying = true;
 
 			return this;
 		}
-
+		
 		virtual Amara::AudioBase* stop() {
-			if (isPlaying && channel != -1) {
-				Mix_HaltChannel(channel);
+			if (channel != -1) {
+				if (Mix_Playing(channel)) Mix_HaltChannel(channel);
 				channel = -1;
 				isPlaying = false;
 				isPaused = false;
-
+				
 				if (parent && parent->currentlyPlaying == this) {
 					parent->currentlyPlaying = nullptr;
 				}
@@ -46,7 +48,9 @@ namespace Amara {
 			Amara::AudioBase::run(parentVolume);
 
 			if (channel != -1) {
-				if (Mix_Playing(channel)) Mix_Volume(channel, floor(volume * masterVolume * parentVolume * MIX_MAX_VOLUME));
+				if (Mix_Playing(channel)) {
+					Mix_Volume(channel, floor(calculatedVolume * MIX_MAX_VOLUME));
+				}
 				else {
 					isPlaying = false;
 					channel = -1;
@@ -60,7 +64,6 @@ namespace Amara {
 			}
 			else {
 				isPlaying = false;
-				channel = -1;
 				if (parent && parent->currentlyPlaying == this) {
 					parent->currentlyPlaying = nullptr;
 				}
@@ -86,6 +89,7 @@ namespace Amara {
 			music = givenAsset;
 		}
 
+		using Amara::AudioBase::play;
 		Amara::AudioBase* play(int gLoops) {
 			loops = gLoops;
 			if (Mix_PlayingMusic()) {
@@ -95,7 +99,7 @@ namespace Amara {
 			}
 			Mix_PlayMusic(music, loops);
 			if (Mix_PausedMusic()) Mix_ResumeMusic();
-			Mix_VolumeMusic(floor(volume * masterVolume * MIX_MAX_VOLUME));
+			Mix_VolumeMusic(floor(calculatedVolume * MIX_MAX_VOLUME));
 			properties->music =  this;
 			currentlyPlayingMusic = this;
 			isPaused = false;
@@ -197,7 +201,7 @@ namespace Amara {
 
 			if (properties->music == this) {
 				if (Mix_PlayingMusic()) {
-					Mix_VolumeMusic(floor(volume * masterVolume * parentVolume * MIX_MAX_VOLUME));
+					Mix_VolumeMusic(floor(calculatedVolume * MIX_MAX_VOLUME));
 					position = Mix_GetMusicPosition(music);
 				}
 			}

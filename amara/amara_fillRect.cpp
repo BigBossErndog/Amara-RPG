@@ -1,5 +1,5 @@
 namespace Amara {
-	class FillRect: public Amara::Actor {
+	class FillRect: public Amara::Actor, public Amara::MakeRect {
 	public:
 		Amara::Color color = {0, 0, 0, 255};
 		Amara::Color recColor;
@@ -11,15 +11,10 @@ namespace Amara {
 
 		SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
-		float width = 0;
-		float height = 0;
-
-		float originX = 0;
-		float originY = 0;
-
 		float renderOffsetX = 0;
 		float renderOffsetY = 0;
 
+		using Amara::Actor::Actor;
 		FillRect(float gx, float gy, float gw, float gh, Amara::Color gColor) {
 			x = gx;
 			y = gy;
@@ -29,29 +24,16 @@ namespace Amara {
 		}
 		FillRect(float gx, float gy, float gw, float gh): FillRect(gx, gy, gw, gh, {0, 0, 0, 255}) {}
 
+		using Amara::Actor::init;
 		void init() {
+			rectInit(this);
 			Amara::Actor::init();
 			entityType = "actor";
 		}
 
 		void configure(nlohmann::json config) {
 			Amara::Actor::configure(config);
-			if (config.find("width") != config.end()) {
-				width = config["width"];
-			}
-			if (config.find("height") != config.end()) {
-				height = config["height"];
-			}
-			if (config.find("originX") != config.end()) {
-				originX = config["originX"];
-			}
-			if (config.find("originY") != config.end()) {
-				originY = config["originY"];
-			}
-			if (config.find("origin") != config.end()) {
-				originX = config["origin"];
-				originY = config["origin"];
-			}
+			rectConfigure(config);
 		}
 
 		Amara::FillRect* setColor(int r, int g, int b, int a) {
@@ -105,6 +87,16 @@ namespace Amara {
 			return setSize(gs, gs);
 		}
 
+		Amara::FloatRect calculateRect() {
+			// Doesn't take into account scrollFactor or zoomFactor.
+			return { 
+				(x+renderOffsetX + properties->offsetX - (originX * width * scaleX)),
+				(y-z+renderOffsetY + properties->offsetY - (originY * height * scaleY)),
+				(width * scaleX),
+				(height * scaleY)
+			};
+		}
+
 		void draw(int vx, int vy, int vw, int vh) {
 			if (!isVisible) return;
 			bool skipDrawing = false;
@@ -121,10 +113,29 @@ namespace Amara {
 			float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
 			float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY;
 
+			bool scaleFlipHorizontal = false;
+			bool scaleFlipVertical = false;
+			float recScaleX = scaleX;
+			float recScaleY = scaleY;
+
+			if (scaleX < 0) {
+				scaleFlipHorizontal = true;
+				scaleX = abs(scaleX);
+			}
+			if (scaleY < 0) {
+				scaleFlipVertical = true;
+				scaleY = abs(scaleY);
+			}
+			scaleX = scaleX * (1 + (nzoomX - 1)*(zoomScaleX - 1));
+			scaleY = scaleY * (1 + (nzoomY - 1)*(zoomScaleY - 1));
+
 			destRect.x = ((x+renderOffsetX - properties->scrollX*scrollFactorX + properties->offsetX - (originX * width * scaleX)) * nzoomX);
 			destRect.y = ((y-z+renderOffsetY - properties->scrollY*scrollFactorY + properties->offsetY - (originY * height * scaleY)) * nzoomY);
 			destRect.w = ((width * scaleX) * nzoomX);
 			destRect.h = ((height * scaleY) * nzoomY);
+
+			scaleX = recScaleX;
+			scaleY = recScaleY;
 
 			origin.x = destRect.w * originX;
 			origin.y = destRect.h * originY;

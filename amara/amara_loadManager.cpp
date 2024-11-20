@@ -22,6 +22,7 @@ namespace Amara {
 
             std::deque<Amara::LoadTask> tasks;
 
+            using Loader::Loader;
             LoadManager(Amara::GameProperties* gameProperties): Amara::Loader(gameProperties) {
                 load = properties->loader;
                 reset();
@@ -137,14 +138,21 @@ namespace Amara {
                     if (success) {
                         tasks.pop_front();
                     }
+                    else if (load->has(task.key) && !task.replace) {
+                        tasks.pop_front();
+                    }
 					else {
 						if (task.tries < numberOfTries) {
 							task.tries += 1;
 						}
 						else {
-                            SDL_Log("Gave up on load task: %s", task.key.c_str());
+                            SDL_Log("Loader Error: Gave up on load task: %s", task.key.c_str());
                             tasks.pop_front();
                             failedTasks += 1;
+                            if (crashOnRepeatedFail) {
+                                SDL_Log("Loader Error: crashOnRepeatedFail is on. Exiting game.");
+                                properties->quit = true;
+                            }
 						}
 					}
                 }

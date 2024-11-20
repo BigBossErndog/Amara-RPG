@@ -1,5 +1,5 @@
 namespace Amara {
-	class Game: public Amara::DataObject {
+	class Game: public Amara::DataObject, public Amara::MakeRect {
 		public:
 			SDL_version compiledVersion;
             SDL_version linkedVersion;
@@ -15,9 +15,6 @@ namespace Amara {
 
 			SDL_Window* gWindow = NULL;
 			SDL_Renderer* gRenderer = NULL;
-
-			int width = 0;
-			int height = 0;
 
 			int displayIndex = 0;
 			Amara::IntRect display;
@@ -52,7 +49,7 @@ namespace Amara {
 			Amara::FileManager files;
 			
 			int fps = 60;
-			int tps = 1000 / fps;
+			float tps = 1000 / fps;
 			int lps = fps;
 			double realFPS = fps;
 			double deltaTime = 1;
@@ -60,8 +57,6 @@ namespace Amara {
 			
 			int frameCounter = 0;
 			int logicDelay = 0;
-
-			bool reloadAssets = false;
 
 			SDL_Event e;
 
@@ -163,7 +158,8 @@ namespace Amara {
 				}
 
 				//Initialize SDL_mixer
-				if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0 ) {
+				Mix_Init(MIX_INIT_OGG);
+				if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
 					SDL_Log("Game Error: SDL_mixer could not initialize. SDL_mixer Error: %s\n", Mix_GetError());
 					return false;
 				}
@@ -262,6 +258,11 @@ namespace Amara {
 				SDL_Quit();
 			}
 
+			void quitGame() {
+				quit = true;
+				properties.quit = true;
+			}
+
 			void start() {
 				// Game Loop
 				while (!quit) {
@@ -277,8 +278,10 @@ namespace Amara {
 			}
 
 			void gameLoop() {
+				if (debugGameLoop) SDL_Log("Amara Game: Start Game Loop");
 				renderTargetsReset = false;
 				renderDeviceReset = false;
+				
 				manageFPSStart();
 				writeProperties();
 				// Run game logic
@@ -287,23 +290,25 @@ namespace Amara {
 				if (debugGameLoop) SDL_Log("Amara Game: End Logic");
 				// Draw Screen
 				if (debugGameLoop) SDL_Log("Amara Game: Start Drawing");
-				draw();
+				if (isWindowed || windowFocused) draw();
 				if (debugGameLoop) SDL_Log("Amara Game: End Drawing");
 				// Manage frame catch up and slow down
 				if (debugGameLoop) SDL_Log("Amara Game: Manage FPS");
 				manageFPSEnd();
 
 				if (renderTargetsReset || renderDeviceReset) {
-					reloadAssets = true;
+					properties.reloadAssets = true;
 				}
-				else if (reloadAssets && (isWindowed || windowFocused)) {
-					reloadAssets = false;
+				else if (properties.reloadAssets && (isWindowed || windowFocused)) {
+					properties.reloadAssets = false;
 					if (debugGameLoop) SDL_Log("Amara Game: Reload Assets");
 					load.regenerateAssets();
 					if (debugGameLoop) SDL_Log("Amara Game: End Reload Assets");
 				}
+
 				if (debugGameLoop) SDL_Log("Amara Game: Run Tasks");
 				taskManager.run();
+				if (debugGameLoop) SDL_Log("Amara Game: End Game Loop");
 			}
 
 			void setFPS(int newFps, bool lockLogicSpeed) {
@@ -446,14 +451,14 @@ namespace Amara {
 
 			void update() {
 				if (debugGameLoop) SDL_Log("Amara Game: Update");
-				if (quit) return;
+				if (quit || properties.quit) return;
 				handleEvents();
 				writeProperties();
-				if (quit) return;
+				if (quit || properties.quit) return;
 				messages.update();
 				events.manage();
-				scenes.run();
 				scenes.manageTasks();
+				scenes.run();
 				audio.run(1);
 				if (debugGameLoop) SDL_Log("Amara Game: End Update");
 			}
@@ -463,7 +468,7 @@ namespace Amara {
 				SDL_SetRenderDrawColor(gRenderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
 				SDL_RenderClear(gRenderer);
 				if (debugGameLoop) SDL_Log("Amara Game: Draw Scenes");
-				if (isWindowed || windowFocused) scenes.draw();
+				scenes.draw();
 				if (debugGameLoop) SDL_Log("Amara Game: Manage Interacts");
 				events.manageInteracts();
 				if (debugGameLoop) SDL_Log("Amara Game Render Present");
@@ -496,14 +501,14 @@ namespace Amara {
 
 			void manageFPSEnd() {
 				// Check if frame finished early
-				if (quit) return;
+				if (quit || properties.quit) return;
 				int totalWait = 0;
 				lagging = false;
 
 				int frameTicks = capTimer.getTicks();
 				if (frameTicks < tps) {
 					// Wait remaining time
-					totalWait += (tps - frameTicks);
+					totalWait += floor(tps - frameTicks);
 				}
 				realFPS = fps / (frameTicks / 1000.f);
 				deltaTime = fps / realFPS;
@@ -547,6 +552,10 @@ namespace Amara {
 
 						input.mouse.x = input.mouse.dx;
 						input.mouse.y = input.mouse.dy;
+
+						if (e.type == SDL_MOUSEMOTION) {
+							input.mouse.moved = true;
+						}
 
 						float offset, upScale;
 						int vx, vy = 0;
@@ -699,7 +708,7 @@ namespace Amara {
 				}
 
 				Uint32 winFlags = SDL_GetWindowFlags(gWindow);
-				if (winFlags & SDL_WINDOW_MOUSE_FOCUS) {
+				if (winFlags & SDL_WINDOW_INPUT_FOCUS) {
 					windowFocused = true;
 				}
 				else windowFocused = false;

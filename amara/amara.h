@@ -36,6 +36,7 @@
     #ifndef AMARA_WEB
         #include <SDL_net.h>
     #endif
+    #include <sdlogv.h>
 #endif
 
 #ifndef AMARA_DIRECTIONS
@@ -139,7 +140,7 @@
 
     #include "amara_wallFinder.cpp"
     #include "amara_interactable.cpp"
-
+    
     #include "amara_physicsBase.cpp"
 
     #include "amara_broadcaster.cpp"
@@ -147,6 +148,8 @@
     #include "amara_entity.cpp"
     #include "amara_script.cpp"
     #include "amara_actor.cpp"
+
+    #include "amara_makeRect.cpp"
 
     #include "amara_timer.cpp"
     #include "amara_textureGeneration.cpp"
@@ -172,6 +175,7 @@
 
     #include "amara_canvas.cpp"
     #include "amara_layerContainer.cpp"
+    #include "amara_textureContainer.cpp"
 
     #include "amara_uiBar.cpp"
 
@@ -179,14 +183,18 @@
     #include "amara_controlScheme.cpp"
 
     #include "amara_fillRect.cpp"
+    #include "amara_fillLine.cpp"
 
     #include "amara_tintImage.cpp"
 
     #include "amara_freeWalker.cpp"
 
+    #include "amara_video.cpp"
+
     #include "amara_tween.cpp"
     #include "amara_tweens_camera.cpp"
     #include "amara_tweens_entities.cpp"
+    #include "amara_tweens_audio.cpp"
 
     #include "amara_physics.cpp"
 

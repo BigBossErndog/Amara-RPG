@@ -288,6 +288,9 @@ namespace Amara {
             float maxShakeX;
             float maxShakeY;
 
+            float targetX = 0;
+            float targetY = 0;
+
             Tween_ReverseShakeXY(float gMaxShakeX, float gMaxShakeY, float tt, Amara::Easing gEasing) {
                 maxShakeX = gMaxShakeX;
                 maxShakeY = gMaxShakeY;
@@ -312,8 +315,8 @@ namespace Amara {
                 float shakeAmountX;
                 float shakeAmountY;
 
-                shakeAmountX = ease(maxShakeX, 0, (1-progress), easing);
-                shakeAmountY = ease(maxShakeY, 0, (1-progress), easing);
+                shakeAmountX = ease(maxShakeX, targetX, (1-progress), easing);
+                shakeAmountY = ease(maxShakeY, targetY, (1-progress), easing);
 
                 parent->x = startX + properties->rng->random()*shakeAmountX - shakeAmountX/2.0;
                 parent->y = startY + properties->rng->random()*shakeAmountY - shakeAmountY/2.0;
@@ -440,12 +443,6 @@ namespace Amara {
                         targetDepth = entity->depth + 0.1;
                     }
                 }
-                for (auto it = parent->entityBuffer.begin(); it != parent->entityBuffer.end();) {
-                    entity = *it;
-                    if (entity->depth > targetDepth) {
-                        targetDepth = entity->depth + 0.1;
-                    }
-                }
             }
         }
 
@@ -540,6 +537,21 @@ namespace Amara {
         
         void script() {
             progressFurther();
+        }
+    };
+
+    class Tween_WaitForActor: public Amara::Script {
+    public:
+        Amara::Actor* waitFor = nullptr;
+
+        Tween_WaitForActor(Amara::Actor* gWaitFor) {
+            waitFor = gWaitFor;
+        }
+
+        void script() {
+            if (waitFor->isDestroyed || waitFor->notActing()) {
+                finish();
+            }
         }
     };
 
@@ -677,6 +689,56 @@ namespace Amara {
                 }
             }
             finishEvt();
+        }
+    };
+
+    class Script_PlayAudio: public Script {
+    public:
+        float delay = 0;
+        std::string audioKey;
+
+        Script_PlayAudio(std::string gKey) {
+            audioKey = gKey;
+        }
+        Script_PlayAudio(std::string gKey, float gDelay): Script_PlayAudio(gKey) {
+            delay = gDelay;
+        }
+
+        void prepare() {}
+
+        void script() {
+            start();
+            if (delay == 0) {
+                finish();
+                return;
+            }
+
+            wait(delay);
+            finishEvt();
+        }
+
+        void finish() {
+            audio->play(audioKey);
+            Script::finish();
+        }
+    };
+
+    class Script_BringToFront: public Script {
+    public:
+        Amara::Entity* target = nullptr;
+
+        Script_BringToFront() {}
+        Script_BringToFront(Amara::Entity* gEntity) {
+            target = gEntity;
+        }
+
+        void prepare() {
+            if (target == nullptr) target = parent;
+        }
+
+        void script() {
+            target->bringToFront();
+            finish();
         }
     };
 }

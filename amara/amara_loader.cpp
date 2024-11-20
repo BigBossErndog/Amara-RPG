@@ -17,6 +17,7 @@ namespace Amara {
 			float progress = 1;
 			int failedTasks = 0;
 			int numberOfTasks = 0;
+			bool crashOnRepeatedFail = false;
 
 			std::string currentBasePath = "";
 			std::string fixedPath = "";
@@ -143,14 +144,17 @@ namespace Amara {
 				return nullptr;
 			}
 
-			virtual bool remove(std::string key) {
-				Amara::Asset* asset = get(key);
+			virtual bool remove(std::string key, bool andDelete) {
+				Amara::Asset* asset = get(key, false);
 				if (asset != nullptr) {
 					assets.erase(key);
-					properties->taskManager->queueDeletion(asset);
-					return true;
+					if (andDelete) properties->taskManager->queueAsset(asset);
+					return true; 
 				}
 				return false;
+			}
+			bool remove(std::string key) {
+				return remove(key, true);
 			}
 
 			virtual bool removePseudonym(std::string key) {
@@ -231,7 +235,7 @@ namespace Amara {
 
 			virtual void clearAssets() {
 				for (auto it = assets.begin(); it != assets.end(); it++) {
-					properties->taskManager->queueDeletion(it->second);
+					properties->taskManager->queueAsset(it->second);
 				}
 				assets.clear();
 			}
@@ -540,7 +544,7 @@ namespace Amara {
 				}
 				else {
 					// Convert surface to screen format.
-					SDL_PixelFormat *format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32);
+					SDL_PixelFormat *format = SDL_AllocFormat(SDL_PIXELFORMAT_ARGB8888);
 					optimizedSurface = SDL_ConvertSurface(loadedSurface, format, 0);
 					SDL_FreeFormat(format);
 					
@@ -583,8 +587,6 @@ namespace Amara {
 				// Load image
 				SDL_Surface* loadedSurface = IMG_Load(path.c_str());
 
-
-
 				if (loadedSurface == NULL && !replace) {
 					std::cout << "Unable to load image " << path << ". Error: " << IMG_GetError() << std::endl;
 					success = false;
@@ -599,7 +601,6 @@ namespace Amara {
 					//Get rid of old loaded surface
 					SDL_FreeSurface(loadedSurface);
 				}
-
 
 				if (success) {
 					std::cout << "Loaded: " << key << std::endl;

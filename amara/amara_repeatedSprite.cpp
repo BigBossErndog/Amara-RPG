@@ -38,6 +38,7 @@ namespace Amara {
         virtual void init(Amara::GameProperties* gameProperties, Amara::Scene* givenScene, Amara::Entity* givenParent) override {
             Amara::Sprite::init(gameProperties, givenScene, givenParent);
             entityType = "repeatedSprite";
+            rectInit(this);
         }
 
         void configure(nlohmann::json config) {
@@ -54,11 +55,11 @@ namespace Amara {
             recWidth = width;
             recHeight = height;
             if (canvas != nullptr) {
-                tasks->queueDeletion(canvas);
+                tasks->queueTexture(canvas);
             }
             canvas = SDL_CreateTexture(
                 properties->gRenderer,
-                SDL_PIXELFORMAT_RGBA8888,
+                SDL_PIXELFORMAT_ARGB8888,
                 SDL_TEXTUREACCESS_TARGET,
                 floor(width),
                 floor(height)
@@ -77,8 +78,8 @@ namespace Amara {
             int cy = floor(patternBaseY + patternOffsetY);
             while (cy < 0) cy += Amara::Sprite::height;
 
-            int ix = cx%Amara::Sprite::width - Amara::Sprite::width;
-            int iy = cy%Amara::Sprite::height - Amara::Sprite::height;
+            int ix = cx%Amara::Sprite::imageWidth - Amara::Sprite::imageWidth;
+            int iy = cy%Amara::Sprite::imageHeight - Amara::Sprite::imageHeight;
             int pw = floor(width/Amara::Sprite::width)+2;
             int ph = floor(height/Amara::Sprite::height)+2;
 
@@ -130,7 +131,7 @@ namespace Amara {
             if (recWidth != width || recHeight != height) {
                 createNewCanvasTexture();
             }
-            else if (properties->renderTargetsReset || properties->renderDeviceReset) {
+            else if (properties->reloadAssets) {
                 createNewCanvasTexture();
             }
 
@@ -192,7 +193,7 @@ namespace Amara {
 
         virtual void destroy(bool recursive) {
             if (canvas) {
-                tasks->queueDeletion(canvas);
+                tasks->queueTexture(canvas);
                 canvas = nullptr;
             }
             Amara::Sprite::destroy(recursive);

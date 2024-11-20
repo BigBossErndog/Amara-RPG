@@ -1,11 +1,9 @@
 namespace Amara {
-    class Canvas: public Actor {
+    class Canvas: public Amara::Actor, public Amara::MakeRect {
         public:
             SDL_Texture* canvas = nullptr;
             SDL_Texture* recTarget = NULL;
             
-            float width = 0;
-            float height = 0;
             int imageWidth = 0;
             int imageHeight = 0;
             bool getLogicalDimensions = false;
@@ -21,8 +19,8 @@ namespace Amara {
             SDL_FPoint origin;
             SDL_BlendMode blendMode = SDL_BLENDMODE_BLEND;
 
-            float originX = 0;
-            float originY = 0;
+            bool flipHorizontal = false;
+            bool flipVertical = false;
 
             Canvas(): Actor() {
                 getLogicalDimensions = true;
@@ -41,6 +39,7 @@ namespace Amara {
                 if (canvas == nullptr) {
                     createNewCanvasTexture();
                 }
+                rectInit(this);
                 Amara::Actor::init(gameProperties, gScene, gParent);
                 if (getLogicalDimensions) {
                     width = properties->resolution->width;
@@ -48,6 +47,11 @@ namespace Amara {
                 }
 
                 entityType = "canvas";
+            }
+
+            void configure(nlohmann::json config) {
+                Amara::Actor::configure(config);
+                rectConfigure(config);
             }
 
             void beginFill(Uint8 r, Uint8 g, Uint8 b, Uint8 a, SDL_BlendMode gBlendMode) {
@@ -95,11 +99,11 @@ namespace Amara {
 
             void createNewCanvasTexture() {
                 if (canvas != nullptr) {
-                    tasks->queueDeletion(canvas);
+                    tasks->queueTexture(canvas);
                 }
                 canvas = SDL_CreateTexture(
                     properties->gRenderer,
-                    SDL_PIXELFORMAT_RGBA8888,
+                    SDL_PIXELFORMAT_ARGB8888,
                     SDL_TEXTUREACCESS_TARGET,
                     floor(width),
                     floor(height)
@@ -202,25 +206,10 @@ namespace Amara {
                 Amara::Actor::run();
             }
 
-            void setOrigin(float gx, float gy) {
-                originX = gx;
-                originY = gy;
-            }
-            void setOrigin(float go) {
-                setOrigin(go, go);
-            }
-            void setOriginPosition(float gx, float gy) {
-                originX = gx/imageWidth;
-                originY = gy/imageHeight;
-            }
-            void setOriginPosition(float g) {
-                setOriginPosition(g, g);
-            }
-
             virtual void draw(int vx, int vy, int vw, int vh) override {
                 bool skipDrawing = false;
 
-				if (properties->renderTargetsReset || properties->renderDeviceReset) {
+				if (properties->reloadAssets) {
 					createNewCanvasTexture();
 				}
 
@@ -235,10 +224,30 @@ namespace Amara {
 
                 float nzoomX = 1 + (properties->zoomX-1)*zoomFactorX*properties->zoomFactorX;
                 float nzoomY = 1 + (properties->zoomY-1)*zoomFactorY*properties->zoomFactorY; 
+
+                bool scaleFlipHorizontal = false;
+                bool scaleFlipVertical = false;
+                float recScaleX = scaleX;
+                float recScaleY = scaleY;
+
+                if (scaleX < 0) {
+                    scaleFlipHorizontal = true;
+                    scaleX = abs(scaleX);
+                }
+                if (scaleY < 0) {
+                    scaleFlipVertical = true;
+                    scaleY = abs(scaleY);
+                }
+                scaleX = scaleX * (1 + (nzoomX - 1)*(zoomScaleX - 1));
+                scaleY = scaleY * (1 + (nzoomY - 1)*(zoomScaleY - 1));
+
                 destRect.x = ((x - properties->scrollX*scrollFactorX + properties->offsetX - (originX * imageWidth * scaleX)) * nzoomX);
                 destRect.y = ((y-z - properties->scrollY*scrollFactorY + properties->offsetY - (originY * imageHeight * scaleY)) * nzoomY);
                 destRect.w = ((imageWidth * scaleX) * properties->zoomX);
                 destRect.h = ((imageHeight * scaleY) * properties->zoomY);
+
+                scaleX = recScaleX;
+                scaleY = recScaleY;
                 
                 origin.x = destRect.w * originX;
                 origin.y = destRect.h * originY;
@@ -257,6 +266,14 @@ namespace Amara {
                         SDL_SetTextureBlendMode(canvas, blendMode);
 				        SDL_SetTextureAlphaMod(canvas, alpha * properties->alpha * 255);
 
+                        SDL_RendererFlip flipVal = SDL_FLIP_NONE;
+                        if (!flipHorizontal != !scaleFlipHorizontal) {
+                            flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_HORIZONTAL);
+                        }
+                        if (!flipVertical != !scaleFlipVertical) {
+                            flipVal = (SDL_RendererFlip)(flipVal | SDL_FLIP_VERTICAL);
+                        }
+                        
                         SDL_RenderCopyExF(
                             properties->gRenderer,
                             canvas,
@@ -264,7 +281,7 @@ namespace Amara {
                             &destRect,
                             angle + properties->angle,
                             &origin,
-                            SDL_FLIP_NONE
+                            flipVal
                         );
                     }
                 }
@@ -276,8 +293,12 @@ namespace Amara {
                 if (clearEveryFrame) clear();
             }
 
-            ~Canvas() {
-                if (tasks) tasks->queueDeletion(canvas);
+            void destroy(bool recursive) {
+                Amara::Actor::destroy(recursive);
+                if (tasks && canvas) { 
+                    tasks->queueTexture(canvas);
+                    canvas = nullptr;
+                }
             }
     };
 }

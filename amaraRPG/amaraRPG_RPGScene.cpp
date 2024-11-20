@@ -82,8 +82,19 @@ namespace Amara {
             }
 
             virtual void updateScene() {
+                debugID = id;
+                std::string debugCopy;
+                if (debugging) {
+                    debugID = "";
+                    for (int i = 0; i < properties->entityDepth; i++) debugID += "\t";
+                    debugID += id;
+                    SDL_Log("%s (%s): Running. - depth %d", debugID.c_str(), entityType.c_str(), properties->entityDepth);
+                    debugCopy = debugID;
+                }
+
                 receiveMessages();
                 updateMessages();
+                if (isDestroyed) return;
                 
                 properties->entityDepth = 0;
                 properties->scrollX = 0;
@@ -98,30 +109,30 @@ namespace Amara {
                 properties->alpha = 1;
                 
                 rpgUpdate();
+                if (isDestroyed) return;
+
+                if (debugging) SDL_Log("%s (%s): Reciting Scripts (%d).", debugCopy.c_str(), entityType.c_str(), scripts.size());
                 reciteScripts();
-
+                if (isDestroyed) return;
+                
                 runChildren();
-                checkChildren();
-
+                if (isDestroyed) return;
+                
+                std::vector<Amara::Camera*> copyCameras = cameras;
                 Amara::Camera* cam;
-                for (auto it = cameras.begin(); it != cameras.end(); ++it) {
+                for (auto it = copyCameras.begin(); it != copyCameras.end();) {
                     cam = *it;
                     if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
+                        ++it;
                         continue;
                     }
                     else {
                         cam->run();
                     }
-                }
-                for (auto it = cameras.begin(); it != cameras.end();) {
-                    cam = *it;
-                    if (cam == nullptr || cam->isDestroyed || cam->parent != this) {
-                        if (mainCamera == cam) mainCamera = nullptr;
-                        it = cameras.erase(it);
-                        continue;
-                    }
                     ++it;
                 }
+
+                if (debugging) SDL_Log("%s (%s): Finished Running.", debugCopy.c_str(), entityType.c_str());
             }
 
             virtual void rpgCreate() {
