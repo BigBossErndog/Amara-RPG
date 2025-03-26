@@ -22,6 +22,22 @@
     #include <math.h>
     #include <regex>
     #include <random>
+    #include <iomanip>
+#endif
+
+#ifndef AMARA_EXTLIB
+    #if defined(_WIN32)
+    #include <windows.h>
+    #elif defined(__linux__)
+    #elif defined(__ANDROID__)
+    #elif defined(__APPLE__)
+        #include <TargetConditionals.h>
+        #if TARGET_OS_IPHONE
+        #else
+        #endif
+        #else
+    #endif
+
     #include <nlohmann/json.hpp>
     #include <MurmurHash3.cpp>
 #endif
@@ -33,10 +49,12 @@
     #include <SDL_ttf.h>
     #include <SDL_mixer.h>
     #include <SDL_FontCache.c>
-    #ifndef AMARA_WEB
+    #ifdef AMARA_WEB
         #include <SDL_net.h>
     #endif
-    #include <sdlogv.h>
+    #ifndef AMARA_NOVIDEO
+        #include <sdlogv.h>
+    #endif
 #endif
 
 #ifndef AMARA_DIRECTIONS
@@ -86,6 +104,10 @@
 
 #ifndef AMARA_LIBRARY
 #define AMARA_LIBRARY
+    #ifndef M_PI
+        #define M_PI 3.14159265358979323846264338327950288
+    #endif
+
     #include "amara_math.cpp"
     #include "amara_geometry.cpp"
     #include "amara_easing.cpp"
@@ -192,6 +214,7 @@
     #include "amara_video.cpp"
 
     #include "amara_tween.cpp"
+    #include "amara_tweens_utility.cpp"
     #include "amara_tweens_camera.cpp"
     #include "amara_tweens_entities.cpp"
     #include "amara_tweens_audio.cpp"
@@ -204,6 +227,8 @@
 
     #include "amara_uiBox.cpp"
     #include "amara_textBox.cpp"
+
+    #include "amara_manyDrawer.cpp"
 
     #include "amara_sceneTransition.cpp"
     #include "amara_sceneTransitions.cpp"

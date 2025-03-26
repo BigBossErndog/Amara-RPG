@@ -43,16 +43,16 @@ class CameraStuff: public RPGCutscene {
         void script() {
             start();
             if (once()) {
-                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT+TILE_WIDTH/2, 4, SINE_INOUT);
+                scene->mainCamera->scrollTo(15*TILE_WIDTH+TILE_WIDTH/2, 10*TILE_HEIGHT+TILE_WIDTH/2, 4, EASE_SINE_INOUT);
             }
             walk(gnik, 15, 10);
             if (once()) {
                 gnik->play("downStand");
-                scene->mainCamera->zoomTo(2, 1, SINE_INOUT);
+                scene->mainCamera->zoomTo(2, 1, EASE_SINE_INOUT);
             }
             wait(1);
             if (once()) {
-                scene->mainCamera->zoomTo(1, 1, SINE_INOUT);
+                scene->mainCamera->zoomTo(1, 1, EASE_SINE_INOUT);
             }
             wait(1);
             tb->say("Hello mom, this textbox works now.");
@@ -93,14 +93,14 @@ class TestArea: public RPGScene {
         }
 
         void create() {
-            assets->addAnim("teenGnik", "downStand", 0);
-            assets->addAnim("teenGnik", "upStand", 10);
-            assets->addAnim("teenGnik", "leftStand", 20);
-            assets->addAnim("teenGnik", "rightStand", 30);
-            assets->addAnim("teenGnik", "downWalk", {3, 2, 4, 2}, 6, true);
-            assets->addAnim("teenGnik", "upWalk", {13, 12, 14, 12}, 6, true);
-            assets->addAnim("teenGnik", "leftWalk", {23, 22, 24, 22}, 6, true);
-            assets->addAnim("teenGnik", "rightWalk", {33, 32, 34, 32}, 6, true);
+            assets->addAnimation("teenGnik", "downStand", 0);
+            assets->addAnimation("teenGnik", "upStand", 10);
+            assets->addAnimation("teenGnik", "leftStand", 20);
+            assets->addAnimation("teenGnik", "rightStand", 30);
+            assets->addAnimation("teenGnik", "downWalk", {3, 2, 4, 2}, 6, true);
+            assets->addAnimation("teenGnik", "upWalk", {13, 12, 14, 12}, 6, true);
+            assets->addAnimation("teenGnik", "leftWalk", {23, 22, 24, 22}, 6, true);
+            assets->addAnimation("teenGnik", "rightWalk", {33, 32, 34, 32}, 6, true);
 
             add(gnik = new PlayerProp());
             gnik->configure({
@@ -123,7 +123,7 @@ class TestArea: public RPGScene {
             box->bringToFront();
             box->setVisible(false);
 
-            mainCamera->centerOn(gnik);
+            mainCamera->focusOn(gnik);
 
             controls->addKey("up", KEY_UP);
             controls->addKey("down", KEY_DOWN);
@@ -185,18 +185,36 @@ class TestArea: public RPGScene {
         }
 };
 
-int main(int argc, char** args) {
-    Game* game = new Game("Amara Game");
-    
-    game->init(480, 360);
-    game->setWindowSize(960, 720);
-    game->setBackgroundColor(0,0,0);
+#if defined(_WIN32)
+	int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+		#ifndef AMARA_WEB
+			Game game = Game("Amara Game", false);
+		#else
+			WebGame game = WebGame("Amara Game");
+		#endif
+		game.init(480, 360);
+		game.setWindowSize(960, 720);
+		game.setWindowPosition(SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-    game->scenes.add("test", new TestArea());
-    game->start("test");
+		game.scenes.add("test", new TestArea());
+		game.start("test");
 
-    // game->scenes->add("enterSceneKey", new GiveSceneInstance());
-    // game->start("enterStartingScene");
+		return 0;
+	}
+#else
+    int main(int argc, char** args) {
+        Game* game = new Game("Amara Game");
+        
+        game->init(480, 360);
+        game->setWindowSize(960, 720);
+        game->setBackgroundColor(0,0,0);
 
-    return 0;
-}
+        game->scenes.add("test", new TestArea());
+        game->start("test");
+
+        // game->scenes->add("enterSceneKey", new GiveSceneInstance());
+        // game->start("enterStartingScene");
+
+        return 0;
+    }
+#endif

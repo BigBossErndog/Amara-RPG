@@ -94,7 +94,7 @@ namespace Amara {
 
                 entityType = "uiBox";
             }
-
+            
             virtual void configure(nlohmann::json config) {
                 Amara::Actor::configure(config);
                 rectConfigure(config);
@@ -307,8 +307,6 @@ namespace Amara {
                 if (alpha > 1) alpha = 1;
 
                 if (recWidth != width || recHeight != height) {
-                    if (openWidth > width) openWidth = width;
-                    if (openHeight > height) openHeight = height;
                     createTexture();
                 }
 				else if (properties->reloadAssets) {
@@ -319,6 +317,9 @@ namespace Amara {
                     openWidth = width;
                     openHeight = height;
                 }
+                if (openWidth > width) openWidth = width;
+                if (openHeight > height) openHeight = height;
+                
                 if (recOpenWidth != openWidth || recOpenHeight != openHeight) {
                     pleaseUpdate = true;
                     recOpenWidth = openWidth;
@@ -521,10 +522,12 @@ namespace Amara {
 			void snapClosed(bool hor, bool ver) {
 				if (hor) openWidth = minWidth;
 				if (ver) openHeight = minHeight;
+                if (content) content->setVisible(false);
 			}
 			void snapOpen(bool hor, bool ver) {
 				if (hor) openWidth = width;
 				if (ver) openHeight = height;
+                if (content) content->setVisible(true);
 			} 
 
             Amara::UIBox* setOrigin(float gx, float gy) {
@@ -562,6 +565,7 @@ namespace Amara {
                 Amara::StateManager& sm = checkSm();
                 if (sm.once()) {
                     setVisible(true);
+                    if (content) content->setVisible(true);
                     return true;
                 }
                 return false;
@@ -571,6 +575,7 @@ namespace Amara {
                 Amara::StateManager& sm = checkSm();
                 if (sm.once()) {
                     setVisible(false);
+                    if (content) content->setVisible(false);
                     return true;
                 }
                 return false;
@@ -810,19 +815,19 @@ namespace Amara {
 			time = tt;
 			easing = gEasing;
 		}
-		UIBox_Timed(float tw, float th, float tt): UIBox_Timed(tw, th, tt, LINEAR) {}
+		UIBox_Timed(float tw, float th, float tt): UIBox_Timed(tw, th, tt, EASE_LINEAR) {}
 		UIBox_Timed(float tt, Easing gEasing) {
             targetWidth = -1;
             targetHeight = -1;
             time = tt;
             easing = gEasing;
         }
-        UIBox_Timed(float tt): UIBox_Timed(tt, LINEAR) {}
+        UIBox_Timed(float tt): UIBox_Timed(tt, EASE_LINEAR) {}
         
         UIBox_Timed(UIBox* gBox, float tw, float th, float tt, Easing gEasing): UIBox_Timed(tw, th, tt, gEasing) {
 			box = gBox;
 		}
-		UIBox_Timed(UIBox* gBox, float tw, float th, float tt): UIBox_Timed(gBox, tw, th, tt, LINEAR) {}
+		UIBox_Timed(UIBox* gBox, float tw, float th, float tt): UIBox_Timed(gBox, tw, th, tt, EASE_LINEAR) {}
 
 		void prepare() {
 			if (box == nullptr) box = (UIBox*)parent;
@@ -840,19 +845,19 @@ namespace Amara {
 		void script() {
 			progressFurther();
 			switch (easing) {
-				case LINEAR:
+				case EASE_LINEAR:
 					box->openWidth = linearEase(startWidth, targetWidth, progress);
 					box->openHeight = linearEase(startHeight, targetHeight, progress);
 					break;
-				case SINE_INOUT:
+				case EASE_SINE_INOUT:
 					box->openWidth = sineInOutEase(startWidth, targetWidth, progress);
 					box->openHeight = sineInOutEase(startHeight, targetHeight, progress);
 					break;
-				case SINE_IN:
+				case EASE_SINE_IN:
 					box->openWidth = sineInEase(startWidth, targetWidth, progress);
 					box->openHeight = sineInEase(startHeight, targetHeight, progress);
 					break;
-				case SINE_OUT:
+				case EASE_SINE_OUT:
 					box->openWidth = sineOutEase(startWidth, targetWidth, progress);
 					box->openHeight = sineOutEase(startHeight, targetHeight, progress);
 					break;

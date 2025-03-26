@@ -126,6 +126,7 @@ namespace Amara {
             bool isFinished = false;
 
             virtual void finish() {
+                if (pushedMessages) fixMessages();
                 isFinished = true;
             }
             bool finishEvt() {
@@ -142,28 +143,35 @@ namespace Amara {
 
             virtual void destroyScript() {
                 if (isDestroyed) return;
+                if (pushedMessages) fixMessages();
                 isDestroyed = true;
                 if (deleteChained) {
                     destroyChains();
                 }
-                properties->taskManager->queueScript(this);
+                if (properties) properties->taskManager->queueScript(this);
+            }
+
+            void fixMessages() {
+                if (!messages) return;
+                pushedMessages = false;
+                for (Amara::Message& msg: messages->queue) {
+                    if (msg.parent == this) {
+                        msg.parent = (Amara::Broadcaster*)parentEntity;
+                        parentEntity->pushedMessages = true;
+                    }
+                }
             }
     };
 
     bool StateManager::waitOnScript(Amara::Script* script) {
         if (evt()) {
-            if (script == nullptr || script->notActing())  {
-                if (script && script->manualDeletion) {
-                    script->destroyScript();
-                }
-                nextEvt();
-            }
-            else {
+            if (script) {
                 script->manualDeletion = true;
                 if (nextEvtOn(script->notActing())) {
                     script->destroyScript();
                 }
             }
+            else nextEvt();
             return true;
         }
         return false;

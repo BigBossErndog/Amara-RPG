@@ -219,12 +219,12 @@ namespace Amara {
                 }
 
                 FloatVector2 p1 = {
-                    tileX * TILE_WIDTH + TILE_WIDTH/2.0,
-                    tileY * TILE_HEIGHT + TILE_HEIGHT/2.0
+                    (float)(tileX * TILE_WIDTH + TILE_WIDTH/2.0),
+                    (float)(tileY * TILE_HEIGHT + TILE_HEIGHT/2.0)
                 };
                 FloatVector2 p2 = {
-                    gx * TILE_WIDTH + TILE_WIDTH/2.0,
-                    gy * TILE_HEIGHT + TILE_HEIGHT/2.0
+                    (float)(gx * TILE_WIDTH + TILE_WIDTH/2.0),
+                    (float)(gy * TILE_HEIGHT + TILE_HEIGHT/2.0)
                 };
 
                 Amara::Prop* prop;

@@ -15,7 +15,7 @@ namespace Amara {
             std::string lastState;
 
             std::vector<StateRecord> stateRecords;
-
+            
             int currentEvent = 1;
             int eventLooker = 0;
 
@@ -60,6 +60,10 @@ namespace Amara {
                 lastState.clear();
                 currentEvent = 1;
                 jumpFlag.clear();
+                stateRecords.clear();
+            }
+
+            void clearStateRecord() {
                 stateRecords.clear();
             }
 

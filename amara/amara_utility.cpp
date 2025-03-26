@@ -9,11 +9,11 @@ namespace Amara {
         for (T element: list2) list1.push_back(element);
     }
 
-    bool json_has(nlohmann::json data, std::string key) {
+    bool json_has(const nlohmann::json& data, const std::string& key) {
         return (data.find(key) != data.end()) ? true : false;
     }
 
-    bool json_is(nlohmann::json data, std::string key) {
+    bool json_is(const nlohmann::json& data, const std::string& key) {
         return json_has(data, key) && data[key].is_boolean() && data[key];
     }
 
@@ -25,14 +25,20 @@ namespace Amara {
         return false;
     }
 
-    bool string_equal(std::string str1, std::string str2) {
-        return (str1.compare(str2) == 0) ? true : false;
+    bool string_equal(const std::string& str1, const std::string& str2) {
+        return str1.compare(str2) == 0;
     }
 
     float fixed_range(float num, float min, float max) {
         if (num < min) return min;
         if (num > max) return max;
         return num;
+    }
+
+    float abs_mod(float num, float den) {
+        while (num < 0) num += den;
+        float result = fmod(num, den);
+        return result;
     }
 
     SDL_Color getPixelFromSurface(SDL_Surface* gSurface, int gx, int gy) {
@@ -65,6 +71,30 @@ namespace Amara {
         return rgba;
     }
 
+    SDL_Surface* duplicate_surface(SDL_Surface* original) {
+        if (!original) {
+            return NULL; // Handle null input
+        }
+    
+        // Create a new surface with the same format, width, height, and depth
+        SDL_Surface* duplicate = SDL_CreateRGBSurfaceWithFormat(
+            0, original->w, original->h, original->format->BitsPerPixel, original->format->format);
+    
+        if (!duplicate) {
+            SDL_Log("Failed to create duplicate surface: %s\n", SDL_GetError());
+            return NULL;
+        }
+    
+        // Copy pixel data from the original surface to the new one
+        if (SDL_BlitSurface(original, NULL, duplicate, NULL) < 0) {
+            SDL_Log("Failed to blit surface: %s\n", SDL_GetError());
+            SDL_FreeSurface(duplicate);
+            return NULL;
+        }
+    
+        return duplicate;
+    }
+
     SDL_BlendMode AMARA_BLENDMODE_MASK = SDL_ComposeCustomBlendMode(
         SDL_BLENDFACTOR_ZERO,
         SDL_BLENDFACTOR_ONE,
@@ -74,12 +104,12 @@ namespace Amara {
         SDL_BLENDOPERATION_ADD
     );
 
-    SDL_BlendMode AMARA_BLENDMODE_UNDERMASK = SDL_ComposeCustomBlendMode(
-        SDL_BLENDFACTOR_ONE,
+    SDL_BlendMode AMARA_BLENDMODE_ERASER = SDL_ComposeCustomBlendMode(
         SDL_BLENDFACTOR_ZERO,
+        SDL_BLENDFACTOR_ONE,
         SDL_BLENDOPERATION_ADD,
         SDL_BLENDFACTOR_ZERO,
-        SDL_BLENDFACTOR_SRC_ALPHA,
+        SDL_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
         SDL_BLENDOPERATION_ADD
     );
 

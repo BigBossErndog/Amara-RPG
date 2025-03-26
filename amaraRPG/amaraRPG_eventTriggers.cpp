@@ -115,8 +115,8 @@ namespace Amara {
 		void prepare() {
 			if (watched == nullptr) watched = parent;
 			checkBox = {
-				x*TILE_WIDTH, y*TILE_HEIGHT,
-				TILE_WIDTH, TILE_HEIGHT
+				(float)(x*TILE_WIDTH, y*TILE_HEIGHT),
+				(float)(TILE_WIDTH, TILE_HEIGHT)
 			};
 		}
 

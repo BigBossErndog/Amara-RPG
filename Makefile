@@ -5,8 +5,10 @@ BUILD_PATH = build
 
 BUILD_EXECUTABLE_WIN = $(BUILD_PATH)/$(BUILD_NAME).exe
 BUILD_EXECUTABLE_LINUX = $(BUILD_PATH)/$(BUILD_NAME).game
+BUILD_HTML = $(BUILD_PATH)/index.html
 
-COMPILER = g++
+COMPILER = clang++
+WSL_COMPILER = x86_64-w64-mingw32-g++
 
 SDL_INCLUDE_PATHS_WIN64 = -I ext_lib/SDL2/win64/include/SDL2 -I ext_lib/SDL2_image/win64/include/SDL2 -I ext_lib/SDL2_ttf/win64/include/SDL2 -I ext_lib/SDL2_mixer/win64/include/SDL2 -I ext_lib/SDL2_net/win64/include/SDL2 -I ext_lib/SDL_FontCache
 SDL_LIBRARY_PATHS_WIN64 = -L ext_lib/SDL2/win64/lib -L ext_lib/SDL2_image/win64/lib -L ext_lib/SDL2_ttf/win64/lib -L ext_lib/SDL2_mixer/win64/lib -L ext_lib/SDL2_net/win64/lib
@@ -17,43 +19,48 @@ SDL_LIBRARY_PATHS_WIN32 = -L ext_lib/SDL2/win32/lib -L ext_lib/SDL2_image/win32/
 SDL_INCLUDE_PATHS_LINUX = `sdl2-config --cflags` -I ext_lib/SDL_FontCache
 
 LINKER_FLAGS = -l SDL2main -l SDL2 -l SDL2_image -l SDL2_ttf -l SDL2_mixer -l SDL2_net
+THEORA_LINKER_FLAGS =  -ltheora -lvorbisenc -lvorbisfile -lvorbis -logg
+
+THEORA_INCLUDE_PATHS_WIN = -I ext_lib/ogg/include -I ext_lib/vorbis/include -I ext_lib/theora/include -I ext_lib/sdlogv
+THEORA_LIBRARY_PATHS_WIN = -L ext_lib/ogg/lib -L ext_lib/vorbis/lib -L ext_lib/theora/lib
+
+THEORA_WIN = $(THEORA_INCLUDE_PATHS_WIN) $(THEORA_LIBRARY_PATHS_WIN) $(THEORA_LINKER_FLAGS)
 
 OTHER_LIB_PATHS = -I ext_lib/nlohmann/include -I ./src -I ext_lib/murmurhash3
 
 AMARA_PATH = -I ./amara -I ./amaraRPG
 
-COMPILER_FLAGS = -w
+COMPILER_FLAGS = -w -Wall
 # COMPILER_FLAGS = -w -Wl,-subsystem,windows
+
+WEB_FLAGS = -O2 -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 --preload-file $(BUILD_PATH)/assets -I ext_lib/SDL_FontCache -I ./amaraWeb -w
 
 all:
 	@echo "Usage: make (option)"
-	@echo "Options: win64 win32 linux"
+	@echo "Options: win64 win32 archlinux"
 	@echo "Options: playwin playlinux"
-
-cpamara:
-	cp -T -r ../amara/amara ./amara
-	cp -T -r ../amara/amaraWeb ./amaraWeb
-	cp -T -r ../amara/ext_lib ./ext_lib
-
-cplibs:
-	cp -T -r ../amara/ext_lib ./ext_lib
-	cp -T -r ../amara/dlls ./dlls
 
 clean:
 	rm -rf $(BUILD_PATH)/*
 
-win64: $(SRC_FILES)
+clearBuild:
+	rm -rf build/*exe
+	rm -rf build/*game
+	rm -rf build/*html
 	rm -rf build/*.dll
 	rm -rf build/assets/*
+
+win64: $(SRC_FILES)
+	make clearBuild
 	cp -R assets/ build/
-	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_WIN64) $(SDL_LIBRARY_PATHS_WIN64) $(COMPILER_FLAGS) -l mingw32 -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic $(LINKER_FLAGS) -o $(BUILD_EXECUTABLE_WIN)
+	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(THEORA_WIN) $(SDL_INCLUDE_PATHS_WIN64) $(SDL_LIBRARY_PATHS_WIN64) $(COMPILER_FLAGS) -static-libgcc -static-libstdc++ -Wl,-Bstatic -pthread -Wl,-Bdynamic -static $(LINKER_FLAGS) -o $(BUILD_EXECUTABLE_WIN)
 	cp dlls/win64/* $(BUILD_PATH)/
 
+
 win32: $(SRC_FILES)
-	rm -rf build/*.dll
-	rm -rf build/assets/*
+	rmake clearBuild
 	cp -R assets/ build/
-	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_WIN32) $(SDL_LIBRARY_PATHS_WIN32) $(COMPILER_FLAGS) -l mingw32 -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic $(LINKER_FLAGS) -I ext_lib/SDL2-32/bin -o $(BUILD_EXECUTABLE_WIN)
+	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(THEORA_WIN) $(SDL_INCLUDE_PATHS_WIN32) $(SDL_LIBRARY_PATHS_WIN32) $(COMPILER_FLAGS) -static-libgcc -static-libstdc++ -Wl,-Bstatic -pthread -Wl,-Bdynamic -static $(LINKER_FLAGS) -I ext_lib/SDL2-32/bin -o $(BUILD_EXECUTABLE_WIN)
 	cp dlls/win32/* $(BUILD_PATH)/
 
 linux:
@@ -63,10 +70,10 @@ linux:
 	cp -R assets/ build/
 	$(COMPILER) $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(SDL_INCLUDE_PATHS_LINUX) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(BUILD_EXECUTABLE_LINUX)
 
-play:
-	rm -rf build/assets/*
+web:
+	make clearBuild
 	cp -R assets/ build/
-	$(BUILD_EXECUTABLE_WIN)
+	emcc $(SRC_FILES) $(AMARA_PATH) $(OTHER_LIB_PATHS) $(WEB_FLAGS) -o $(BUILD_HTML)
 
 playwin:
 	rm -rf build/assets/*
@@ -78,6 +85,15 @@ playlinux:
 	cp -R assets/ build/
 	./$(BUILD_EXECUTABLE_LINUX)
 
+valgrind:
+	rm -rf build/assets/*
+	cp -R assets/ build/
+	valgrind --leak-check=yes ./$(BUILD_EXECUTABLE_LINUX)
+
+setup-wsl:
+	make setup-apt64
+	sudo apt-get install mingw-w64
+
 setup-apt64:
 	sudo apt-get install libsdl2-2.0-0
 	sudo apt-get install libsdl2-dev
@@ -85,6 +101,7 @@ setup-apt64:
 	sudo apt-get install libsdl2-ttf-dev
 	sudo apt-get install libsdl2-mixer-dev
 	sudo apt-get install libsdl2-net-dev
+	sudo apt install libtheora-dev libogg-dev libvorbis-dev
 
 setup-yum64:
 	sudo yum install SDL2
@@ -103,3 +120,4 @@ setup-pacman64:
 	sudo pacman -S sdl2_ttf
 	sudo pacman -S sdl2_mixer
 	sudo pacman -S sdl2_net
+	sudo pacman -S libtheora libogg libvorbis

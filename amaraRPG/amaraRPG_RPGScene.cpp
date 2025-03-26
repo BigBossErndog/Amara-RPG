@@ -191,14 +191,11 @@ namespace Amara {
 
             virtual void rpgUpdate() {
                 if (sm.state("start")) {
-                    if (transition == nullptr) {
-                        if (currentCutscene) {
-                            sm.switchState("cutscenes");
-
-                        }
-                        else {
-                            sm.switchState("duration");
-                        }
+                    if (currentCutscene) {
+                        sm.switchState("cutscenes");
+                    }
+                    else {
+                        sm.switchState("duration");
                     }
                 }
                 else if (sm.state("duration")) {
@@ -207,11 +204,6 @@ namespace Amara {
                 else if (sm.state("cutscenes")) {
                     runCutscenes();
                 }
-				else if (sm.state("transition")) {
-					if (!transition) {
-						sm.returnState();
-					}
-				}
 				update();
             }
 
@@ -266,9 +258,6 @@ namespace Amara {
 
 			virtual Amara::SceneTransitionBase* startTransition(Amara::SceneTransitionBase* gTransition) {
                 Amara::Scene::startTransition(gTransition);
-				if (transition && !inState("transition")) {
-					sm.switchState("transition");
-				}
                 return transition;
             }
             
